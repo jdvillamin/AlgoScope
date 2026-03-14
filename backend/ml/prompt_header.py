@@ -303,17 +303,37 @@ Rules:
    Both from_id and to_id must be string IDs previously registered with trace_graph_node.
    Do NOT pass integer indices — pass the string vertex IDs.
 
-4. Call trace_graph_highlight when a traversal algorithm visits a node (e.g., BFS/DFS pop/dequeue).
-   Pass the string ID of the node being visited.
+4. MANDATORY: Call trace_graph_highlight every time a traversal visits a node.
+   This applies to ALL traversal patterns — BFS, DFS, or any loop that processes vertices.
+   Place it immediately after the node is dequeued, popped, or selected as current.
+   Do NOT skip this call. Every visited node MUST be highlighted.
+   Pass the string ID of the node being visited, not its index.
 
 5. Ordering requirement:
    trace_graph_init → trace_graph_node (all vertices) → trace_graph_edge (all edges)
    A node must be registered before any edge that references it.
 
-Example:
+Traversal highlight patterns:
 
-Graph g;
-initGraph(&g);
+BFS — highlight immediately after dequeue:
+
+int current = queue[front++];
+trace_graph_highlight("G", g.vertices[current].id);
+
+DFS (iterative) — highlight immediately after pop:
+
+int current = stack[top--];
+trace_graph_highlight("G", g.vertices[current].id);
+
+DFS (recursive) — highlight at the start of the recursive call:
+
+void dfs(Graph* g, int v) {
+    trace_graph_highlight("G", g->vertices[v].id);
+    ...
+}
+
+Example (full BFS):
+
 trace_graph_init("G");
 
 int A = addVertex(&g, "A");
@@ -325,7 +345,8 @@ trace_graph_node("G", g.vertices[B].id);
 addEdge(&g, A, B);
 trace_graph_edge("G", g.vertices[A].id, g.vertices[B].id);
 
-/* During BFS/DFS traversal, highlight the node being visited: */
+/* Inside BFS loop: */
+int current = queue[front++];
 trace_graph_highlight("G", g.vertices[current].id);
 
 ==================================================
