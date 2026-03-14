@@ -19,14 +19,17 @@ def safe_decode(data: bytes) -> str:
 
 @app.route("/run", methods=["POST"])
 def run_code():
-    code = request.json["code"]
+    body = request.json
+    code = body["code"]
+    skip_instrumentation = body.get("skip_instrumentation", False)
 
-    try:
-        code = instrument_code(code)
-    except Exception as e:
-        return jsonify({
-            "error": f"Instrumentation error: {str(e)}"
-        })
+    if not skip_instrumentation:
+        try:
+            code = instrument_code(code)
+        except Exception as e:
+            return jsonify({
+                "error": f"Instrumentation error: {str(e)}"
+            })
 
     with tempfile.TemporaryDirectory() as tmp:
         cfile = os.path.join(tmp, "main.c")

@@ -4,16 +4,19 @@ You are instrumenting a C program so its execution can be visualized.
 Your task is to INSERT tracing calls into the code.
 
 STRICT RULES
-1. Preserve the original C program exactly.
-2. Do NOT delete or modify any original line.
-3. Do NOT reorder includes, declarations, structs, functions, or statements.
-4. Only INSERT new trace statements.
-5. If traces are used, ensure `#include "tracer.h"` exists.
-6. Every original line must remain present in the final output.
-7. You may only insert new lines BEFORE or AFTER existing lines.
-8. Do NOT rewrite, simplify, or regenerate the program.
-9. Output ONLY valid C code.
-10. Do NOT output explanations or markdown.
+1. Preserve the original C program EXACTLY — every line, every character.
+2. Do NOT delete ANY original line under any circumstance.
+3. Do NOT modify, rewrite, or simplify ANY original line.
+4. Do NOT remove or collapse ANY struct, union, or typedef definition.
+5. Do NOT remove ANY function definition or declaration.
+6. Do NOT remove ANY #include directive.
+7. Do NOT remove ANY variable declaration, even if you think it is unused.
+8. Do NOT reorder any original code — includes, structs, typedefs, functions, and statements must stay in their original order.
+9. Only INSERT new trace statements. You may only add lines BETWEEN existing lines.
+10. If any trace call is inserted, ensure `#include "tracer.h"` is present at the top.
+11. Output ONLY valid C code.
+12. Do NOT output explanations, comments, or markdown.
+13. If you are uncertain whether to keep a line — KEEP IT.
 
 ==================================================
 TRACE SYSTEM MODEL
@@ -306,10 +309,11 @@ OUTPUT
 Return ONLY the final instrumented C program.
 
 Do NOT explain anything.
-Do NOT remove original code.
-Do NOT rewrite original statements.
+Do NOT remove ANY original line, struct, function, include, or declaration.
+Do NOT rewrite or simplify ANY original statement.
+Do NOT omit anything from the original source — not even blank lines.
 
-Only insert trace statements.
+Only insert trace statements between existing lines.
 
 ==================================================
 SOURCE CODE

@@ -34,7 +34,10 @@ function App() {
   };
 
   const runCode = async () => {
-    if (!code.trim()) {
+    const isInstrumentedTab = activeTab === "instrumented";
+    const codeToRun = isInstrumentedTab ? instrumentedCode : code;
+
+    if (!codeToRun.trim()) {
       alert("Please enter C code first.");
       return;
     }
@@ -52,10 +55,15 @@ function App() {
       setRunPhase("Sending code to backend...");
       await new Promise((r) => setTimeout(r, 120));
 
-      const resPromise = API.post("/run", { code });
+      const resPromise = API.post("/run", {
+        code: codeToRun,
+        skip_instrumentation: isInstrumentedTab,
+      });
 
-      setRunPhase("Instrumenting source code...");
-      await new Promise((r) => setTimeout(r, 220));
+      if (!isInstrumentedTab) {
+        setRunPhase("Instrumenting source code...");
+        await new Promise((r) => setTimeout(r, 220));
+      }
 
       setRunPhase("Compiling instrumented code...");
       await new Promise((r) => setTimeout(r, 220));
@@ -166,6 +174,7 @@ function App() {
             code={code}
             setCode={setCode}
             instrumentedCode={instrumentedCode}
+            setInstrumentedCode={setInstrumentedCode}
             currentLine={currentLine}
             isRunning={isRunning}
             isProcessing={isProcessing}

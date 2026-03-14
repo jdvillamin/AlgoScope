@@ -4,6 +4,7 @@ function Editor({
   code,
   setCode,
   instrumentedCode = "",
+  setInstrumentedCode,
   currentLine,
   isRunning,
   isProcessing,
@@ -258,10 +259,13 @@ function Editor({
           <textarea
             ref={textareaRef}
             value={displayedCode}
-            readOnly={isRunning || isInstrumentedTab || isProcessing}
+            readOnly={isRunning || isProcessing}
             wrap="off"
             onChange={(e) => {
-              if (!isInstrumentedTab && !isProcessing) {
+              if (isProcessing) return;
+              if (isInstrumentedTab) {
+                setInstrumentedCode?.(e.target.value);
+              } else {
                 setCode(e.target.value);
               }
             }}
