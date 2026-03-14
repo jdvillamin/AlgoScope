@@ -131,7 +131,7 @@ function App() {
         height: "100vh",
         width: "100vw",
         overflow: "hidden",
-        background: "#0f141d",
+        background: "#080d15",
       }}
     >
       {/* LEFT: Canvas */}
@@ -148,9 +148,9 @@ function App() {
 
         <div
           style={{
-            height: "120px",
-            borderTop: "1px solid #1f2533",
-            background: "#141821",
+            height: "100px",
+            borderTop: "1px solid #1a2535",
+            background: "#0e1520",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -166,7 +166,7 @@ function App() {
           flex: 1.5,
           display: "flex",
           flexDirection: "column",
-          borderLeft: "1px solid #1f2533",
+          borderLeft: "1px solid #1a2535",
         }}
       >
         <div style={{ flex: 3, minHeight: 0 }}>
@@ -190,32 +190,26 @@ function App() {
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            borderTop: "1px solid #1f2533",
-            background: "#141821",
+            borderTop: "1px solid #1a2535",
+            background: "#0e1520",
             position: "relative",
             overflow: "hidden",
           }}
         >
+          {/* Console header */}
           <div
             style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid #1f2533",
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "#9aa4c7",
-              letterSpacing: "0.5px",
+              padding: "9px 16px",
+              borderBottom: "1px solid #1a2535",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
-            <span>OBJECT DETAILS / CONSOLE</span>
-            <span
-              style={{
-                fontSize: "12px",
-                color: isProcessing ? "#fbc531" : "#6f7ea8",
-              }}
-            >
+            <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#4e6180", textTransform: "uppercase" }}>
+              Console
+            </span>
+            <span style={{ fontSize: "12px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#3d5270" }}>
               {runPhase}
             </span>
           </div>
@@ -224,15 +218,13 @@ function App() {
             <div
               style={{
                 position: "absolute",
-                top: 41,
+                top: 38,
                 left: 0,
                 right: 0,
-                height: "3px",
-                background:
-                  "linear-gradient(90deg, transparent, #fbc531, transparent)",
+                height: "2px",
+                background: "linear-gradient(90deg, transparent, #f0a429, transparent)",
                 backgroundSize: "200% 100%",
                 animation: "consoleShimmer 1.2s linear infinite",
-                opacity: 0.9,
               }}
             />
           )}
@@ -240,55 +232,44 @@ function App() {
           <div
             style={{
               flex: 1,
-              padding: "12px 16px",
+              padding: "14px 16px",
               overflowY: "auto",
-              fontSize: "13px",
-              fontFamily: "monospace",
-              color: error ? "#ffb4b4" : "#7f8fa6",
+              fontSize: "12.5px",
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+              color: error ? "#f87171" : "#4e6180",
               whiteSpace: "pre-wrap",
+              lineHeight: 1.6,
               transition: "opacity 0.2s ease",
-              opacity: isProcessing ? 0.92 : 1,
+              opacity: isProcessing ? 0.85 : 1,
             }}
           >
             {isProcessing ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                  color: "#d7def7",
-                }}
-              >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", color: "#c8d8f0" }}>
                 <div
                   style={{
-                    width: "14px",
-                    height: "14px",
-                    border: "2px solid #2f3547",
-                    borderTop: "2px solid #fbc531",
+                    width: "13px",
+                    height: "13px",
+                    border: "2px solid #1e2d42",
+                    borderTop: "2px solid #f0a429",
                     borderRadius: "50%",
-                    animation: "spin 0.9s linear infinite",
-                    marginTop: "2px",
+                    animation: "spin 0.8s linear infinite",
+                    marginTop: "3px",
                     flexShrink: 0,
                   }}
                 />
                 <div>
-                  <div style={{ fontWeight: 600, color: "#fbc531" }}>
-                    Processing source code...
+                  <div style={{ fontWeight: 600, color: "#f0a429", fontFamily: "inherit" }}>
+                    Processing...
                   </div>
-                  <div style={{ marginTop: "6px", color: "#9aa4c7" }}>
+                  <div style={{ marginTop: "5px", color: "#7b96bf", fontFamily: "inherit" }}>
                     {runPhase}
-                  </div>
-                  <div style={{ marginTop: "10px", color: "#6f7ea8" }}>
-                    Please wait while AlgoScope instruments, compiles, and executes your code.
                   </div>
                 </div>
               </div>
             ) : error ? (
               error
             ) : trace.length > 0 ? (
-              `Trace events: ${trace.length}\nCurrent step: ${currentStep}\nCurrent line: ${
-                currentLine ?? "None"
-              }`
+              `Trace events: ${trace.length}\nCurrent step: ${currentStep}\nCurrent line: ${currentLine ?? "—"}`
             ) : (
               "Waiting for execution..."
             )}
@@ -299,10 +280,8 @@ function App() {
       <style>
         {`
           @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
           }
-
           @keyframes consoleShimmer {
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }

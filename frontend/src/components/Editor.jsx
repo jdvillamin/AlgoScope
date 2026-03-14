@@ -71,17 +71,8 @@ function Editor({
     syncOverlay();
   }, [currentLine, isRunning, isInstrumentedTab, syncOverlay]);
 
-  const handleScroll = () => {
-    syncOverlay();
-  };
-
-  useEffect(() => {
-    syncOverlay();
-  }, [syncOverlay, displayedCode]);
-
-  useEffect(() => {
-    scrollToCurrentLine();
-  }, [scrollToCurrentLine]);
+  useEffect(() => { syncOverlay(); }, [syncOverlay, displayedCode]);
+  useEffect(() => { scrollToCurrentLine(); }, [scrollToCurrentLine]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -98,32 +89,35 @@ function Editor({
     });
   }, [activeTab, displayedCode, syncOverlay, scrollToCurrentLine]);
 
-  const iconButton = {
-    width: "36px",
-    height: "36px",
+  const iconBtn = (active = true) => ({
+    width: "32px",
+    height: "32px",
     borderRadius: "8px",
-    background: "#1c2230",
-    border: "1px solid #2b3245",
-    color: "#cfd8ff",
+    background: active ? "#19243a" : "transparent",
+    border: `1px solid ${active ? "#243347" : "transparent"}`,
+    color: isProcessing ? "#3d5270" : "#8fa3c8",
     cursor: isProcessing ? "not-allowed" : "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    fontSize: "15px",
     padding: 0,
     lineHeight: 1,
-    opacity: isProcessing ? 0.7 : 1,
-    transition: "all 0.2s ease",
-  };
+    flexShrink: 0,
+  });
 
   const tabStyle = (selected) => ({
-    padding: "8px 14px",
-    borderRadius: "8px",
-    border: selected ? "1px solid #4c5a79" : "1px solid #2b3245",
-    background: selected ? "#1c2230" : "#111722",
-    color: selected ? "#ffffff" : "#94a3b8",
+    padding: "6px 2px",
+    background: "none",
+    border: "none",
+    borderBottom: selected ? "2px solid #4b8cf7" : "2px solid transparent",
+    color: selected ? "#c8d8f0" : "#4e6180",
     cursor: "pointer",
     fontSize: "13px",
-    fontWeight: 600,
+    fontWeight: selected ? 600 : 500,
+    letterSpacing: "0.1px",
+    marginBottom: "-1px",
+    transition: "color 0.15s, border-color 0.15s",
   });
 
   return (
@@ -133,79 +127,94 @@ function Editor({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#141821",
-        color: "#f5f6fa",
+        background: "#0e1520",
+        color: "#dce7f8",
       }}
     >
+      {/* Header */}
       <div
         style={{
-          padding: "12px 18px",
-          borderBottom: "1px solid #1f2533",
+          padding: "0 16px",
+          borderBottom: "1px solid #1a2535",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "stretch",
           gap: "16px",
-          flexWrap: "wrap",
+          height: "44px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontWeight: 600, fontSize: "14px" }}>Code Editor</span>
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              onClick={() => setActiveTab("raw")}
-              style={tabStyle(activeTab === "raw")}
-              title="Original source code"
-            >
-              Raw Code
-            </button>
-
-            <button
-              onClick={() => setActiveTab("instrumented")}
-              style={tabStyle(activeTab === "instrumented")}
-              title="Instrumented code returned by backend"
-            >
-              Instrumented Code
-            </button>
-          </div>
+        {/* Tabs */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: "20px" }}>
+          <button
+            onClick={() => setActiveTab("raw")}
+            style={tabStyle(activeTab === "raw")}
+            title="Original source code"
+          >
+            Raw code
+          </button>
+          <button
+            onClick={() => setActiveTab("instrumented")}
+            style={tabStyle(activeTab === "instrumented")}
+            title="Instrumented code"
+          >
+            Instrumented code
+          </button>
         </div>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        {/* Actions */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <button
             onClick={!isProcessing ? onRun : undefined}
-            style={iconButton}
-            title={isProcessing ? "Processing..." : "Compile & Run"}
+            style={{
+              ...iconBtn(),
+              width: "auto",
+              padding: "0 12px",
+              gap: "6px",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              color: isProcessing ? "#3d5270" : "#4b8cf7",
+              border: `1px solid ${isProcessing ? "#1a2535" : "#1e3a6e"}`,
+              background: isProcessing ? "#0f1928" : "#0f1e3a",
+            }}
+            title={isProcessing ? "Processing..." : "Compile & run"}
           >
-            {isProcessing ? "⋯" : "⚡"}
+            {isProcessing ? "⋯" : "▶"}&nbsp;{isProcessing ? "Running" : "Run"}
           </button>
 
-          <button onClick={onReset} style={iconButton} title="Reset">
-            ⟲
+          <button
+            onClick={onReset}
+            style={iconBtn()}
+            title="Reset"
+          >
+            ↺
           </button>
         </div>
       </div>
 
+      {/* Editor body */}
       <div
         style={{
           flex: 1,
           display: "flex",
-          background: "#0f141d",
-          fontFamily: "Consolas, monospace",
-          fontSize: "14px",
+          background: "#080d15",
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+          fontSize: "13.5px",
           lineHeight: `${lineHeight}px`,
           minHeight: 0,
         }}
       >
+        {/* Line numbers */}
         <div
           ref={lineNumberRef}
           style={{
-            padding: `${topPadding}px 10px`,
-            background: "#0c1017",
-            color: "#3e4a5a",
+            padding: `${topPadding}px 12px`,
+            background: "#080d15",
+            color: "#2a3d56",
             textAlign: "right",
             userSelect: "none",
             overflow: "hidden",
-            minWidth: "56px",
+            minWidth: "52px",
+            borderRight: "1px solid #111c2c",
           }}
         >
           {lines.map((_, i) => (
@@ -215,8 +224,10 @@ function Editor({
                 height: `${lineHeight}px`,
                 color:
                   !isInstrumentedTab && isRunning && currentLine === i + 1
-                    ? "#fbc531"
-                    : "#3e4a5a",
+                    ? "#f0a429"
+                    : "#2a3d56",
+                fontWeight: !isInstrumentedTab && isRunning && currentLine === i + 1 ? 600 : 400,
+                transition: "color 0.1s",
               }}
             >
               {i + 1}
@@ -224,12 +235,8 @@ function Editor({
           ))}
         </div>
 
-        <div
-          style={{
-            position: "relative",
-            flex: 1,
-          }}
-        >
+        {/* Code area */}
+        <div style={{ position: "relative", flex: 1 }}>
           <div
             ref={highlightRef}
             style={{
@@ -237,7 +244,8 @@ function Editor({
               left: 0,
               right: 0,
               height: `${lineHeight}px`,
-              background: "rgba(251, 197, 49, 0.15)",
+              background: "rgba(240, 164, 41, 0.08)",
+              borderLeft: "2px solid rgba(240, 164, 41, 0.5)",
               pointerEvents: "none",
               zIndex: 0,
               display: "none",
@@ -249,7 +257,7 @@ function Editor({
               style={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(15, 20, 29, 0.18)",
+                background: "rgba(8, 13, 21, 0.3)",
                 zIndex: 2,
                 pointerEvents: "none",
               }}
@@ -269,7 +277,7 @@ function Editor({
                 setCode(e.target.value);
               }
             }}
-            onScroll={handleScroll}
+            onScroll={syncOverlay}
             spellCheck={false}
             style={{
               width: "100%",
@@ -278,8 +286,8 @@ function Editor({
               border: "none",
               outline: "none",
               background: "transparent",
-              color: isInstrumentedTab ? "#cbd5e1" : "#e2e8f0",
-              padding: `${topPadding}px`,
+              color: isInstrumentedTab ? "#a8bedd" : "#cdd9f0",
+              padding: `${topPadding}px 16px`,
               fontFamily: "inherit",
               fontSize: "inherit",
               lineHeight: `${lineHeight}px`,
@@ -288,8 +296,9 @@ function Editor({
               tabSize: 4,
               position: "relative",
               zIndex: 1,
-              opacity: isProcessing ? 0.8 : 1,
+              opacity: isProcessing ? 0.6 : 1,
               transition: "opacity 0.2s ease",
+              caretColor: "#4b8cf7",
             }}
           />
         </div>

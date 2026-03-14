@@ -1,9 +1,9 @@
 import React from "react";
 
 function QueueView({ obj, onMouseDown }) {
-  const CELL_WIDTH = 80;
-  const CELL_HEIGHT = 50;
-  const GAP = 12;
+  const CELL_WIDTH = 76;
+  const CELL_HEIGHT = 48;
+  const GAP = 6;
 
   return (
     <div
@@ -16,21 +16,21 @@ function QueueView({ obj, onMouseDown }) {
         userSelect: "none",
       }}
     >
-      {/* Title */}
       <div
         style={{
-          marginBottom: 12,
-          fontSize: 12,
-          letterSpacing: 1,
-          color: "#8aa2ff",
+          fontSize: "11px",
+          fontWeight: 600,
+          letterSpacing: "0.8px",
+          color: "#3d5270",
           textAlign: "center",
+          marginBottom: "10px",
+          textTransform: "uppercase",
         }}
       >
         {obj.id}
       </div>
 
       <div style={{ position: "relative" }}>
-        {/* Cells */}
         <div style={{ display: "flex", gap: GAP }}>
           {obj.items.map((value, index) => (
             <div
@@ -41,11 +41,13 @@ function QueueView({ obj, onMouseDown }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#1f2433",
-                color: "#ffffff",
-                borderRadius: 8,
-                boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+                background: "#131d2e",
+                border: "1px solid #1e2d42",
+                color: "#c8d8f0",
+                borderRadius: "8px",
                 fontWeight: 600,
+                fontSize: "15px",
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
               }}
             >
               {value}
@@ -53,57 +55,55 @@ function QueueView({ obj, onMouseDown }) {
           ))}
         </div>
 
-        {/* Pointer Labels */}
         {obj.items.length > 0 && (
           <>
             {obj.items.length === 1 ? (
-              // 🔥 Single element case
               <div
                 style={{
                   position: "absolute",
-                  top: -22,
+                  top: -20,
                   left: 0,
                   width: CELL_WIDTH,
                   textAlign: "center",
-                  fontSize: 12,
+                  fontSize: "11px",
                   fontWeight: 600,
-                  color: "#fbc531",
+                  letterSpacing: "0.3px",
+                  color: "#f0a429",
                 }}
               >
-                FRONT / REAR
+                Front / Rear
               </div>
             ) : (
               <>
-                {/* FRONT */}
                 <div
                   style={{
                     position: "absolute",
-                    top: -22,
+                    top: -20,
                     left: 0,
                     width: CELL_WIDTH,
                     textAlign: "center",
-                    fontSize: 12,
+                    fontSize: "11px",
                     fontWeight: 600,
-                    color: "#fbc531",
+                    letterSpacing: "0.3px",
+                    color: "#f0a429",
                   }}
                 >
-                  FRONT
+                  Front
                 </div>
-
-                {/* REAR */}
                 <div
                   style={{
                     position: "absolute",
-                    top: -22,
+                    top: -20,
                     left: obj.rearIndex * (CELL_WIDTH + GAP),
                     width: CELL_WIDTH,
                     textAlign: "center",
-                    fontSize: 12,
+                    fontSize: "11px",
                     fontWeight: 600,
-                    color: "#2d8cff",
+                    letterSpacing: "0.3px",
+                    color: "#4b8cf7",
                   }}
                 >
-                  REAR
+                  Rear
                 </div>
               </>
             )}

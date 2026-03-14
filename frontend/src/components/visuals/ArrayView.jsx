@@ -14,45 +14,45 @@ function ArrayView({ obj, onMouseDown }) {
         userSelect: "none",
       }}
     >
-      {/* Container */}
       <div
         style={{
-          background: "#1f2433",
-          border: "1px solid #2f3547",
-          borderRadius: "10px",
-          padding: "14px 18px",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+          background: "#131d2e",
+          border: "1px solid #1e2d42",
+          borderRadius: "12px",
+          padding: "14px 16px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
         }}
       >
-        {/* Label */}
         <div
           style={{
-            fontSize: "12px",
-            color: "#8aa2ff",
+            fontSize: "11px",
+            fontWeight: 600,
+            color: "#3d5270",
             marginBottom: "10px",
-            letterSpacing: "1px",
+            letterSpacing: "0.8px",
+            textTransform: "uppercase",
           }}
         >
           {obj.id}
         </div>
 
-        {/* Cells */}
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "6px" }}>
           {obj.data.map((v, i) => (
             <div
               key={i}
               style={{
-                width: "50px",
-                height: "50px",
+                width: "48px",
+                height: "48px",
                 borderRadius: "8px",
-                background: "#2b3245",
-                border: "1px solid #3a435c",
-                color: "#ffffff",
+                background: "#192233",
+                border: "1px solid #243347",
+                color: "#dce7f8",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontWeight: "bold",
-                fontSize: "15px",
+                fontWeight: 600,
+                fontSize: "14px",
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
               }}
             >
               {v ?? "∅"}

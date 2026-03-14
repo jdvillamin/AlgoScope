@@ -23,21 +23,21 @@ function Canvas({ trace = [], currentStep = 0 }) {
   const canvasRef = useRef(null);
 
   const iconButton = {
-    width: "36px",
-    height: "36px",
+    width: "32px",
+    height: "32px",
     borderRadius: "8px",
-    background: "#1c2230",
-    border: "1px solid #2b3245",
-    color: "#cfd8ff",
+    background: "#131d2e",
+    border: "1px solid #1e2d42",
+    color: "#7b96bf",
     cursor: "pointer",
-
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-
     padding: 0,
     lineHeight: 1,
-    fontSize: "16px",
+    fontSize: "14px",
+    fontWeight: 600,
+    transition: "all 0.15s ease",
   };
 
   // ================= BUILD OBJECTS FROM TRACE =================
@@ -100,38 +100,37 @@ function Canvas({ trace = [], currentStep = 0 }) {
       {/* Toolbar */}
       <div
         style={{
-          padding: "12px 20px",
-          background: "#141821",
+          padding: "8px 16px",
+          background: "#0e1520",
+          borderBottom: "1px solid #1a2535",
           display: "flex",
-          gap: "12px",
+          gap: "6px",
           alignItems: "center",
         }}
       >
+        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#243347", textTransform: "uppercase", marginRight: "8px" }}>
+          AlgoScope
+        </span>
         <button
           style={iconButton}
           onClick={() => setScale((s) => Math.min(s + 0.2, 3))}
-          title="Zoom In"
+          title="Zoom in"
         >
-          ＋
+          +
         </button>
-
         <button
           style={iconButton}
           onClick={() => setScale((s) => Math.max(s - 0.2, 0.3))}
-          title="Zoom Out"
+          title="Zoom out"
         >
-          －
+          −
         </button>
-
         <button
           style={iconButton}
-          onClick={() => {
-            setScale(1);
-            setOffset({ x: 0, y: 0 });
-          }}
-          title="Reset View"
+          onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }}
+          title="Reset view"
         >
-          ⟳
+          ↺
         </button>
       </div>
 
@@ -147,7 +146,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
           overflow: "hidden",
           position: "relative",
           background:
-            "radial-gradient(circle at 30% 20%, #1c2330, #0f141d 70%)",
+            "radial-gradient(ellipse at 25% 25%, #111c2e 0%, #080d15 65%)",
         }}
       >
         <div

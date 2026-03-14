@@ -12,36 +12,35 @@ function VariableView({ obj, onMouseDown }) {
         userSelect: "none",
       }}
     >
-      {/* Container */}
       <div
         style={{
-          background: "#1f2433",
-          border: "1px solid #2f3547",
-          borderRadius: "10px",
-          padding: "12px 18px",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
-          minWidth: "120px",
+          background: "#131d2e",
+          border: "1px solid #1e2d42",
+          borderRadius: "12px",
+          padding: "14px 20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          minWidth: "100px",
           textAlign: "center",
         }}
       >
-        {/* Variable Name */}
         <div
           style={{
-            fontSize: "12px",
-            color: "#8aa2ff",
-            marginBottom: "6px",
-            letterSpacing: "1px",
+            fontSize: "11px",
+            fontWeight: 600,
+            color: "#3d5270",
+            marginBottom: "8px",
+            letterSpacing: "0.8px",
+            textTransform: "uppercase",
           }}
         >
           {obj.id}
         </div>
-
-        {/* Value */}
         <div
           style={{
-            fontSize: "20px",
-            fontWeight: "bold",
-            color: "#ffffff",
+            fontSize: "22px",
+            fontWeight: 700,
+            color: "#dce7f8",
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
           }}
         >
           {obj.value ?? "∅"}
