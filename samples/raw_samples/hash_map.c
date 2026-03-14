@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "tracer.h"
+
+#define SIZE 5
+
+typedef struct Node {
+  int key;
+  int value;
+  struct Node* next;
+} Node;
+
+Node* table[SIZE];
+
+int hash(int key) { return key % SIZE; }
+
+void put(int key, int value) {
+  int index = hash(key);
+  trace_line(__LINE__ - 1);
+
+  Node* newNode = (Node*)malloc(sizeof(Node));
+  trace_line(__LINE__ - 1);
+
+  newNode->key = key;
+  newNode->value = value;
+  newNode->next = NULL;
+  trace_line(__LINE__ - 3);
+
+  if (table[index] == NULL) {
+    trace_line(__LINE__ - 1);
+    table[index] = newNode;
+  } else {
+    trace_line(__LINE__ - 1);
+    Node* temp = table[index];
+    while (temp->next != NULL) {
+      trace_line(__LINE__ - 1);
+      temp = temp->next;
+    }
+    temp->next = newNode;
+  }
+
+  trace_hash_put("H", key, value, index);
+}
+
+void removeKey(int key) {
+  int index = hash(key);
+  trace_line(__LINE__ - 1);
+
+  Node* temp = table[index];
+  Node* prev = NULL;
+  trace_line(__LINE__ - 2);
+
+  while (temp != NULL && temp->key != key) {
+    trace_line(__LINE__ - 1);
+    prev = temp;
+    temp = temp->next;
+  }
+
+  if (temp == NULL) {
+    trace_line(__LINE__ - 1);
+    return;
+  }
+
+  if (prev == NULL) {
+    trace_line(__LINE__ - 1);
+    table[index] = temp->next;
+  } else {
+    trace_line(__LINE__ - 1);
+    prev->next = temp->next;
+  }
+
+  trace_hash_remove("H", key, index);
+
+  free(temp);
+}
+
+int main() {
+  trace_hash_init("H", SIZE);
+
+  // Initialize table
+  for (int i = 0; i < SIZE; i++) {
+    trace_line(__LINE__ - 1);
+    table[i] = NULL;
+  }
+
+  // Insert values
+  put(10, 100);
+  put(15, 150);
+  put(20, 200);
+  put(7, 70);
+
+  // Remove one key
+  removeKey(15);
+
+  return 0;
+}
