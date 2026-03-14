@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tracer.h"
-
 typedef struct Node {
   char id[10];
   int value;
