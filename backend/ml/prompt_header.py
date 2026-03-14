@@ -284,10 +284,49 @@ trace_tree_highlight
 GRAPH TRACES
 ==================================================
 
-trace_graph_init
-trace_graph_node
-trace_graph_edge
-trace_graph_highlight
+Signatures:
+
+trace_graph_init(char* name)
+trace_graph_node(char* graph, char* id)
+trace_graph_edge(char* graph, char* from_id, char* to_id)
+trace_graph_highlight(char* graph, char* id)
+
+Rules:
+
+1. Call trace_graph_init ONCE before any node or edge traces.
+
+2. Call trace_graph_node after the vertex's string id field is set.
+   The id argument must be the string identifier of the vertex, NOT an integer index.
+   Call it once per vertex, as soon as the vertex is ready.
+
+3. Call trace_graph_edge after the adjacency link is established in the data structure.
+   Both from_id and to_id must be string IDs previously registered with trace_graph_node.
+   Do NOT pass integer indices — pass the string vertex IDs.
+
+4. Call trace_graph_highlight when a traversal algorithm visits a node (e.g., BFS/DFS pop/dequeue).
+   Pass the string ID of the node being visited.
+
+5. Ordering requirement:
+   trace_graph_init → trace_graph_node (all vertices) → trace_graph_edge (all edges)
+   A node must be registered before any edge that references it.
+
+Example:
+
+Graph g;
+initGraph(&g);
+trace_graph_init("G");
+
+int A = addVertex(&g, "A");
+trace_graph_node("G", g.vertices[A].id);
+
+int B = addVertex(&g, "B");
+trace_graph_node("G", g.vertices[B].id);
+
+addEdge(&g, A, B);
+trace_graph_edge("G", g.vertices[A].id, g.vertices[B].id);
+
+/* During BFS/DFS traversal, highlight the node being visited: */
+trace_graph_highlight("G", g.vertices[current].id);
 
 ==================================================
 INSTRUMENTATION STRATEGY
