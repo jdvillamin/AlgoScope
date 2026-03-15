@@ -248,37 +248,163 @@ trace_dll_pointer("dll", "curr", curr->id);
 STACK TRACES
 ==================================================
 
-trace_stack_init
-trace_stack_push
-trace_stack_pop
-trace_stack_top
+Signatures:
+
+trace_stack_init(char* name)
+trace_stack_push(char* name, int value)
+trace_stack_pop(char* name)
+trace_stack_top(char* name, int value)
+
+Rules:
+
+1. Call trace_stack_init ONCE before any push or pop traces.
+
+2. Call trace_stack_push AFTER the value has been written to the stack array.
+   Pass the value that was pushed.
+
+3. Call trace_stack_pop BEFORE decrementing top.
+   Do NOT pass the value — the visualizer removes the top element automatically.
+
+4. Call trace_stack_top only when explicitly peeking at the top element without popping.
+   Pass the current top value.
+
+Example:
+
+trace_stack_init("S");
+
+/* push */
+top++;
+stack[top] = 5;
+trace_stack_push("S", 5);
+
+/* pop */
+trace_stack_pop("S");
+top--;
 
 ==================================================
 QUEUE TRACES
 ==================================================
 
-trace_queue_init
-trace_queue_enqueue
-trace_queue_dequeue
-trace_queue_front
-trace_queue_rear
+Signatures:
+
+trace_queue_init(char* name)
+trace_queue_enqueue(char* name, int value)
+trace_queue_dequeue(char* name)
+trace_queue_front(char* name, int value)
+trace_queue_rear(char* name, int value)
+
+Rules:
+
+1. Call trace_queue_init ONCE before any enqueue or dequeue traces.
+
+2. Call trace_queue_enqueue AFTER the value has been written to the queue array.
+   Pass the value that was enqueued.
+
+3. Call trace_queue_dequeue BEFORE incrementing front.
+   Do NOT pass the value — the visualizer removes the front element automatically.
+
+4. Call trace_queue_front and trace_queue_rear only when explicitly reading the
+   front or rear pointer values without modifying the queue.
+
+Example:
+
+trace_queue_init("Q");
+
+/* enqueue */
+rear++;
+queue[rear] = 10;
+trace_queue_enqueue("Q", 10);
+
+/* dequeue */
+trace_queue_dequeue("Q");
+front++;
 
 ==================================================
 HASH TABLE TRACES
 ==================================================
 
-trace_hash_init
-trace_hash_put
-trace_hash_remove
+Signatures:
+
+trace_hash_init(char* name, int size)
+trace_hash_put(char* name, int key, int value, int index)
+trace_hash_remove(char* name, int key, int index)
+
+Rules:
+
+1. Call trace_hash_init ONCE before any put or remove traces.
+   Pass the total number of buckets as size.
+
+2. Call trace_hash_put AFTER the new node has been fully inserted into the bucket chain.
+   Pass the key, value, and the bucket index returned by the hash function.
+
+3. Call trace_hash_remove AFTER the node has been unlinked but BEFORE calling free().
+   Pass the key and bucket index.
+
+4. The bucket index must always be the result of the hash function — never a raw pointer or array offset.
+
+Example:
+
+trace_hash_init("H", SIZE);
+
+/* put */
+int index = hash(key);
+/* ... build and link newNode ... */
+trace_hash_put("H", key, value, index);
+
+/* remove */
+int index = hash(key);
+/* ... unlink node from chain ... */
+trace_hash_remove("H", key, index);
+free(node);
 
 ==================================================
 TREE TRACES
 ==================================================
 
-trace_tree_init
-trace_tree_node
-trace_tree_edge
-trace_tree_highlight
+Signatures:
+
+trace_tree_init(char* name)
+trace_tree_node(char* tree, char* id, char* value)
+trace_tree_edge(char* tree, char* parent_id, char* child_id)
+trace_tree_highlight(char* tree, char* id)
+
+Rules:
+
+1. Call trace_tree_init ONCE before any node or edge traces.
+
+2. Call trace_tree_node after the node's id and value strings are set.
+   id must be a unique string identifier for the node (e.g., "n1", "root").
+   value is the display string shown inside the node in the visualization.
+   Both id and value must be char* (string), not integers.
+
+3. Call trace_tree_edge after the parent-child relationship is established.
+   The parent node must already be registered with trace_tree_node.
+   Pass the parent's id string, then the child's id string.
+
+4. Call trace_tree_highlight during traversal to mark the currently visited node.
+   Place it immediately when the traversal logic processes that node.
+
+5. Ordering requirement:
+   trace_tree_init → trace_tree_node (register node) → trace_tree_edge (connect to parent)
+   A child node must be registered before the edge connecting it to its parent.
+
+Example:
+
+trace_tree_init("T");
+
+Node* root = malloc(sizeof(Node));
+strcpy(root->id, "root");
+strcpy(root->value, "A");
+trace_tree_node("T", root->id, root->value);
+
+Node* child = malloc(sizeof(Node));
+strcpy(child->id, "n1");
+strcpy(child->value, "B");
+trace_tree_node("T", child->id, child->value);
+trace_tree_edge("T", root->id, child->id);
+
+/* During traversal: */
+trace_tree_highlight("T", current->id);
 
 ==================================================
 GRAPH TRACES
