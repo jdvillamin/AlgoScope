@@ -12,6 +12,8 @@ function Editor({
   onReset,
   activeTab,
   setActiveTab,
+  stdin,
+  setStdin,
 }) {
   const textareaRef = useRef(null);
   const lineNumberRef = useRef(null);
@@ -302,6 +304,68 @@ function Editor({
             }}
           />
         </div>
+      </div>
+
+      {/* Stdin */}
+      <div
+        style={{
+          borderTop: "1px solid #1a2535",
+          background: "#0e1520",
+        }}
+      >
+        <div
+          style={{
+            padding: "7px 16px",
+            borderBottom: "1px solid #1a2535",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.8px",
+              color: "#4e6180",
+              textTransform: "uppercase",
+            }}
+          >
+            Standard Input
+          </span>
+          <span
+            style={{
+              fontSize: "11px",
+              color: "#3d5270",
+            }}
+          >
+            Numbers must not exceed 20
+          </span>
+        </div>
+        <textarea
+          value={stdin}
+          onChange={(e) => setStdin(e.target.value)}
+          readOnly={isProcessing}
+          placeholder="Enter input values (e.g. 5 3 8 1 ...)"
+          spellCheck={false}
+          style={{
+            width: "100%",
+            height: "56px",
+            resize: "none",
+            border: "none",
+            outline: "none",
+            background: "#080d15",
+            color: "#cdd9f0",
+            padding: "10px 16px",
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            fontSize: "13px",
+            lineHeight: "20px",
+            boxSizing: "border-box",
+            caretColor: "#4b8cf7",
+            opacity: isProcessing ? 0.6 : 1,
+            transition: "opacity 0.2s ease",
+          }}
+        />
       </div>
     </div>
   );

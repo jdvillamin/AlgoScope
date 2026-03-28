@@ -3,12 +3,14 @@
 
 void trace_array_init(char* name, int size);
 void trace_array(char* name, int index, int value);
+void trace_array_highlight(char* name, int index);
 
 void trace_var_init(char* name, int value);
 void trace_var(char* name, int value);
 
 void trace_array2d_init(char* name, int rows, int cols);
 void trace_array2d(char* name, int r, int c, int value);
+void trace_array2d_highlight(char* name, int r, int c);
 
 void trace_ll_init(char* name);
 void trace_ll_node(char* list, char* id, int value);

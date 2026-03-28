@@ -21,6 +21,11 @@ void trace_array(char* name, int index, int value) {
          index, value);
 }
 
+void trace_array_highlight(char* name, int index) {
+  printf("{\"type\":\"array_highlight\",\"name\":\"%s\",\"i\":%d}\n", name,
+         index);
+}
+
 /* 2D Array */
 void trace_array2d_init(char* name, int rows, int cols) {
   printf(
@@ -31,6 +36,12 @@ void trace_array2d_init(char* name, int rows, int cols) {
 void trace_array2d(char* name, int r, int c, int value) {
   printf("{\"type\":\"array2d\",\"name\":\"%s\",\"r\":%d,\"c\":%d,\"v\":%d}\n",
          name, r, c, value);
+}
+
+void trace_array2d_highlight(char* name, int r, int c) {
+  printf(
+      "{\"type\":\"array2d_highlight\",\"name\":\"%s\",\"r\":%d,\"c\":%d}\n",
+      name, r, c);
 }
 
 /* Singly Linked List */

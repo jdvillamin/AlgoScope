@@ -35,6 +35,10 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       }
     }
 
+    if (step.type === "array_highlight" && newObjects[step.name]) {
+      newObjects[step.name].highlightIndex = step.i;
+    }
+
     // ================= 2D ARRAY =================
     if (step.type === "array2d_init") {
       newObjects[step.name] = {
@@ -53,6 +57,11 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       ) {
         newObjects[step.name].data[step.r][step.c] = step.v;
       }
+    }
+
+    if (step.type === "array2d_highlight" && newObjects[step.name]) {
+      newObjects[step.name].highlightRow = step.r;
+      newObjects[step.name].highlightCol = step.c;
     }
 
     // ================= LINKED LIST =================

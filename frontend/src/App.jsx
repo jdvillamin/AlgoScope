@@ -8,6 +8,7 @@ function App() {
   const [code, setCode] = useState("");
   const [instrumentedCode, setInstrumentedCode] = useState("");
   const [activeTab, setActiveTab] = useState("raw");
+  const [stdin, setStdin] = useState("");
 
   const [trace, setTrace] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -42,6 +43,14 @@ function App() {
       return;
     }
 
+    const numbers = stdin.match(/-?\d+/g) || [];
+    for (const n of numbers) {
+      if (Math.abs(parseInt(n, 10)) > 20) {
+        setError(`Input number ${n} exceeds the limit of 20.`);
+        return;
+      }
+    }
+
     try {
       setIsProcessing(true);
       setRunPhase("Preparing source code...");
@@ -58,6 +67,7 @@ function App() {
       const resPromise = API.post("/run", {
         code: codeToRun,
         skip_instrumentation: isInstrumentedTab,
+        stdin: stdin,
       });
 
       if (!isInstrumentedTab) {
@@ -182,6 +192,8 @@ function App() {
             onReset={resetExecution}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            stdin={stdin}
+            setStdin={setStdin}
           />
         </div>
 

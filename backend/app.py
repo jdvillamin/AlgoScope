@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import re
 import subprocess
 import tempfile
 import os
@@ -22,6 +23,15 @@ def run_code():
     body = request.json
     code = body["code"]
     skip_instrumentation = body.get("skip_instrumentation", False)
+    stdin_text = body.get("stdin", "")
+
+    # Validate that no number in stdin exceeds 20
+    numbers = re.findall(r'-?\d+', stdin_text)
+    for n in numbers:
+        if abs(int(n)) > 20:
+            return jsonify({
+                "error": f"Input number {n} exceeds the limit of 20."
+            })
 
     if not skip_instrumentation:
         try:
@@ -61,6 +71,7 @@ def run_code():
         try:
             run_proc = subprocess.run(
                 [exe],
+                input=stdin_text.encode("utf-8") if stdin_text else None,
                 capture_output=True,
                 timeout=5
             )

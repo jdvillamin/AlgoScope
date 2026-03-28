@@ -124,6 +124,7 @@ ARRAY TRACES
 
 trace_array_init(char* name, int size)
 trace_array(char* name, int index, int value)
+trace_array_highlight(char* name, int index)
 
 Rules:
 
@@ -137,12 +138,39 @@ Trace every write.
 arr[i] = value;
 trace_array("arr", i, arr[i]);
 
+Highlight the element currently being accessed, compared, or swapped.
+Call trace_array_highlight each time the algorithm inspects or modifies an element.
+
+trace_array_highlight("arr", i);
+
+Example (linear search):
+
+for (int i = 0; i < n; i++) {
+    trace_array_highlight("arr", i);
+    if (arr[i] == target) {
+        found = i;
+        break;
+    }
+}
+
+Example (bubble sort inner loop):
+
+if (arr[j] > arr[j + 1]) {
+    trace_array_highlight("arr", j);
+    int temp = arr[j];
+    arr[j] = arr[j + 1];
+    arr[j + 1] = temp;
+    trace_array("arr", j, arr[j]);
+    trace_array("arr", j + 1, arr[j + 1]);
+}
+
 ==================================================
 2D ARRAY TRACES
 ==================================================
 
 trace_array2d_init(char* name, int rows, int cols)
 trace_array2d(char* name, int r, int c, int value)
+trace_array2d_highlight(char* name, int r, int c)
 
 Rules:
 
@@ -155,6 +183,10 @@ Trace cell writes.
 
 mat[r][c] = value;
 trace_array2d("mat", r, c, mat[r][c]);
+
+Highlight the cell currently being accessed or compared.
+
+trace_array2d_highlight("mat", r, c);
 
 ==================================================
 SINGLY LINKED LIST TRACES
@@ -218,31 +250,116 @@ trace_var_init("temp", (int)(uintptr_t)temp);
 DOUBLY LINKED LIST TRACES
 ==================================================
 
-trace_dll_init
-trace_dll_node
-trace_dll_next_link
-trace_dll_prev_link
-trace_dll_next_unlink
-trace_dll_prev_unlink
-trace_dll_pointer
-trace_dll_highlight
-trace_dll_free
+trace_dll_init(char* name)
+trace_dll_node(char* list, char* id, int value)
+trace_dll_next_link(char* list, char* from, char* to)
+trace_dll_prev_link(char* list, char* from, char* to)
+trace_dll_next_unlink(char* list, char* from, char* to)
+trace_dll_prev_unlink(char* list, char* from, char* to)
+trace_dll_pointer(char* list, char* name, char* target)
+trace_dll_highlight(char* list, char* id)
+trace_dll_free(char* list, char* id)
 
 Rules:
 
-Forward link:
+Initialize list BEFORE any node events.
 
-a->next = b;
-trace_dll_next_link("dll", a->id, b->id);
+trace_dll_init("dll");
 
-Backward link:
+A node becomes "ready" only after BOTH id and value are initialized.
 
-b->prev = a;
-trace_dll_prev_link("dll", b->id, a->id);
+Correct order:
 
-Pointer movement:
+strcpy(node->id, "n1");
+node->value = 5;
+trace_dll_node("dll", node->id, node->value);
 
-trace_dll_pointer("dll", "curr", curr->id);
+Forward (next) pointer connections:
+
+node1->next = node2;
+trace_dll_next_link("dll", node1->id, node2->id);
+
+Backward (prev) pointer connections:
+
+node2->prev = node1;
+trace_dll_prev_link("dll", node2->id, node1->id);
+
+IMPORTANT: trace_dll_prev_link takes (list, from, to) where "from" is the node
+whose prev pointer is being SET, and "to" is the node it points back to.
+So if b->prev = a, call trace_dll_prev_link("dll", b->id, a->id).
+
+Forward unlink (when removing a next connection):
+
+trace_dll_next_unlink("dll", node1->id, node2->id);
+node1->next = node2->next;
+
+Backward unlink (when removing a prev connection):
+
+trace_dll_prev_unlink("dll", node2->id, node1->id);
+node2->prev = node1->prev;
+
+Traversal pointers:
+
+trace_dll_pointer("dll", "curr", node->id);
+
+Traversal highlight:
+
+trace_dll_highlight("dll", node->id);
+
+Free nodes BEFORE calling free():
+
+trace_dll_free("dll", node->id);
+free(node);
+
+Do NOT use trace_var_init or trace_var for pointer variables used in doubly linked lists,
+such as head, tail, temp, curr, prev, or nextNode.
+
+These pointers must be traced using trace_dll_pointer instead.
+
+Example:
+
+Node* temp = head;
+
+Correct:
+trace_dll_pointer("dll", "temp", temp->id);
+
+Incorrect:
+trace_var_init("temp", (int)(uintptr_t)temp);
+
+Example (full insertion at tail):
+
+trace_dll_init("dll");
+
+Node* n1 = malloc(sizeof(Node));
+strcpy(n1->id, "n1");
+n1->value = 10;
+n1->next = NULL;
+n1->prev = NULL;
+trace_dll_node("dll", n1->id, n1->value);
+trace_dll_pointer("dll", "head", n1->id);
+trace_dll_pointer("dll", "tail", n1->id);
+
+Node* n2 = malloc(sizeof(Node));
+strcpy(n2->id, "n2");
+n2->value = 20;
+n2->next = NULL;
+trace_dll_node("dll", n2->id, n2->value);
+
+n1->next = n2;
+trace_dll_next_link("dll", n1->id, n2->id);
+
+n2->prev = n1;
+trace_dll_prev_link("dll", n2->id, n1->id);
+
+trace_dll_pointer("dll", "tail", n2->id);
+
+/* Deletion of n1: */
+trace_dll_next_unlink("dll", n1->id, n2->id);
+n2->prev = NULL;
+trace_dll_prev_unlink("dll", n2->id, n1->id);
+trace_dll_pointer("dll", "head", n2->id);
+trace_dll_free("dll", n1->id);
+free(n1);
 
 ==================================================
 STACK TRACES
@@ -381,14 +498,61 @@ Rules:
    The parent node must already be registered with trace_tree_node.
    Pass the parent's id string, then the child's id string.
 
-4. Call trace_tree_highlight during traversal to mark the currently visited node.
-   Place it immediately when the traversal logic processes that node.
+4. MANDATORY: Call trace_tree_highlight every time a traversal visits a node.
+   This applies to ALL traversal patterns — preorder, inorder, postorder, or level-order.
+   Place it immediately at the start of the traversal function, after the NULL check.
+   Do NOT skip this call. Every visited node MUST be highlighted.
 
 5. Ordering requirement:
    trace_tree_init → trace_tree_node (register node) → trace_tree_edge (connect to parent)
    A child node must be registered before the edge connecting it to its parent.
 
-Example:
+Traversal highlight patterns:
+
+Preorder (recursive) — highlight at the start, before processing children:
+
+void preorder(Node* node) {
+    if (node == NULL) return;
+    trace_tree_highlight("T", node->id);
+    printf("%s ", node->value);
+    for (int i = 0; i < node->childCount; i++) {
+        preorder(node->children[i]);
+    }
+}
+
+Inorder (binary tree) — highlight before processing the node's value:
+
+void inorder(Node* node) {
+    if (node == NULL) return;
+    inorder(node->left);
+    trace_tree_highlight("T", node->id);
+    printf("%s ", node->value);
+    inorder(node->right);
+}
+
+Postorder (recursive) — highlight after processing children:
+
+void postorder(Node* node) {
+    if (node == NULL) return;
+    for (int i = 0; i < node->childCount; i++) {
+        postorder(node->children[i]);
+    }
+    trace_tree_highlight("T", node->id);
+    printf("%s ", node->value);
+}
+
+Level-order (BFS) — highlight immediately after dequeue:
+
+queue[rear++] = root;
+while (front < rear) {
+    Node* current = queue[front++];
+    trace_tree_highlight("T", current->id);
+    for (int i = 0; i < current->childCount; i++) {
+        queue[rear++] = current->children[i];
+    }
+}
+
+Example (tree construction):
 
 trace_tree_init("T");
 
@@ -402,9 +566,6 @@ strcpy(child->id, "n1");
 strcpy(child->value, "B");
 trace_tree_node("T", child->id, child->value);
 trace_tree_edge("T", root->id, child->id);
-
-/* During traversal: */
-trace_tree_highlight("T", current->id);
 
 ==================================================
 GRAPH TRACES

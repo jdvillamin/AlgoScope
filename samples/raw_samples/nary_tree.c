@@ -2,62 +2,65 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_CHILDREN 10
+
 typedef struct Node {
   char id[10];
   char value[10];
+  struct Node* children[MAX_CHILDREN];
+  int childCount;
 } Node;
 
+Node* createNode(const char* id, const char* value) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  strcpy(n->id, id);
+  strcpy(n->value, value);
+  n->childCount = 0;
+  return n;
+}
+
+void addChild(Node* parent, Node* child) {
+  parent->children[parent->childCount++] = child;
+}
+
+void preorder(Node* node) {
+  if (node == NULL) return;
+  printf("%s ", node->value);
+  for (int i = 0; i < node->childCount; i++) {
+    preorder(node->children[i]);
+  }
+}
+
 int main() {
-  // ================= ROOT =================
-  Node* R = (Node*)malloc(sizeof(Node));
-  strcpy(R->id, "R");
-  strcpy(R->value, "R");
+  // ================= BUILD TREE =================
+  Node* R = createNode("R", "R");
 
-  // ================= LEVEL 1 =================
-  Node* n1 = (Node*)malloc(sizeof(Node));
-  strcpy(n1->id, "n1");
-  strcpy(n1->value, "1");
+  Node* n1 = createNode("n1", "1");
+  Node* n2 = createNode("n2", "2");
+  Node* n3 = createNode("n3", "3");
+  addChild(R, n1);
+  addChild(R, n2);
+  addChild(R, n3);
 
-  Node* n2 = (Node*)malloc(sizeof(Node));
-  strcpy(n2->id, "n2");
-  strcpy(n2->value, "2");
+  Node* n4 = createNode("n4", "4");
+  Node* n5 = createNode("n5", "5");
+  addChild(n1, n4);
+  addChild(n1, n5);
 
-  Node* n3 = (Node*)malloc(sizeof(Node));
-  strcpy(n3->id, "n3");
-  strcpy(n3->value, "3");
+  Node* n6 = createNode("n6", "6");
+  addChild(n2, n6);
 
-  // ================= LEVEL 2 =================
+  Node* n7 = createNode("n7", "7");
+  Node* n8 = createNode("n8", "8");
+  addChild(n3, n7);
+  addChild(n3, n8);
 
-  // Children of n1
-  Node* n4 = (Node*)malloc(sizeof(Node));
-  strcpy(n4->id, "n4");
-  strcpy(n4->value, "4");
+  Node* n9 = createNode("n9", "9");
+  addChild(n4, n9);
 
-  Node* n5 = (Node*)malloc(sizeof(Node));
-  strcpy(n5->id, "n5");
-  strcpy(n5->value, "5");
-
-  // Child of n2
-  Node* n6 = (Node*)malloc(sizeof(Node));
-  strcpy(n6->id, "n6");
-  strcpy(n6->value, "6");
-
-  // Children of n3
-  Node* n7 = (Node*)malloc(sizeof(Node));
-  strcpy(n7->id, "n7");
-  strcpy(n7->value, "7");
-
-  Node* n8 = (Node*)malloc(sizeof(Node));
-  strcpy(n8->id, "n8");
-  strcpy(n8->value, "8");
-
-  // ================= LEVEL 3 =================
-
-  Node* n9 = (Node*)malloc(sizeof(Node));
-  strcpy(n9->id, "n9");
-  strcpy(n9->value, "9");
-
-  // ================= HIGHLIGHT TEST =================
+  // ================= PREORDER TRAVERSAL =================
+  preorder(R);
+  printf("\n");
 
   return 0;
 }

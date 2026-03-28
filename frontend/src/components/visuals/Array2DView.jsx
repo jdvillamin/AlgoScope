@@ -39,27 +39,33 @@ function Array2DView({ obj, onMouseDown }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {obj.data.map((row, rIndex) => (
             <div key={rIndex} style={{ display: "flex", gap: "6px" }}>
-              {row.map((v, cIndex) => (
-                <div
-                  key={cIndex}
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "8px",
-                    background: "#192233",
-                    border: "1px solid #243347",
-                    color: "#dce7f8",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                  }}
-                >
-                  {v ?? "∅"}
-                </div>
-              ))}
+              {row.map((v, cIndex) => {
+                const isHighlighted =
+                  obj.highlightRow === rIndex && obj.highlightCol === cIndex;
+                return (
+                  <div
+                    key={cIndex}
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "8px",
+                      background: isHighlighted ? "#1a2a1a" : "#192233",
+                      border: isHighlighted ? "1.5px solid #4ade80" : "1px solid #243347",
+                      color: isHighlighted ? "#4ade80" : "#dce7f8",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                      boxShadow: isHighlighted ? "0 0 12px rgba(74, 222, 128, 0.25)" : "none",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {v ?? "∅"}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
