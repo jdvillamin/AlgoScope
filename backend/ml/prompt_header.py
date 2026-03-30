@@ -12,11 +12,15 @@ STRICT RULES
 6. Do NOT remove ANY #include directive.
 7. Do NOT remove ANY variable declaration, even if you think it is unused.
 8. Do NOT reorder any original code — includes, structs, typedefs, functions, and statements must stay in their original order.
-9. Only INSERT new trace statements. You may only add lines BETWEEN existing lines.
-10. If any trace call is inserted, ensure `#include "tracer.h"` is present at the top.
-11. Output ONLY valid C code.
-12. Do NOT output explanations, comments, or markdown.
-13. If you are uncertain whether to keep a line — KEEP IT.
+9. Do NOT restructure ANY code. Never extract declarations out of for-loop headers.
+   If the original code says `for (int i = 0; ...)`, keep it exactly as `for (int i = 0; ...)`.
+   Do NOT split it into `int i = 0;` followed by `for (i = 0; ...)` or any other form.
+   Every original statement must remain in its original syntactic form.
+10. Only INSERT new trace statements. You may only add lines BETWEEN existing lines.
+11. If any trace call is inserted, ensure `#include "tracer.h"` is present at the top.
+12. Output ONLY valid C code.
+13. Do NOT output explanations, comments, or markdown.
+14. If you are uncertain whether to keep a line — KEEP IT.
 
 ==================================================
 TRACE SYSTEM MODEL
@@ -116,7 +120,85 @@ Example:
 x = x + 1;
 trace_var("x", x);
 
-Loop variables must be traced when updated.
+CRITICAL — Variables populated via scanf or other input:
+
+When a variable receives its value from scanf (or similar input functions),
+insert trace_var_init (or trace_var if already initialized) AFTER the scanf call.
+The variable has no meaningful value until scanf writes to it, so trace it after.
+
+Example:
+
+int n;
+scanf("%d", &n);
+trace_var_init("n", n);
+
+int a, b;
+scanf("%d %d", &a, &b);
+trace_var_init("a", a);
+trace_var_init("b", b);
+
+The same applies to arrays filled via scanf in a loop:
+
+int arr[100];
+trace_array_init("arr", n);
+for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+}
+
+Every variable or array element that receives data from input MUST be traced
+immediately after the input call so the visualizer shows its value.
+
+CRITICAL — Loop iterator variables:
+
+For-loop iterators (i, j, k, etc.) change on EVERY iteration due to the
+increment expression (e.g. i++). Because you cannot insert code inside
+the for-header, you must trace the iterator at the TOP of the loop body,
+AFTER the trace_line for the for-header. This captures the new value of
+the iterator at the start of each iteration AND the initial value on the
+first iteration.
+
+When the variable is declared OUTSIDE the for-header:
+
+int i = 0;
+trace_var_init("i", i);
+trace_line(<for_line>);
+for (i = 0; i < 5; i++) {
+    trace_line(<for_line>);
+    trace_var("i", i);
+    // ... loop body ...
+}
+
+When the variable is declared INSIDE the for-header (e.g. `for (int i = ...)`):
+Do NOT extract the declaration. Keep the for-header exactly as written.
+Use trace_var_init inside the loop body on the first iteration to register it.
+
+trace_line(<for_line>);
+for (int i = 0; i < 5; i++) {
+    trace_line(<for_line>);
+    trace_var_init("i", i);
+    // ... loop body ...
+}
+
+Note: trace_var_init is safe to call multiple times — the visualizer will
+treat subsequent calls as updates. This avoids restructuring the code.
+
+For nested loops, trace EACH iterator at the top of its own loop body:
+
+trace_line(<outer>);
+for (int i = 0; i < n; i++) {
+    trace_line(<outer>);
+    trace_var_init("i", i);
+    trace_line(<inner>);
+    for (int j = 0; j < m; j++) {
+        trace_line(<inner>);
+        trace_var_init("j", j);
+        // ... inner body ...
+    }
+}
+
+The same rule applies to while loops — trace any variable that changes
+each iteration at the top of the loop body.
 
 ==================================================
 ARRAY TRACES
@@ -132,6 +214,28 @@ Initialize once after declaration.
 
 int arr[5];
 trace_array_init("arr", 5);
+
+If the array is declared with initial values, emit trace_array for EVERY
+element immediately after trace_array_init so the visualizer shows the
+pre-filled contents.
+
+int arr[5] = {3, 7, 1, 9, 4};
+trace_array_init("arr", 5);
+trace_array("arr", 0, arr[0]);
+trace_array("arr", 1, arr[1]);
+trace_array("arr", 2, arr[2]);
+trace_array("arr", 3, arr[3]);
+trace_array("arr", 4, arr[4]);
+
+Use a loop when the size comes from a variable or from stdin:
+
+trace_array_init("arr", n);
+for (int _i = 0; _i < n; _i++) { trace_array("arr", _i, arr[_i]); }
+
+This rule applies to ALL initialized arrays — whether the values come from
+an initializer list, a preceding input loop, or any other source. The
+visualizer cannot see array contents until trace_array is called for each
+index.
 
 Trace every write.
 
@@ -178,6 +282,15 @@ Initialize after declaration.
 
 int mat[3][5];
 trace_array2d_init("mat", 3, 5);
+
+If the 2D array is declared with initial values, emit trace_array2d for
+EVERY cell immediately after trace_array2d_init.
+
+int mat[2][3] = {{1,2,3},{4,5,6}};
+trace_array2d_init("mat", 2, 3);
+for (int _r = 0; _r < 2; _r++)
+    for (int _c = 0; _c < 3; _c++)
+        trace_array2d("mat", _r, _c, mat[_r][_c]);
 
 Trace cell writes.
 
@@ -657,7 +770,8 @@ Return ONLY the final instrumented C program.
 
 Do NOT explain anything.
 Do NOT remove ANY original line, struct, function, include, or declaration.
-Do NOT rewrite or simplify ANY original statement.
+Do NOT rewrite, simplify, or restructure ANY original statement.
+Do NOT extract declarations from for-loop headers or change any code's form.
 Do NOT omit anything from the original source — not even blank lines.
 
 Only insert trace statements between existing lines.

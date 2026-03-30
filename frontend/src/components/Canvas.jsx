@@ -108,7 +108,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
           alignItems: "center",
         }}
       >
-        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#243347", textTransform: "uppercase", marginRight: "8px" }}>
+        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#3d5270", textTransform: "uppercase", marginRight: "8px" }}>
           AlgoScope
         </span>
         <button

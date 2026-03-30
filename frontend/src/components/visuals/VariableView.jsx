@@ -27,7 +27,7 @@ function VariableView({ obj, onMouseDown }) {
           style={{
             fontSize: "11px",
             fontWeight: 600,
-            color: "#3d5270",
+            color: "#506888",
             marginBottom: "8px",
             letterSpacing: "0.8px",
             textTransform: "uppercase",

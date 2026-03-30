@@ -14,6 +14,9 @@ function Editor({
   setActiveTab,
   stdin,
   setStdin,
+  lockToLine,
+  setLockToLine,
+  onDeInstrument,
 }) {
   const textareaRef = useRef(null);
   const lineNumberRef = useRef(null);
@@ -58,7 +61,7 @@ function Editor({
 
   const scrollToCurrentLine = useCallback(() => {
     const textarea = textareaRef.current;
-    if (!textarea || !isRunning || !currentLine || isInstrumentedTab) return;
+    if (!textarea || !isRunning || !currentLine || isInstrumentedTab || !lockToLine) return;
 
     const desiredTop =
       topPadding +
@@ -71,7 +74,7 @@ function Editor({
 
     textarea.scrollTop = clampedTop;
     syncOverlay();
-  }, [currentLine, isRunning, isInstrumentedTab, syncOverlay]);
+  }, [currentLine, isRunning, isInstrumentedTab, lockToLine, syncOverlay]);
 
   useEffect(() => { syncOverlay(); }, [syncOverlay, displayedCode]);
   useEffect(() => { scrollToCurrentLine(); }, [scrollToCurrentLine]);
@@ -97,7 +100,7 @@ function Editor({
     borderRadius: "8px",
     background: active ? "#19243a" : "transparent",
     border: `1px solid ${active ? "#243347" : "transparent"}`,
-    color: isProcessing ? "#3d5270" : "#8fa3c8",
+    color: isProcessing ? "#506888" : "#8fa3c8",
     cursor: isProcessing ? "not-allowed" : "pointer",
     display: "flex",
     alignItems: "center",
@@ -113,7 +116,7 @@ function Editor({
     background: "none",
     border: "none",
     borderBottom: selected ? "2px solid #4b8cf7" : "2px solid transparent",
-    color: selected ? "#c8d8f0" : "#4e6180",
+    color: selected ? "#c8d8f0" : "#647e9c",
     cursor: "pointer",
     fontSize: "13px",
     fontWeight: selected ? 600 : 500,
@@ -166,6 +169,33 @@ function Editor({
         {/* Actions */}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <button
+            onClick={() => setLockToLine((v) => !v)}
+            style={{
+              ...iconBtn(lockToLine),
+              color: lockToLine ? "#f0a429" : "#647e9c",
+              border: `1px solid ${lockToLine ? "#3d2e10" : "#1a2535"}`,
+              background: lockToLine ? "#1a1810" : "transparent",
+              cursor: "pointer",
+            }}
+            title={lockToLine ? "Auto-scroll to current line (on)" : "Auto-scroll to current line (off)"}
+          >
+            ⊙
+          </button>
+
+          {isInstrumentedTab && (
+            <button
+              onClick={!isProcessing ? onDeInstrument : undefined}
+              style={{
+                ...iconBtn(),
+                cursor: isProcessing ? "not-allowed" : "pointer",
+              }}
+              title="Generate raw code from instrumented code"
+            >
+              ⇤
+            </button>
+          )}
+
+          <button
             onClick={!isProcessing ? onRun : undefined}
             style={{
               ...iconBtn(),
@@ -174,13 +204,13 @@ function Editor({
               gap: "6px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: isProcessing ? "#3d5270" : "#4b8cf7",
+              color: isProcessing ? "#506888" : "#4b8cf7",
               border: `1px solid ${isProcessing ? "#1a2535" : "#1e3a6e"}`,
               background: isProcessing ? "#0f1928" : "#0f1e3a",
             }}
-            title={isProcessing ? "Processing..." : "Compile & run"}
+            title={isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
           >
-            {isProcessing ? "⋯" : "▶"}&nbsp;{isProcessing ? "Running" : "Run"}
+            {isProcessing ? "⋯" : "▶"}&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}
           </button>
 
           <button
@@ -211,7 +241,7 @@ function Editor({
           style={{
             padding: `${topPadding}px 12px`,
             background: "#080d15",
-            color: "#2a3d56",
+            color: "#3d5270",
             textAlign: "right",
             userSelect: "none",
             overflow: "hidden",
@@ -227,7 +257,7 @@ function Editor({
                 color:
                   !isInstrumentedTab && isRunning && currentLine === i + 1
                     ? "#f0a429"
-                    : "#2a3d56",
+                    : "#3d5270",
                 fontWeight: !isInstrumentedTab && isRunning && currentLine === i + 1 ? 600 : 400,
                 transition: "color 0.1s",
               }}
@@ -327,7 +357,7 @@ function Editor({
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.8px",
-              color: "#4e6180",
+              color: "#647e9c",
               textTransform: "uppercase",
             }}
           >
@@ -336,7 +366,7 @@ function Editor({
           <span
             style={{
               fontSize: "11px",
-              color: "#3d5270",
+              color: "#506888",
             }}
           >
             Numbers must not exceed 20

@@ -23,15 +23,17 @@ def run_code():
     body = request.json
     code = body["code"]
     skip_instrumentation = body.get("skip_instrumentation", False)
+    instrument_only = body.get("instrument_only", False)
     stdin_text = body.get("stdin", "")
 
-    # Validate that no number in stdin exceeds 20
-    numbers = re.findall(r'-?\d+', stdin_text)
-    for n in numbers:
-        if abs(int(n)) > 20:
-            return jsonify({
-                "error": f"Input number {n} exceeds the limit of 20."
-            })
+    if not instrument_only:
+        # Validate that no number in stdin exceeds 20
+        numbers = re.findall(r'-?\d+', stdin_text)
+        for n in numbers:
+            if abs(int(n)) > 20:
+                return jsonify({
+                    "error": f"Input number {n} exceeds the limit of 20."
+                })
 
     if not skip_instrumentation:
         try:
@@ -40,6 +42,11 @@ def run_code():
             return jsonify({
                 "error": f"Instrumentation error: {str(e)}"
             })
+
+    if instrument_only:
+        return jsonify({
+            "instrumented_code": code
+        })
 
     with tempfile.TemporaryDirectory() as tmp:
         cfile = os.path.join(tmp, "main.c")

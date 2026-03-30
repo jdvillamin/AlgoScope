@@ -45,7 +45,7 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#3d5270",
+          color: "#506888",
           marginBottom: "10px",
           textTransform: "uppercase",
         }}
@@ -80,7 +80,7 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
                     justifyContent: "center",
                     fontSize: "11px",
                     fontWeight: 500,
-                    color: "#2a3d56",
+                    color: "#3d5270",
                     borderRight: "1px solid #1e2d42",
                     letterSpacing: "0.3px",
                   }}
@@ -112,7 +112,7 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
                     justifyContent: "center",
                     fontSize: "11px",
                     fontWeight: 500,
-                    color: "#2a3d56",
+                    color: "#3d5270",
                     letterSpacing: "0.3px",
                   }}
                 >

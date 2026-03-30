@@ -21,7 +21,7 @@ function StackView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#3d5270",
+          color: "#506888",
           textAlign: "center",
           marginBottom: "10px",
           textTransform: "uppercase",

@@ -26,12 +26,12 @@ function HashMapView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#3d5270",
+          color: "#506888",
           marginBottom: "14px",
           textTransform: "uppercase",
         }}
       >
-        {obj.id} <span style={{ color: "#243347", fontWeight: 500 }}>({bucketIds.length} buckets)</span>
+        {obj.id} <span style={{ color: "#3d5270", fontWeight: 500 }}>({bucketIds.length} buckets)</span>
       </div>
 
       <div style={{ position: "relative" }}>
@@ -55,7 +55,7 @@ function HashMapView({ obj, onMouseDown }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#4e6180",
+                  color: "#647e9c",
                   fontWeight: 600,
                   fontSize: "13px",
                   fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",

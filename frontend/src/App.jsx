@@ -1,37 +1,181 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import Editor from "./components/Editor";
 import Canvas from "./components/Canvas";
 import Controls from "./components/Controls";
+import FilePanel from "./components/FilePanel";
 import API from "./api/backend";
 
-function App() {
-  const [code, setCode] = useState("");
-  const [instrumentedCode, setInstrumentedCode] = useState("");
-  const [activeTab, setActiveTab] = useState("raw");
-  const [stdin, setStdin] = useState("");
+const TRACE_LINE_RE = /^(\s*)trace_line\s*\(\s*(\d+)\s*\)\s*;/;
+const TRACE_CALL_RE = /^\s*(trace_\w+\s*\(|#include\s+"tracer\.h")/;
+const TRACE_LOOP_RE = /^\s*for\s*\([^)]*\)\s*\{\s*trace_\w+\s*\(.*\)\s*;\s*\}/;
 
+function isTraceLine(line) {
+  return TRACE_CALL_RE.test(line) || TRACE_LOOP_RE.test(line);
+}
+
+function reverseInstrument(instrumentedCode) {
+  const lines = instrumentedCode.split("\n");
+  const isTrace = lines.map(isTraceLine);
+
+  const rawLines = [];
+  const instrToRaw = {};
+  for (let i = 0; i < lines.length; i++) {
+    if (!isTrace[i]) {
+      rawLines.push(lines[i]);
+      instrToRaw[i] = rawLines.length;
+    }
+  }
+
+  const updatedLines = lines.map((line, i) => {
+    const m = line.match(TRACE_LINE_RE);
+    if (!m) return line;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (!isTrace[j]) return `${m[1]}trace_line(${instrToRaw[j]});`;
+    }
+    return line;
+  });
+
+  return {
+    rawCode: rawLines.join("\n"),
+    updatedInstrumentedCode: updatedLines.join("\n"),
+  };
+}
+
+function App() {
+  const nextId = useRef(2);
+  const [files, setFiles] = useState([
+    { id: "1", name: "Untitled", code: "", instrumentedCode: "", stdin: "" },
+  ]);
+  const [activeFileId, setActiveFileId] = useState("1");
+
+  const [activeTab, setActiveTab] = useState("raw");
   const [trace, setTrace] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState("");
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [runPhase, setRunPhase] = useState("Idle");
+  const [lockToLine, setLockToLine] = useState(true);
+  const [stdout, setStdout] = useState("");
+
+  // Derive code/instrumentedCode/stdin from active file
+  const activeFile = files.find((f) => f.id === activeFileId);
+  const code = activeFile?.code || "";
+  const instrumentedCode = activeFile?.instrumentedCode || "";
+  const stdin = activeFile?.stdin || "";
+
+  const updateActiveFile = useCallback(
+    (updates) => {
+      setFiles((prev) =>
+        prev.map((f) => (f.id === activeFileId ? { ...f, ...updates } : f))
+      );
+    },
+    [activeFileId]
+  );
+
+  const setCode = useCallback(
+    (v) => updateActiveFile({ code: v }),
+    [updateActiveFile]
+  );
+  const setInstrumentedCode = useCallback(
+    (v) => updateActiveFile({ instrumentedCode: v }),
+    [updateActiveFile]
+  );
+  const setStdin = useCallback(
+    (v) => updateActiveFile({ stdin: v }),
+    [updateActiveFile]
+  );
+
+  // --- File operations ---
+
+  const resetExecutionState = useCallback(() => {
+    setTrace([]);
+    setCurrentStep(0);
+    setIsRunning(false);
+    setError("");
+    setStdout("");
+    setIsProcessing(false);
+    setRunPhase("Idle");
+    setActiveTab("raw");
+  }, []);
+
+  const handleNewFile = useCallback(() => {
+    const id = String(nextId.current++);
+    setFiles((prev) => [
+      ...prev,
+      { id, name: "Untitled", code: "", instrumentedCode: "", stdin: "" },
+    ]);
+    setActiveFileId(id);
+    resetExecutionState();
+  }, [resetExecutionState]);
+
+  const handleSwitchFile = useCallback(
+    (id) => {
+      if (id === activeFileId) return;
+      setActiveFileId(id);
+      resetExecutionState();
+    },
+    [activeFileId, resetExecutionState]
+  );
+
+  const handleRenameFile = useCallback((id, name) => {
+    setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+  }, []);
+
+  const handleDeleteFile = useCallback(
+    (id) => {
+      setFiles((prev) => {
+        const remaining = prev.filter((f) => f.id !== id);
+        if (remaining.length === 0) return prev;
+        if (id === activeFileId) {
+          const idx = prev.findIndex((f) => f.id === id);
+          const next = remaining[Math.min(idx, remaining.length - 1)];
+          setActiveFileId(next.id);
+          resetExecutionState();
+        }
+        return remaining;
+      });
+    },
+    [activeFileId, resetExecutionState]
+  );
+
+  const handleLoadSample = useCallback(
+    (sample) => {
+      const id = String(nextId.current++);
+      setFiles((prev) => [
+        ...prev,
+        {
+          id,
+          name: sample.name,
+          code: sample.code,
+          instrumentedCode: sample.instrumentedCode || "",
+          stdin: sample.stdin || "",
+        },
+      ]);
+      setActiveFileId(id);
+      resetExecutionState();
+    },
+    [resetExecutionState]
+  );
+
+  // --- Execution ---
 
   const handleTrace = (lines) => {
-    const parsed = lines
-      .map((line) => {
-        try {
-          return JSON.parse(line);
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
+    const parsed = [];
+    const outputLines = [];
+
+    for (const line of lines) {
+      try {
+        parsed.push(JSON.parse(line));
+      } catch {
+        if (line.trim()) outputLines.push(line);
+      }
+    }
 
     setTrace(parsed);
     setCurrentStep(0);
     setIsRunning(parsed.length > 0);
+    setStdout(outputLines.join("\n"));
   };
 
   const runCode = async () => {
@@ -43,83 +187,124 @@ function App() {
       return;
     }
 
-    const numbers = stdin.match(/-?\d+/g) || [];
-    for (const n of numbers) {
-      if (Math.abs(parseInt(n, 10)) > 20) {
-        setError(`Input number ${n} exceeds the limit of 20.`);
-        return;
+    if (isInstrumentedTab) {
+      const numbers = stdin.match(/-?\d+/g) || [];
+      for (const n of numbers) {
+        if (Math.abs(parseInt(n, 10)) > 20) {
+          setError(`Input number ${n} exceeds the limit of 20.`);
+          return;
+        }
       }
-    }
 
-    try {
-      setIsProcessing(true);
-      setRunPhase("Preparing source code...");
-      setError("");
-      setTrace([]);
-      setCurrentStep(0);
-      setIsRunning(false);
+      try {
+        setIsProcessing(true);
+        setRunPhase("Preparing instrumented code...");
+        setError("");
+        setStdout("");
+        setTrace([]);
+        setCurrentStep(0);
+        setIsRunning(false);
 
-      await new Promise((r) => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 120));
 
-      setRunPhase("Sending code to backend...");
-      await new Promise((r) => setTimeout(r, 120));
+        setRunPhase("Compiling instrumented code...");
+        await new Promise((r) => setTimeout(r, 120));
 
-      const resPromise = API.post("/run", {
-        code: codeToRun,
-        skip_instrumentation: isInstrumentedTab,
-        stdin: stdin,
-      });
+        const resPromise = API.post("/run", {
+          code: instrumentedCode,
+          skip_instrumentation: true,
+          stdin: stdin,
+        });
 
-      if (!isInstrumentedTab) {
+        setRunPhase("Executing program...");
+        const res = await resPromise;
+
+        console.log("Backend response:", res.data);
+
+        if (res.data.error) {
+          setRunPhase("Compilation or execution failed.");
+          setError(res.data.error);
+          setIsProcessing(false);
+          return;
+        }
+
+        setRunPhase("Rendering trace...");
+        await new Promise((r) => setTimeout(r, 180));
+
+        handleTrace(res.data.trace || []);
+
+        setRunPhase("Execution complete.");
+        setTimeout(() => {
+          setIsProcessing(false);
+        }, 250);
+      } catch (err) {
+        console.error(err);
+        setRunPhase("Backend error.");
+        setError("Backend error. Is Flask running?");
+        setIsProcessing(false);
+      }
+    } else {
+      try {
+        setIsProcessing(true);
+        setRunPhase("Preparing source code...");
+        setError("");
+        setStdout("");
+        setTrace([]);
+        setCurrentStep(0);
+        setIsRunning(false);
+
+        await new Promise((r) => setTimeout(r, 120));
+
+        setRunPhase("Sending code to backend...");
+        await new Promise((r) => setTimeout(r, 120));
+
         setRunPhase("Instrumenting source code...");
-        await new Promise((r) => setTimeout(r, 220));
-      }
+        const res = await API.post("/run", {
+          code: code,
+          instrument_only: true,
+        });
 
-      setRunPhase("Compiling instrumented code...");
-      await new Promise((r) => setTimeout(r, 220));
+        console.log("Backend response:", res.data);
 
-      setRunPhase("Executing program...");
-      const res = await resPromise;
+        if (res.data.error) {
+          setRunPhase("Instrumentation failed.");
+          setError(res.data.error);
+          setIsProcessing(false);
+          return;
+        }
 
-      console.log("Backend response:", res.data);
+        if (typeof res.data.instrumented_code === "string") {
+          setInstrumentedCode(res.data.instrumented_code);
+        }
 
-      if (typeof res.data.instrumented_code === "string") {
-        setInstrumentedCode(res.data.instrumented_code);
-      } else {
-        setInstrumentedCode("");
-      }
-
-      if (res.data.error) {
-        setRunPhase("Compilation or execution failed.");
-        setError(res.data.error);
+        setRunPhase("Instrumentation complete.");
         setActiveTab("instrumented");
+        setTimeout(() => {
+          setIsProcessing(false);
+        }, 250);
+      } catch (err) {
+        console.error(err);
+        setRunPhase("Backend error.");
+        setError("Backend error. Is Flask running?");
         setIsProcessing(false);
-        return;
       }
-
-      setRunPhase("Rendering trace...");
-      await new Promise((r) => setTimeout(r, 180));
-
-      handleTrace(res.data.trace || []);
-      setActiveTab("raw");
-
-      setRunPhase("Execution complete.");
-      setTimeout(() => {
-        setIsProcessing(false);
-      }, 250);
-    } catch (err) {
-      console.error(err);
-      setRunPhase("Backend error.");
-      setError("Backend error. Is Flask running?");
-      setIsProcessing(false);
     }
   };
+
+  const deInstrument = useCallback(() => {
+    if (!instrumentedCode.trim()) return;
+    const { rawCode, updatedInstrumentedCode } =
+      reverseInstrument(instrumentedCode);
+    setCode(rawCode);
+    setInstrumentedCode(updatedInstrumentedCode);
+  }, [instrumentedCode, setCode, setInstrumentedCode]);
 
   const resetExecution = () => {
     setIsRunning(false);
     setCurrentStep(0);
     setTrace([]);
     setError("");
+    setStdout("");
     setIsProcessing(false);
     setRunPhase("Idle");
     setActiveTab("raw");
@@ -144,6 +329,17 @@ function App() {
         background: "#080d15",
       }}
     >
+      {/* FAR LEFT: File Panel */}
+      <FilePanel
+        files={files}
+        activeFileId={activeFileId}
+        onNewFile={handleNewFile}
+        onSwitchFile={handleSwitchFile}
+        onRenameFile={handleRenameFile}
+        onDeleteFile={handleDeleteFile}
+        onLoadSample={handleLoadSample}
+      />
+
       {/* LEFT: Canvas */}
       <div
         style={{
@@ -166,7 +362,7 @@ function App() {
             justifyContent: "center",
           }}
         >
-          <Controls trace={trace} setCurrentStep={setCurrentStep} />
+          <Controls trace={trace} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
         </div>
       </div>
 
@@ -194,6 +390,9 @@ function App() {
             setActiveTab={setActiveTab}
             stdin={stdin}
             setStdin={setStdin}
+            lockToLine={lockToLine}
+            setLockToLine={setLockToLine}
+            onDeInstrument={deInstrument}
           />
         </div>
 
@@ -218,10 +417,24 @@ function App() {
               alignItems: "center",
             }}
           >
-            <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#4e6180", textTransform: "uppercase" }}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.8px",
+                color: "#647e9c",
+                textTransform: "uppercase",
+              }}
+            >
               Console
             </span>
-            <span style={{ fontSize: "12px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#3d5270" }}>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 500,
+                color: isProcessing ? "#f0a429" : "#506888",
+              }}
+            >
               {runPhase}
             </span>
           </div>
@@ -234,7 +447,8 @@ function App() {
                 left: 0,
                 right: 0,
                 height: "2px",
-                background: "linear-gradient(90deg, transparent, #f0a429, transparent)",
+                background:
+                  "linear-gradient(90deg, transparent, #f0a429, transparent)",
                 backgroundSize: "200% 100%",
                 animation: "consoleShimmer 1.2s linear infinite",
               }}
@@ -247,8 +461,9 @@ function App() {
               padding: "14px 16px",
               overflowY: "auto",
               fontSize: "12.5px",
-              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-              color: error ? "#f87171" : "#4e6180",
+              fontFamily:
+                "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+              color: error ? "#f87171" : "#647e9c",
               whiteSpace: "pre-wrap",
               lineHeight: 1.6,
               transition: "opacity 0.2s ease",
@@ -256,7 +471,14 @@ function App() {
             }}
           >
             {isProcessing ? (
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", color: "#c8d8f0" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                  color: "#c8d8f0",
+                }}
+              >
                 <div
                   style={{
                     width: "13px",
@@ -270,10 +492,22 @@ function App() {
                   }}
                 />
                 <div>
-                  <div style={{ fontWeight: 600, color: "#f0a429", fontFamily: "inherit" }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: "#f0a429",
+                      fontFamily: "inherit",
+                    }}
+                  >
                     Processing...
                   </div>
-                  <div style={{ marginTop: "5px", color: "#7b96bf", fontFamily: "inherit" }}>
+                  <div
+                    style={{
+                      marginTop: "5px",
+                      color: "#7b96bf",
+                      fontFamily: "inherit",
+                    }}
+                  >
                     {runPhase}
                   </div>
                 </div>
@@ -281,7 +515,19 @@ function App() {
             ) : error ? (
               error
             ) : trace.length > 0 ? (
-              `Trace events: ${trace.length}\nCurrent step: ${currentStep}\nCurrent line: ${currentLine ?? "—"}`
+              <>
+                <div style={{ color: "#506888", marginBottom: stdout ? "10px" : 0 }}>
+                  {`Trace events: ${trace.length}  ·  Step: ${currentStep}  ·  Line: ${currentLine ?? "—"}`}
+                </div>
+                {stdout && (
+                  <>
+                    <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#3d5270", textTransform: "uppercase", marginBottom: "6px" }}>
+                      Standard Output
+                    </div>
+                    <div style={{ color: "#c8d8f0" }}>{stdout}</div>
+                  </>
+                )}
+              </>
             ) : (
               "Waiting for execution..."
             )}

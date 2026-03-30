@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
-function Controls({ trace, setCurrentStep }) {
+const SPEEDS = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
+
+function Controls({ trace, setCurrentStep, setActiveTab }) {
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const intervalRef = useRef(null);
   const traceRef = useRef(trace);
+  const speedRef = useRef(speed);
 
   useEffect(() => { traceRef.current = trace; }, [trace]);
+  useEffect(() => { speedRef.current = speed; }, [speed]);
 
   const clearTimer = () => {
     if (intervalRef.current) {
@@ -14,9 +19,8 @@ function Controls({ trace, setCurrentStep }) {
     }
   };
 
-  const play = () => {
-    if (playing || traceRef.current.length === 0) return;
-    setPlaying(true);
+  const startInterval = (spd) => {
+    clearTimer();
     intervalRef.current = setInterval(() => {
       setCurrentStep((prev) => {
         const next = prev + 1;
@@ -27,12 +31,28 @@ function Controls({ trace, setCurrentStep }) {
         }
         return next;
       });
-    }, 500);
+    }, 500 / spd);
+  };
+
+  const play = () => {
+    if (playing || traceRef.current.length === 0) return;
+    setPlaying(true);
+    setActiveTab("raw");
+    startInterval(speedRef.current);
   };
 
   const pause = () => {
     clearTimer();
     setPlaying(false);
+  };
+
+  const cycleSpeed = () => {
+    setSpeed((prev) => {
+      const idx = SPEEDS.indexOf(prev);
+      const next = SPEEDS[(idx + 1) % SPEEDS.length];
+      if (playing) startInterval(next);
+      return next;
+    });
   };
 
   useEffect(() => () => clearTimer(), []);
@@ -103,6 +123,24 @@ function Controls({ trace, setCurrentStep }) {
         title="Step forward"
       >
         →
+      </button>
+
+      <button
+        onClick={cycleSpeed}
+        style={{
+          ...stepBtn,
+          width: "auto",
+          padding: "0 10px",
+          fontSize: "12px",
+          fontWeight: 600,
+          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+          color: disabled ? "#243347" : speed === 1 ? "#647e9c" : "#f0a429",
+          border: `1px solid ${speed === 1 ? "#1e2d42" : "#3d2e10"}`,
+          background: speed === 1 ? "#131d2e" : "#1a1810",
+        }}
+        title="Cycle playback speed"
+      >
+        {speed}x
       </button>
     </div>
   );
