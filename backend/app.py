@@ -9,7 +9,14 @@ import shutil
 from ml.instrumenter import instrument_code
 
 app = Flask(__name__)
-CORS(app)
+
+# Allowed origins: local Vite dev server + deployed GitHub Pages site.
+# Override at deploy time with the FRONTEND_ORIGIN env var if your Pages URL differs.
+_frontend_origin = os.environ.get("FRONTEND_ORIGIN")
+_allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+if _frontend_origin:
+    _allowed_origins.append(_frontend_origin)
+CORS(app, origins=_allowed_origins)
 
 
 def safe_decode(data: bytes) -> str:
