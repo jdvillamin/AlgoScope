@@ -10,13 +10,20 @@ from ml.instrumenter import instrument_code
 
 app = Flask(__name__)
 
-# Allowed origins: local Vite dev server + deployed GitHub Pages site.
-# Override at deploy time with the FRONTEND_ORIGIN env var if your Pages URL differs.
-_frontend_origin = os.environ.get("FRONTEND_ORIGIN")
+# Allowed origins: local Vite dev server + any origins listed in FRONTEND_ORIGIN.
+# FRONTEND_ORIGIN is a comma-separated list, e.g.
+#   "https://algoscope-visualizer.vercel.app,https://algoscope-visualizer-git-master-foo.vercel.app"
+_frontend_origin_env = os.environ.get("FRONTEND_ORIGIN", "")
 _allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
-if _frontend_origin:
-    _allowed_origins.append(_frontend_origin)
+_allowed_origins.extend(
+    origin.strip() for origin in _frontend_origin_env.split(",") if origin.strip()
+)
 CORS(app, origins=_allowed_origins)
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
 
 
 def safe_decode(data: bytes) -> str:
