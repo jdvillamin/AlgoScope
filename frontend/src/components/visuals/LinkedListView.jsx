@@ -46,7 +46,6 @@ function LinkedListView({ obj, onMouseDown }) {
           letterSpacing: "0.8px",
           color: "#506888",
           marginBottom: "10px",
-          textTransform: "uppercase",
         }}
       >
         {obj.id}

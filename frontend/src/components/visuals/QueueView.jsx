@@ -24,7 +24,6 @@ function QueueView({ obj, onMouseDown }) {
           color: "#506888",
           textAlign: "center",
           marginBottom: "10px",
-          textTransform: "uppercase",
         }}
       >
         {obj.id}

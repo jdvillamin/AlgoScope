@@ -28,7 +28,6 @@ function HashMapView({ obj, onMouseDown }) {
           letterSpacing: "0.8px",
           color: "#506888",
           marginBottom: "14px",
-          textTransform: "uppercase",
         }}
       >
         {obj.id} <span style={{ color: "#3d5270", fontWeight: 500 }}>({bucketIds.length} buckets)</span>

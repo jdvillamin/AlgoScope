@@ -30,7 +30,6 @@ function VariableView({ obj, onMouseDown }) {
             color: "#506888",
             marginBottom: "8px",
             letterSpacing: "0.8px",
-            textTransform: "uppercase",
           }}
         >
           {obj.id}

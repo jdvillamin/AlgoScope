@@ -30,7 +30,6 @@ function Array2DView({ obj, onMouseDown }) {
             color: "#506888",
             marginBottom: "10px",
             letterSpacing: "0.8px",
-            textTransform: "uppercase",
           }}
         >
           {obj.id}
