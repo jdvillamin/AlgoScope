@@ -5,8 +5,16 @@ import Controls from "./components/Controls";
 import FilePanel from "./components/FilePanel";
 import API from "./api/backend";
 
-const STORAGE_KEY = "algoscope:state:v1";
-const DEFAULT_FILE = { id: "1", name: "Untitled", code: "", instrumentedCode: "", stdin: "" };
+const STORAGE_KEY = "algoscope:state:v2";
+const DEFAULT_FILE = {
+  id: "1",
+  name: "Untitled",
+  code: "",
+  instrumentedCode: "",
+  stdin: "",
+  trace: [],
+  stdout: "",
+};
 
 function loadPersistedState() {
   try {
@@ -23,6 +31,8 @@ function loadPersistedState() {
         code: typeof f.code === "string" ? f.code : "",
         instrumentedCode: typeof f.instrumentedCode === "string" ? f.instrumentedCode : "",
         stdin: typeof f.stdin === "string" ? f.stdin : "",
+        trace: Array.isArray(f.trace) ? f.trace : [],
+        stdout: typeof f.stdout === "string" ? f.stdout : "",
       }));
     if (files.length === 0) return null;
     const activeFileId =
@@ -99,20 +109,59 @@ function App() {
   }, [files, activeFileId]);
 
   const [activeTab, setActiveTab] = useState("raw");
-  const [trace, setTrace] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [runPhase, setRunPhase] = useState("Idle");
   const [lockToLine, setLockToLine] = useState(true);
-  const [stdout, setStdout] = useState("");
 
-  // Derive code/instrumentedCode/stdin from active file
+  // Resizable / hidable editor panel.
+  const [editorWidth, setEditorWidth] = useState(() => {
+    const saved = parseInt(localStorage.getItem("algoscope:editorWidth") || "", 10);
+    return Number.isFinite(saved) && saved >= 320 ? saved : 560;
+  });
+  const [editorHidden, setEditorHidden] = useState(
+    () => localStorage.getItem("algoscope:editorHidden") === "1"
+  );
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("algoscope:editorWidth", String(editorWidth));
+  }, [editorWidth]);
+  useEffect(() => {
+    localStorage.setItem("algoscope:editorHidden", editorHidden ? "1" : "0");
+  }, [editorHidden]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e) => {
+      const next = window.innerWidth - e.clientX;
+      const clamped = Math.max(320, Math.min(next, window.innerWidth - 400));
+      setEditorWidth(clamped);
+    };
+    const onUp = () => setIsResizing(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [isResizing]);
+
+  // Derive code/instrumentedCode/stdin/trace/stdout from active file
   const activeFile = files.find((f) => f.id === activeFileId);
   const code = activeFile?.code || "";
   const instrumentedCode = activeFile?.instrumentedCode || "";
   const stdin = activeFile?.stdin || "";
+  const trace = useMemo(() => activeFile?.trace || [], [activeFile?.trace]);
+  const stdout = activeFile?.stdout || "";
+  const isRunning = trace.length > 0;
 
   const updateActiveFile = useCallback(
     (updates) => {
@@ -138,34 +187,38 @@ function App() {
 
   // --- File operations ---
 
-  const resetExecutionState = useCallback(() => {
-    setTrace([]);
+  // Clears ephemeral UI state (error banners, processing spinner, active tab).
+  // Persisted trace/stdout live on the file itself and are NOT cleared here —
+  // use clearActiveFileTrace for that.
+  const resetUiState = useCallback(() => {
     setCurrentStep(0);
-    setIsRunning(false);
     setError("");
-    setStdout("");
     setIsProcessing(false);
     setRunPhase("Idle");
     setActiveTab("raw");
   }, []);
 
+  const clearActiveFileTrace = useCallback(() => {
+    updateActiveFile({ trace: [], stdout: "" });
+  }, [updateActiveFile]);
+
   const handleNewFile = useCallback(() => {
     const id = String(nextId.current++);
     setFiles((prev) => [
       ...prev,
-      { id, name: "Untitled", code: "", instrumentedCode: "", stdin: "" },
+      { id, name: "Untitled", code: "", instrumentedCode: "", stdin: "", trace: [], stdout: "" },
     ]);
     setActiveFileId(id);
-    resetExecutionState();
-  }, [resetExecutionState]);
+    resetUiState();
+  }, [resetUiState]);
 
   const handleSwitchFile = useCallback(
     (id) => {
       if (id === activeFileId) return;
       setActiveFileId(id);
-      resetExecutionState();
+      resetUiState();
     },
-    [activeFileId, resetExecutionState]
+    [activeFileId, resetUiState]
   );
 
   const handleRenameFile = useCallback((id, name) => {
@@ -181,12 +234,12 @@ function App() {
           const idx = prev.findIndex((f) => f.id === id);
           const next = remaining[Math.min(idx, remaining.length - 1)];
           setActiveFileId(next.id);
-          resetExecutionState();
+          resetUiState();
         }
         return remaining;
       });
     },
-    [activeFileId, resetExecutionState]
+    [activeFileId, resetUiState]
   );
 
   const handleImportFile = useCallback(
@@ -199,14 +252,14 @@ function App() {
         const name = (file.name || "untitled").replace(/\.c$/i, "");
         setFiles((prev) => [
           ...prev,
-          { id, name, code: contents, instrumentedCode: "", stdin: "" },
+          { id, name, code: contents, instrumentedCode: "", stdin: "", trace: [], stdout: "" },
         ]);
         setActiveFileId(id);
-        resetExecutionState();
+        resetUiState();
       };
       reader.readAsText(file);
     },
-    [resetExecutionState]
+    [resetUiState]
   );
 
   const handleExportFile = useCallback(() => {
@@ -236,33 +289,36 @@ function App() {
           code: sample.code,
           instrumentedCode: sample.instrumentedCode || "",
           stdin: sample.stdin || "",
+          trace: [],
+          stdout: "",
         },
       ]);
       setActiveFileId(id);
-      resetExecutionState();
+      resetUiState();
     },
-    [resetExecutionState]
+    [resetUiState]
   );
 
   // --- Execution ---
 
-  const handleTrace = (lines) => {
-    const parsed = [];
-    const outputLines = [];
+  const handleTrace = useCallback(
+    (lines) => {
+      const parsed = [];
+      const outputLines = [];
 
-    for (const line of lines) {
-      try {
-        parsed.push(JSON.parse(line));
-      } catch {
-        if (line.trim()) outputLines.push(line);
+      for (const line of lines) {
+        try {
+          parsed.push(JSON.parse(line));
+        } catch {
+          if (line.trim()) outputLines.push(line);
+        }
       }
-    }
 
-    setTrace(parsed);
-    setCurrentStep(0);
-    setIsRunning(parsed.length > 0);
-    setStdout(outputLines.join("\n"));
-  };
+      updateActiveFile({ trace: parsed, stdout: outputLines.join("\n") });
+      setCurrentStep(0);
+    },
+    [updateActiveFile]
+  );
 
   const runCode = async () => {
     const isInstrumentedTab = activeTab === "instrumented";
@@ -286,10 +342,8 @@ function App() {
         setIsProcessing(true);
         setRunPhase("Preparing instrumented code...");
         setError("");
-        setStdout("");
-        setTrace([]);
+        clearActiveFileTrace();
         setCurrentStep(0);
-        setIsRunning(false);
 
         await new Promise((r) => setTimeout(r, 120));
 
@@ -334,10 +388,8 @@ function App() {
         setIsProcessing(true);
         setRunPhase("Preparing source code...");
         setError("");
-        setStdout("");
-        setTrace([]);
+        clearActiveFileTrace();
         setCurrentStep(0);
-        setIsRunning(false);
 
         await new Promise((r) => setTimeout(r, 120));
 
@@ -386,11 +438,9 @@ function App() {
   }, [instrumentedCode, setCode, setInstrumentedCode]);
 
   const resetExecution = () => {
-    setIsRunning(false);
+    clearActiveFileTrace();
     setCurrentStep(0);
-    setTrace([]);
     setError("");
-    setStdout("");
     setIsProcessing(false);
     setRunPhase("Idle");
     setActiveTab("raw");
@@ -431,13 +481,42 @@ function App() {
       {/* LEFT: Canvas */}
       <div
         style={{
-          flex: 2,
+          flex: 1,
+          minWidth: 0,
           display: "flex",
           flexDirection: "column",
+          position: "relative",
         }}
       >
-        <div style={{ flex: 1, position: "relative" }}>
+        <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
           <Canvas trace={trace} currentStep={currentStep} />
+          {editorHidden && (
+            <button
+              onClick={() => setEditorHidden(false)}
+              title="Show editor panel"
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 12px",
+                background: "#121c2c",
+                color: "#c8d8f0",
+                border: "1px solid #1e2d42",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+              }}
+            >
+              <span style={{ fontSize: "14px", lineHeight: 1 }}>‹</span>
+              Show Editor
+            </button>
+          )}
         </div>
 
         <div
@@ -454,13 +533,33 @@ function App() {
         </div>
       </div>
 
+      {/* Draggable resizer */}
+      {!editorHidden && (
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizing(true);
+          }}
+          onDoubleClick={() => setEditorWidth(560)}
+          title="Drag to resize · double-click to reset"
+          style={{
+            width: "6px",
+            cursor: "col-resize",
+            background: isResizing ? "#2a3f5c" : "#1a2535",
+            transition: isResizing ? "none" : "background 0.15s",
+            flexShrink: 0,
+            zIndex: 5,
+          }}
+        />
+      )}
+
       {/* RIGHT: Editor */}
       <div
         style={{
-          flex: 1.5,
-          display: "flex",
+          width: editorHidden ? 0 : `${editorWidth}px`,
+          flexShrink: 0,
+          display: editorHidden ? "none" : "flex",
           flexDirection: "column",
-          borderLeft: "1px solid #1a2535",
         }}
       >
         <div style={{ flex: 3, minHeight: 0 }}>
@@ -481,6 +580,7 @@ function App() {
             lockToLine={lockToLine}
             setLockToLine={setLockToLine}
             onDeInstrument={deInstrument}
+            onHide={() => setEditorHidden(true)}
           />
         </div>
 

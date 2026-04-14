@@ -18,6 +18,7 @@ function Editor({
   lockToLine,
   setLockToLine,
   onDeInstrument,
+  onHide,
 }) {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -214,6 +215,16 @@ function Editor({
           >
             ↺
           </button>
+
+          {onHide && (
+            <button
+              onClick={onHide}
+              style={iconBtn()}
+              title="Hide editor panel"
+            >
+              ›
+            </button>
+          )}
         </div>
       </div>
 

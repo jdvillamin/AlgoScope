@@ -730,28 +730,55 @@ Rules:
 
 Notes:
 
-1. A graph can be represented using structs but it can also be represented as an
-adjacency matrix adj (or similar) where adj[u][v] = 1 denotes an edge from u to
-v and adj[u][v] = 0 denotes no edge from u to v.
+1. A graph can be represented using structs, but it can also be represented as
+an adjacency matrix (a 2D array where adj[u][v] = 1 denotes an edge from u to v
+and 0 denotes no edge) OR as an adjacency list (an array of linked lists where
+adj[u] is a linked list of the neighbors of u).
 
-2. If you found that the adjacency matrix can be transposed, visualize an
+2. If the adjacency matrix is symmetric (adj[u][v] == adj[v][u] for all u, v),
+or if the adjacency list stores edges in both directions, visualize an
 undirected graph instead of a directed graph.
 
-3. MAKE SURE TO BOTH VISUALIZE THE ADJACENCY MATRIX AS A 2D ARRAY AND ALSO A 
-DIRECTED/UNDIRECTED GRAPH!
+3. MANDATORY: Whenever the source code uses an adjacency matrix or an
+adjacency list to represent a graph, you MUST visualize BOTH the underlying
+data structure (2D array or array of linked lists) AND the graph itself. The
+two views must be kept in sync — every time the matrix/list is updated, emit
+the corresponding graph event as well.
 
-trace_array2d_init("adj", n, n) should be paired with
-trace_graph_init("adj")
-for (int i = 0; i < n; i++) {
-    trace_graph_node("adj", '0' + i);
-}
+   a. Adjacency matrix — pair trace_array2d with trace_graph:
 
-and
+      trace_array2d_init("adj", n, n)   ← paired with →   trace_graph_init("adj")
 
-adj[i][j] = 1; should be paired with
-trace_graph_edge("adj", '0' + i, '0' + j);
+      for (int i = 0; i < n; i++) {
+          trace_graph_node("adj", _trace_id(i));
+      }
 
-Example:
+      adj[u][v] = 1;   ← paired with →   trace_graph_edge("adj", _trace_id(u), _trace_id(v));
+
+   b. Adjacency list — each vertex u owns its own linked list named "adj_u"
+      (use the _trace_id helper or snprintf to build the name). You must
+      ALSO emit a graph view named "adj" that mirrors the whole structure:
+
+      trace_graph_init("adj");
+      for (int i = 0; i < n; i++) {
+          char list_name[32];
+          snprintf(list_name, 32, "adj_%d", i);
+          trace_ll_init(list_name);
+          trace_graph_node("adj", _trace_id(i));
+      }
+
+      When you append neighbor v to adj[u] (i.e. create a new list node in
+      "adj_u"), also emit the graph edge:
+
+      trace_ll_node("adj_u", node_id, v);
+      trace_ll_link("adj_u", prev_id, node_id);   // if not head
+      trace_graph_edge("adj", _trace_id(u), _trace_id(v));
+
+      Traversal highlighting must hit BOTH views: when visiting vertex u,
+      call trace_graph_highlight("adj", _trace_id(u)); when scanning a
+      neighbor node in the list, call trace_ll_highlight("adj_u", node_id).
+
+Example (adjacency matrix):
 #include <stdlib.h>
 #include <stdio.h>
 #include "tracer.h"
@@ -843,6 +870,110 @@ int main() {
     }
     trace_line(31);
     dfs(0, n, adj, vis);
+}
+
+Example (adjacency list):
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "tracer.h"
+
+static char _trace_id_buffers[4096][32];
+static int _trace_id_next = 0;
+
+char* _trace_id(int x) {
+    char* buf = _trace_id_buffers[_trace_id_next];
+    _trace_id_next = (_trace_id_next + 1) % 4096;
+    snprintf(buf, 32, "%d", x);
+    return buf;
+}
+
+typedef struct Node {
+    int v;
+    int nid;
+    struct Node* next;
+} Node;
+
+static int _next_nid = 0;
+
+void dfs(int u, Node** adj, int* vis) {
+    trace_var_init("u", u);
+    trace_graph_highlight("adj", _trace_id(u));
+    char list_u[32];
+    snprintf(list_u, 32, "adj_%d", u);
+    trace_line(4);
+    trace_array_highlight("vis", u);
+    vis[u] = 1;
+    trace_array("vis", u, vis[u]);
+    trace_line(5);
+    for (Node* p = adj[u]; p != NULL; p = p->next) {
+        trace_line(5);
+        trace_ll_highlight(list_u, _trace_id(p->nid));
+        trace_line(6);
+        trace_array_highlight("vis", p->v);
+        if (vis[p->v] == 0) {
+            trace_line(7);
+            dfs(p->v, adj, vis);
+        }
+    }
+}
+
+int main() {
+    int n, m;
+    trace_line(14);
+    scanf("%d %d", &n, &m);
+    trace_var_init("n", n);
+    trace_var_init("m", m);
+
+    trace_line(15);
+    int* vis = (int*)malloc(n * sizeof(int));
+    trace_array_init("vis", n);
+
+    // Initialize one linked list per vertex AND a single graph view.
+    trace_graph_init("adj");
+    Node** adj = (Node**)malloc(n * sizeof(Node*));
+    trace_line(16);
+    for (int i = 0; i < n; i++) {
+        trace_line(16);
+        trace_var_init("i", i);
+        adj[i] = NULL;
+        char list_name[32];
+        snprintf(list_name, 32, "adj_%d", i);
+        trace_ll_init(list_name);
+        trace_graph_node("adj", _trace_id(i));
+        vis[i] = 0;
+        trace_array("vis", i, vis[i]);
+    }
+
+    trace_line(20);
+    for (int i = 0; i < m; i++) {
+        trace_line(20);
+        trace_var_init("i", i);
+        int u, v;
+        trace_line(22);
+        scanf("%d %d", &u, &v);
+        trace_var_init("u", u);
+        trace_var_init("v", v);
+
+        // Prepend v to adj[u]: create list node, link it, and mirror the
+        // edge onto the graph view.
+        Node* node = (Node*)malloc(sizeof(Node));
+        node->v = v;
+        node->nid = _next_nid++;
+        node->next = adj[u];
+        adj[u] = node;
+
+        char list_u[32];
+        snprintf(list_u, 32, "adj_%d", u);
+        trace_ll_node(list_u, _trace_id(node->nid), v);
+        if (node->next != NULL) {
+            trace_ll_link(list_u, _trace_id(node->nid), _trace_id(node->next->nid));
+        }
+        trace_graph_edge("adj", _trace_id(u), _trace_id(v));
+    }
+
+    trace_line(30);
+    dfs(0, adj, vis);
 }
 
 Traversal highlight patterns:
