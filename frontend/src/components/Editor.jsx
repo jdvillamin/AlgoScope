@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
+import MonacoEditor from "@monaco-editor/react";
 
 function Editor({
   code,
@@ -18,81 +19,74 @@ function Editor({
   setLockToLine,
   onDeInstrument,
 }) {
-  const textareaRef = useRef(null);
-  const lineNumberRef = useRef(null);
-  const highlightRef = useRef(null);
-
-  const lineHeight = 22;
-  const topPadding = 16;
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const decorationsRef = useRef(null);
 
   const displayedCode =
     activeTab === "instrumented" ? instrumentedCode || "" : code || "";
 
-  const lines = displayedCode.split("\n");
   const isInstrumentedTab = activeTab === "instrumented";
 
-  const syncLineNumberScroll = useCallback(() => {
-    if (!textareaRef.current || !lineNumberRef.current) return;
-    lineNumberRef.current.scrollTop = textareaRef.current.scrollTop;
-  }, []);
+  const handleMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
 
-  const updateHighlightPosition = useCallback(() => {
-    const textarea = textareaRef.current;
-    const highlight = highlightRef.current;
+    monaco.editor.defineTheme("algoscope-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#080d15",
+        "editor.foreground": "#cdd9f0",
+        "editor.lineHighlightBackground": "#0e1520",
+        "editor.lineHighlightBorder": "#0e1520",
+        "editorLineNumber.foreground": "#3d5270",
+        "editorLineNumber.activeForeground": "#8fa3c8",
+        "editorCursor.foreground": "#4b8cf7",
+        "editorGutter.background": "#080d15",
+        "editorIndentGuide.background1": "#111c2c",
+        "editorIndentGuide.activeBackground1": "#1a2535",
+        "scrollbarSlider.background": "#1a253580",
+        "scrollbarSlider.hoverBackground": "#243347a0",
+        "scrollbarSlider.activeBackground": "#243347",
+      },
+    });
+    monaco.editor.setTheme("algoscope-dark");
 
-    if (!textarea || !highlight) return;
+    decorationsRef.current = editor.createDecorationsCollection([]);
+  };
+
+  // Current-line highlight decoration
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    const decos = decorationsRef.current;
+    if (!editor || !monaco || !decos) return;
 
     if (!isRunning || !currentLine || isInstrumentedTab) {
-      highlight.style.display = "none";
+      decos.clear();
       return;
     }
 
-    const top = topPadding + (currentLine - 1) * lineHeight - textarea.scrollTop;
+    decos.set([
+      {
+        range: new monaco.Range(currentLine, 1, currentLine, 1),
+        options: {
+          isWholeLine: true,
+          className: "algoscope-current-line",
+          linesDecorationsClassName: "algoscope-current-line-gutter",
+        },
+      },
+    ]);
+  }, [currentLine, isRunning, isInstrumentedTab, displayedCode]);
 
-    highlight.style.display = "block";
-    highlight.style.top = `${top}px`;
-    highlight.style.height = `${lineHeight}px`;
-  }, [currentLine, isRunning, isInstrumentedTab]);
-
-  const syncOverlay = useCallback(() => {
-    syncLineNumberScroll();
-    updateHighlightPosition();
-  }, [syncLineNumberScroll, updateHighlightPosition]);
-
-  const scrollToCurrentLine = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea || !isRunning || !currentLine || isInstrumentedTab || !lockToLine) return;
-
-    const desiredTop =
-      topPadding +
-      (currentLine - 1) * lineHeight -
-      textarea.clientHeight / 2 +
-      lineHeight / 2;
-
-    const maxScroll = Math.max(0, textarea.scrollHeight - textarea.clientHeight);
-    const clampedTop = Math.max(0, Math.min(desiredTop, maxScroll));
-
-    textarea.scrollTop = clampedTop;
-    syncOverlay();
-  }, [currentLine, isRunning, isInstrumentedTab, lockToLine, syncOverlay]);
-
-  useEffect(() => { syncOverlay(); }, [syncOverlay, displayedCode]);
-  useEffect(() => { scrollToCurrentLine(); }, [scrollToCurrentLine]);
-
+  // Lock-to-line auto-scroll
   useEffect(() => {
-    const textarea = textareaRef.current;
-    const lineNumbers = lineNumberRef.current;
-    const highlight = highlightRef.current;
-
-    if (textarea) textarea.scrollTop = 0;
-    if (lineNumbers) lineNumbers.scrollTop = 0;
-    if (highlight) highlight.style.display = "none";
-
-    requestAnimationFrame(() => {
-      syncOverlay();
-      scrollToCurrentLine();
-    });
-  }, [activeTab, displayedCode, syncOverlay, scrollToCurrentLine]);
+    const editor = editorRef.current;
+    if (!editor || !isRunning || !currentLine || isInstrumentedTab || !lockToLine) return;
+    editor.revealLineInCenter(currentLine);
+  }, [currentLine, isRunning, isInstrumentedTab, lockToLine]);
 
   const iconBtn = (active = true) => ({
     width: "32px",
@@ -224,116 +218,52 @@ function Editor({
       </div>
 
       {/* Editor body */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          background: "#080d15",
-          fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-          fontSize: "13.5px",
-          lineHeight: `${lineHeight}px`,
-          minHeight: 0,
-        }}
-      >
-        {/* Line numbers */}
-        <div
-          ref={lineNumberRef}
-          style={{
-            padding: `${topPadding}px 12px`,
-            background: "#080d15",
-            color: "#3d5270",
-            textAlign: "right",
-            userSelect: "none",
-            overflow: "hidden",
-            minWidth: "52px",
-            borderRight: "1px solid #111c2c",
+      <div style={{ flex: 1, minHeight: 0, position: "relative", background: "#080d15" }}>
+        <MonacoEditor
+          height="100%"
+          language="c"
+          value={displayedCode}
+          onChange={(value) => {
+            if (isProcessing) return;
+            if (isInstrumentedTab) {
+              setInstrumentedCode?.(value ?? "");
+            } else {
+              setCode(value ?? "");
+            }
           }}
-        >
-          {lines.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: `${lineHeight}px`,
-                color:
-                  !isInstrumentedTab && isRunning && currentLine === i + 1
-                    ? "#f0a429"
-                    : "#3d5270",
-                fontWeight: !isInstrumentedTab && isRunning && currentLine === i + 1 ? 600 : 400,
-                transition: "color 0.1s",
-              }}
-            >
-              {i + 1}
-            </div>
-          ))}
-        </div>
-
-        {/* Code area */}
-        <div style={{ position: "relative", flex: 1 }}>
+          onMount={handleMount}
+          options={{
+            readOnly: isRunning || isProcessing,
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            fontSize: 13.5,
+            lineHeight: 22,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            smoothScrolling: true,
+            renderLineHighlight: "none",
+            tabSize: 4,
+            automaticLayout: true,
+            padding: { top: 16, bottom: 16 },
+            scrollbar: {
+              verticalScrollbarSize: 10,
+              horizontalScrollbarSize: 10,
+            },
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            overviewRulerBorder: false,
+          }}
+        />
+        {isProcessing && (
           <div
-            ref={highlightRef}
             style={{
               position: "absolute",
-              left: 0,
-              right: 0,
-              height: `${lineHeight}px`,
-              background: "rgba(240, 164, 41, 0.08)",
-              borderLeft: "2px solid rgba(240, 164, 41, 0.5)",
+              inset: 0,
+              background: "rgba(8, 13, 21, 0.3)",
+              zIndex: 2,
               pointerEvents: "none",
-              zIndex: 0,
-              display: "none",
             }}
           />
-
-          {isProcessing && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(8, 13, 21, 0.3)",
-                zIndex: 2,
-                pointerEvents: "none",
-              }}
-            />
-          )}
-
-          <textarea
-            ref={textareaRef}
-            value={displayedCode}
-            readOnly={isRunning || isProcessing}
-            wrap="off"
-            onChange={(e) => {
-              if (isProcessing) return;
-              if (isInstrumentedTab) {
-                setInstrumentedCode?.(e.target.value);
-              } else {
-                setCode(e.target.value);
-              }
-            }}
-            onScroll={syncOverlay}
-            spellCheck={false}
-            style={{
-              width: "100%",
-              height: "100%",
-              resize: "none",
-              border: "none",
-              outline: "none",
-              background: "transparent",
-              color: isInstrumentedTab ? "#a8bedd" : "#cdd9f0",
-              padding: `${topPadding}px 16px`,
-              fontFamily: "inherit",
-              fontSize: "inherit",
-              lineHeight: `${lineHeight}px`,
-              overflow: "auto",
-              whiteSpace: "pre",
-              tabSize: 4,
-              position: "relative",
-              zIndex: 1,
-              opacity: isProcessing ? 0.6 : 1,
-              transition: "opacity 0.2s ease",
-              caretColor: "#4b8cf7",
-            }}
-          />
-        </div>
+        )}
       </div>
 
       {/* Stdin */}

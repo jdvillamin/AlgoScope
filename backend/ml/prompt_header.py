@@ -215,6 +215,12 @@ Initialize once after declaration.
 int arr[5];
 trace_array_init("arr", 5);
 
+Note that arrays can also be allocated in the heap. If the array is 
+declared using an integer pointer, you must also visualize it.
+
+int* arr = (int*)malloc(5 * sizeof(int));
+trace_array_init("arr", 5);
+
 If the array is declared with initial values, emit trace_array for EVERY
 element immediately after trace_array_init so the visualizer shows the
 pre-filled contents.
@@ -281,6 +287,15 @@ Rules:
 Initialize after declaration.
 
 int mat[3][5];
+trace_array2d_init("mat", 3, 5);
+
+Note that 2D arrays can also be allocated in the heap. If a 2D array
+is declared using int**, please visualize it as well.
+
+int** mat[3][5] = (int**)malloc(3 * sizeof(int));
+for (int i = 0; i < 3; i++) {
+    mat[i] = (int*)malloc(5 * sizeof(int));
+}
 trace_array2d_init("mat", 3, 5);
 
 If the 2D array is declared with initial values, emit trace_array2d for
@@ -712,6 +727,123 @@ Rules:
 5. Ordering requirement:
    trace_graph_init → trace_graph_node (all vertices) → trace_graph_edge (all edges)
    A node must be registered before any edge that references it.
+
+Notes:
+
+1. A graph can be represented using structs but it can also be represented as an
+adjacency matrix adj (or similar) where adj[u][v] = 1 denotes an edge from u to
+v and adj[u][v] = 0 denotes no edge from u to v.
+
+2. If you found that the adjacency matrix can be transposed, visualize an
+undirected graph instead of a directed graph.
+
+3. MAKE SURE TO BOTH VISUALIZE THE ADJACENCY MATRIX AS A 2D ARRAY AND ALSO A 
+DIRECTED/UNDIRECTED GRAPH!
+
+trace_array2d_init("adj", n, n) should be paired with
+trace_graph_init("adj")
+for (int i = 0; i < n; i++) {
+    trace_graph_node("adj", '0' + i);
+}
+
+and
+
+adj[i][j] = 1; should be paired with
+trace_graph_edge("adj", '0' + i, '0' + j);
+
+Example:
+#include <stdlib.h>
+#include <stdio.h>
+#include "tracer.h"
+
+static char _trace_id_buffers[4096][32];
+static int _trace_id_next = 0;
+
+char* _trace_id(int x) {
+    char* buf = _trace_id_buffers[_trace_id_next];
+    _trace_id_next = (_trace_id_next + 1) % 4096;
+    snprintf(buf, 32, "%d", x);
+    return buf;
+}
+
+void dfs(int u, int n, int** adj, int* vis) {
+    trace_var_init("u", u);
+    trace_var_init("n", n);
+    trace_graph_highlight("adj", _trace_id(u));
+    trace_line(4);
+    trace_array_highlight("vis", u);
+    vis[u] = 1;
+    trace_array("vis", u, vis[u]);
+    trace_line(5);
+    for (int v = 0; v < n; v++) {
+        trace_line(5);
+        trace_var_init("v", v);
+        trace_line(6);
+        trace_array2d_highlight("adj", u, v);
+        trace_array_highlight("vis", v);
+        if (adj[u][v] == 1 && vis[v] == 0) {
+            trace_line(7);
+            dfs(v, n, adj, vis);
+        }
+    }
+}
+
+int main() {
+    int n, m;
+    trace_line(14);
+    scanf("%d %d", &n, &m);
+    trace_var_init("n", n);
+    trace_var_init("m", m);
+    trace_line(15);
+    int* vis = (int*)malloc(n * sizeof(int));
+    trace_array_init("vis", n);
+    trace_graph_init("adj");
+    trace_line(16);
+    for (int i = 0; i < n; i++) {
+        trace_line(16);
+        trace_var_init("i", i);
+        trace_graph_node("adj", _trace_id(i));
+        trace_line(17);
+        vis[i] = 0;
+        trace_array("vis", i, vis[i]);
+    }
+    trace_line(19);
+    int** adj = (int**)malloc(n * sizeof(int*));
+    trace_array2d_init("adj", n, n);
+    trace_line(20);
+    for (int i = 0; i < n; i++) {
+        trace_line(20);
+        trace_var_init("i", i);
+        trace_line(21);
+        adj[i] = (int*)malloc(n * sizeof(int));
+        trace_line(22);
+        for (int j = 0; j < n; j++) {
+            trace_line(22);
+            trace_var_init("j", j);
+            trace_line(23);
+            trace_array2d_highlight("adj", i, j);
+            adj[i][j] = 0;
+            trace_array2d("adj", i, j, adj[i][j]);
+        }
+    }
+    trace_line(26);
+    for (int i = 0; i < m; i++) {
+        trace_line(26);
+        trace_var_init("i", i);
+        int u, v;
+        trace_line(28);
+        scanf("%d %d", &u, &v);
+        trace_var_init("u", u);
+        trace_var_init("v", v);
+        trace_line(29);
+        trace_array2d_highlight("adj", u, v);
+        adj[u][v] = 1;
+        trace_array2d("adj", u, v, adj[u][v]);
+        trace_graph_edge("adj", _trace_id(u), _trace_id(v));
+    }
+    trace_line(31);
+    dfs(0, n, adj, vis);
+}
 
 Traversal highlight patterns:
 

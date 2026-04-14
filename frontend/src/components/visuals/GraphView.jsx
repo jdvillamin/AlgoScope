@@ -50,6 +50,7 @@ function GraphView({ obj, onMouseDown }) {
 
   return (
     <div
+      data-viz-id={obj.id}
       onMouseDown={(e) => onMouseDown(e, obj.id)}
       style={{ position: "absolute", left: obj.x, top: obj.y, cursor: "move", userSelect: "none" }}
     >

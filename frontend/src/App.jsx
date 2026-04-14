@@ -1,9 +1,39 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Editor from "./components/Editor";
 import Canvas from "./components/Canvas";
 import Controls from "./components/Controls";
 import FilePanel from "./components/FilePanel";
 import API from "./api/backend";
+
+const STORAGE_KEY = "algoscope:state:v1";
+const DEFAULT_FILE = { id: "1", name: "Untitled", code: "", instrumentedCode: "", stdin: "" };
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.files) || parsed.files.length === 0) return null;
+    // Normalize: every file must have the expected shape.
+    const files = parsed.files
+      .filter((f) => f && typeof f.id === "string")
+      .map((f) => ({
+        id: f.id,
+        name: typeof f.name === "string" ? f.name : "Untitled",
+        code: typeof f.code === "string" ? f.code : "",
+        instrumentedCode: typeof f.instrumentedCode === "string" ? f.instrumentedCode : "",
+        stdin: typeof f.stdin === "string" ? f.stdin : "",
+      }));
+    if (files.length === 0) return null;
+    const activeFileId =
+      typeof parsed.activeFileId === "string" && files.some((f) => f.id === parsed.activeFileId)
+        ? parsed.activeFileId
+        : files[0].id;
+    return { files, activeFileId };
+  } catch {
+    return null;
+  }
+}
 
 const TRACE_LINE_RE = /^(\s*)trace_line\s*\(\s*(\d+)\s*\)\s*;/;
 const TRACE_CALL_RE = /^\s*(trace_\w+\s*\(|#include\s+"tracer\.h")/;
@@ -42,11 +72,31 @@ function reverseInstrument(instrumentedCode) {
 }
 
 function App() {
-  const nextId = useRef(2);
-  const [files, setFiles] = useState([
-    { id: "1", name: "Untitled", code: "", instrumentedCode: "", stdin: "" },
-  ]);
-  const [activeFileId, setActiveFileId] = useState("1");
+  // Read persisted state exactly once on mount via a lazy useState initializer
+  // — lint forbids touching ref.current during render, but a useState init
+  // function runs exactly once per mount.
+  const [persisted] = useState(loadPersistedState);
+
+  const nextId = useRef(
+    persisted
+      ? Math.max(...persisted.files.map((f) => parseInt(f.id, 10) || 0)) + 1
+      : 2
+  );
+  const [files, setFiles] = useState(() => persisted?.files ?? [DEFAULT_FILE]);
+  const [activeFileId, setActiveFileId] = useState(() => persisted?.activeFileId ?? "1");
+
+  // Debounced write-through to localStorage. Skips trace / execution state —
+  // only the user-authored files survive a reload.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ files, activeFileId }));
+      } catch {
+        // Quota exceeded or storage unavailable — drop silently.
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [files, activeFileId]);
 
   const [activeTab, setActiveTab] = useState("raw");
   const [trace, setTrace] = useState([]);
@@ -138,6 +188,42 @@ function App() {
     },
     [activeFileId, resetExecutionState]
   );
+
+  const handleImportFile = useCallback(
+    (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const contents = typeof e.target?.result === "string" ? e.target.result : "";
+        const id = String(nextId.current++);
+        const name = (file.name || "untitled").replace(/\.c$/i, "");
+        setFiles((prev) => [
+          ...prev,
+          { id, name, code: contents, instrumentedCode: "", stdin: "" },
+        ]);
+        setActiveFileId(id);
+        resetExecutionState();
+      };
+      reader.readAsText(file);
+    },
+    [resetExecutionState]
+  );
+
+  const handleExportFile = useCallback(() => {
+    const current = files.find((f) => f.id === activeFileId);
+    if (!current) return;
+    const safeName = (current.name || "untitled").replace(/[^a-z0-9_.-]/gi, "_");
+    const filename = /\.c$/i.test(safeName) ? safeName : `${safeName}.c`;
+    const blob = new Blob([current.code ?? ""], { type: "text/x-c" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [files, activeFileId]);
 
   const handleLoadSample = useCallback(
     (sample) => {
@@ -338,6 +424,8 @@ function App() {
         onRenameFile={handleRenameFile}
         onDeleteFile={handleDeleteFile}
         onLoadSample={handleLoadSample}
+        onImportFile={handleImportFile}
+        onExportFile={handleExportFile}
       />
 
       {/* LEFT: Canvas */}

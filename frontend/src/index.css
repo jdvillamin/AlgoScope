@@ -37,3 +37,11 @@ button:focus-visible {
   outline: 2px solid #4b8cf7;
   outline-offset: 2px;
 }
+
+.algoscope-current-line {
+  background: rgba(240, 164, 41, 0.08);
+}
+
+.algoscope-current-line-gutter {
+  border-left: 2px solid rgba(240, 164, 41, 0.5);
+}

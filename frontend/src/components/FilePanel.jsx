@@ -1,11 +1,30 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import SAMPLE_CATEGORIES from "../samples";
+import UserMenu from "./UserMenu";
 
-function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile }) {
+function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile }) {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const smallBtn = {
+    flex: 1,
+    padding: "6px 8px",
+    borderRadius: "6px",
+    border: "1px solid #1e2d42",
+    background: "#0f1928",
+    color: "#8fa3c8",
+    fontSize: "11.5px",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "5px",
+    fontFamily: "inherit",
+  };
 
   const toggleCategory = (name) => {
     setExpandedCategories((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -25,8 +44,19 @@ function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile,
         transition: "width 0.2s ease, min-width 0.2s ease",
       }}
     >
-      {/* Toggle + New File */}
-      <div style={{ padding: collapsed ? "12px 6px 8px" : "12px 12px 8px", display: "flex", flexDirection: "column", gap: "6px" }}>
+      {/* Header row — 44px to align with Canvas toolbar & Editor tabs */}
+      <div
+        style={{
+          height: "44px",
+          padding: collapsed ? "0 6px" : "0 12px",
+          borderBottom: "1px solid #1a2535",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          boxSizing: "border-box",
+          flexShrink: 0,
+        }}
+      >
         <button
           onClick={() => setCollapsed((v) => !v)}
           style={{
@@ -48,28 +78,64 @@ function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile,
         >
           {collapsed ? "☰" : "◀"}
         </button>
+      </div>
+
+      {/* New File + Import / Export */}
+      <div style={{ padding: "10px 12px 4px" }}>
         {!collapsed && (
-          <button
-            onClick={onNewFile}
-            style={{
-              width: "100%",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "1px solid #1e2d42",
-              background: "#0f1928",
-              color: "#8fa3c8",
-              fontSize: "12.5px",
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontFamily: "inherit",
-            }}
-          >
-            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
-            New File
-          </button>
+          <>
+            <button
+              onClick={onNewFile}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid #1e2d42",
+                background: "#0f1928",
+                color: "#8fa3c8",
+                fontSize: "12.5px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontFamily: "inherit",
+              }}
+            >
+              <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+              New File
+            </button>
+            <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={smallBtn}
+                title="Import a .c file from disk"
+              >
+                <span style={{ fontSize: "13px", lineHeight: 1 }}>↑</span>
+                Import
+              </button>
+              <button
+                onClick={onExportFile}
+                style={smallBtn}
+                title="Download the active file as .c"
+              >
+                <span style={{ fontSize: "13px", lineHeight: 1 }}>↓</span>
+                Export
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".c,text/x-c,text/plain"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const picked = Array.from(e.target.files || []);
+                picked.forEach((f) => onImportFile?.(f));
+                e.target.value = "";
+              }}
+            />
+          </>
         )}
       </div>
 
@@ -275,6 +341,8 @@ function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile,
           })}
         </div>
       </div>}
+
+      <UserMenu collapsed={collapsed} />
     </div>
   );
 }

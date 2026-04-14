@@ -36,12 +36,26 @@ function TreeView({ obj, onMouseDown }) {
 
   if (rootId) layout(rootId, 0);
 
+  // Tight bbox of all node centers so the root div has a real measurable size.
+  const nodeXs = Object.values(positioned).map((p) => p.x);
+  const nodeYs = Object.values(positioned).map((p) => p.y);
+  const tightW = nodeXs.length ? Math.max(...nodeXs) + NODE_SIZE : NODE_SIZE;
+  const tightH = nodeYs.length ? Math.max(...nodeYs) + NODE_SIZE : NODE_SIZE;
+
   return (
     <div
+      data-viz-id={obj.id}
       onMouseDown={(e) => onMouseDown(e, obj.id)}
-      style={{ position: "absolute", left: obj.x, top: obj.y, cursor: "move" }}
+      style={{
+        position: "absolute",
+        left: obj.x,
+        top: obj.y,
+        width: tightW,
+        height: tightH,
+        cursor: "move",
+      }}
     >
-      <svg width={800} height={600} style={{ position: "absolute" }}>
+      <svg width={tightW} height={tightH} style={{ position: "absolute", top: 0, left: 0 }}>
         {edges.map((edge, i) => {
           const p = positioned[edge.parent];
           const c = positioned[edge.child];
