@@ -490,34 +490,36 @@ function App() {
       >
         <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
           <Canvas trace={trace} currentStep={currentStep} />
-          {editorHidden && (
+        </div>
+        {editorHidden && (
             <button
               onClick={() => setEditorHidden(false)}
               title="Show editor panel"
               style={{
                 position: "absolute",
-                top: 12,
+                top: 6,
                 right: 12,
+                height: 32,
                 zIndex: 10,
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "7px 12px",
+                padding: "0 12px",
                 background: "#121c2c",
                 color: "#c8d8f0",
                 border: "1px solid #1e2d42",
                 borderRadius: "6px",
                 fontSize: "12px",
                 fontWeight: 600,
+                lineHeight: 1,
                 cursor: "pointer",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
               }}
             >
-              <span style={{ fontSize: "14px", lineHeight: 1 }}>‹</span>
+              <span style={{ fontSize: "14px", lineHeight: 1, display: "inline-block", transform: "translateY(-1px)" }}>‹</span>
               Show Editor
             </button>
           )}
-        </div>
 
         <div
           style={{
