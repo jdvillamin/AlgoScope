@@ -531,7 +531,7 @@ function App() {
             justifyContent: "center",
           }}
         >
-          <Controls trace={trace} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
+          <Controls trace={trace} currentStep={currentStep} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
         </div>
       </div>
 

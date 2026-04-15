@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 const SPEEDS = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
 
-function Controls({ trace, setCurrentStep, setActiveTab }) {
+function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
+  const barRef = useRef(null);
+  const [hoverRatio, setHoverRatio] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const intervalRef = useRef(null);
@@ -90,16 +92,90 @@ function Controls({ trace, setCurrentStep, setActiveTab }) {
     transition: "all 0.15s ease",
   };
 
+  const lastIndex = Math.max(trace.length - 1, 0);
+  const ratio = disabled ? 0 : lastIndex === 0 ? 0 : currentStep / lastIndex;
+  const fillPct = Math.min(100, Math.max(0, ratio * 100));
+  const hoverPct = hoverRatio == null ? null : Math.min(100, Math.max(0, hoverRatio * 100));
+
+  const seekFromEvent = (e) => {
+    if (disabled || !barRef.current) return null;
+    const rect = barRef.current.getBoundingClientRect();
+    const r = (e.clientX - rect.left) / rect.width;
+    return Math.min(1, Math.max(0, r));
+  };
+
+  const handleBarClick = (e) => {
+    const r = seekFromEvent(e);
+    if (r == null) return;
+    pause();
+    setCurrentStep(Math.round(r * lastIndex));
+  };
+
+  const handleBarMove = (e) => {
+    const r = seekFromEvent(e);
+    if (r != null) setHoverRatio(r);
+  };
+
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "12px",
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: "10px",
         width: "100%",
+        padding: "0 24px",
+        boxSizing: "border-box",
       }}
     >
+      <div
+        ref={barRef}
+        onClick={handleBarClick}
+        onMouseMove={handleBarMove}
+        onMouseLeave={() => setHoverRatio(null)}
+        title={disabled ? "No trace loaded" : `Step ${currentStep} / ${lastIndex}`}
+        style={{
+          position: "relative",
+          height: "6px",
+          borderRadius: "3px",
+          background: "#131d2e",
+          border: "1px solid #1a2535",
+          cursor: disabled ? "default" : "pointer",
+          overflow: "hidden",
+        }}
+      >
+        {hoverPct != null && !disabled && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: `${hoverPct}%`,
+              background: "#243854",
+            }}
+          />
+        )}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: `${fillPct}%`,
+            background: disabled
+              ? "#1a2535"
+              : "linear-gradient(90deg, #3d6fc4 0%, #4b8cf7 100%)",
+            boxShadow: disabled ? "none" : "0 0 8px rgba(75,140,247,0.45)",
+            transition: "width 0.12s linear",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "12px",
+          width: "100%",
+        }}
+      >
       <button
         onClick={() => !disabled && setCurrentStep((s) => Math.max(0, s - 1))}
         style={stepBtn}
@@ -142,6 +218,7 @@ function Controls({ trace, setCurrentStep, setActiveTab }) {
       >
         {speed}x
       </button>
+      </div>
     </div>
   );
 }
