@@ -3,6 +3,7 @@ import Editor from "./components/Editor";
 import Canvas from "./components/Canvas";
 import Controls from "./components/Controls";
 import FilePanel from "./components/FilePanel";
+import UnsavedPrompt from "./components/UnsavedPrompt";
 import API from "./api/backend";
 
 const STORAGE_KEY = "algoscope:state:v2";
@@ -14,7 +15,15 @@ const DEFAULT_FILE = {
   stdin: "",
   trace: [],
   stdout: "",
+  savedSnapshot: null,
 };
+
+function isFileUnsaved(f) {
+  if (!f) return false;
+  const s = f.savedSnapshot;
+  if (!s) return true;
+  return s.code !== f.code || s.name !== f.name || s.stdin !== f.stdin;
+}
 
 function loadPersistedState() {
   try {
@@ -25,15 +34,21 @@ function loadPersistedState() {
     // Normalize: every file must have the expected shape.
     const files = parsed.files
       .filter((f) => f && typeof f.id === "string")
-      .map((f) => ({
-        id: f.id,
-        name: typeof f.name === "string" ? f.name : "Untitled",
-        code: typeof f.code === "string" ? f.code : "",
-        instrumentedCode: typeof f.instrumentedCode === "string" ? f.instrumentedCode : "",
-        stdin: typeof f.stdin === "string" ? f.stdin : "",
-        trace: Array.isArray(f.trace) ? f.trace : [],
-        stdout: typeof f.stdout === "string" ? f.stdout : "",
-      }));
+      .map((f) => {
+        const name = typeof f.name === "string" ? f.name : "Untitled";
+        const code = typeof f.code === "string" ? f.code : "";
+        const stdin = typeof f.stdin === "string" ? f.stdin : "";
+        return {
+          id: f.id,
+          name,
+          code,
+          instrumentedCode: typeof f.instrumentedCode === "string" ? f.instrumentedCode : "",
+          stdin,
+          trace: Array.isArray(f.trace) ? f.trace : [],
+          stdout: typeof f.stdout === "string" ? f.stdout : "",
+          savedSnapshot: { code, name, stdin },
+        };
+      });
     if (files.length === 0) return null;
     const activeFileId =
       typeof parsed.activeFileId === "string" && files.some((f) => f.id === parsed.activeFileId)
@@ -95,12 +110,19 @@ function App() {
   const [files, setFiles] = useState(() => persisted?.files ?? [DEFAULT_FILE]);
   const [activeFileId, setActiveFileId] = useState(() => persisted?.activeFileId ?? "1");
 
-  // Debounced write-through to localStorage. Skips trace / execution state —
-  // only the user-authored files survive a reload.
+  // Debounced write-through to localStorage. Only files that are saved (clean
+  // vs. their savedSnapshot) are persisted — unsaved samples / new files /
+  // dirty edits disappear on reload.
   useEffect(() => {
     const handle = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ files, activeFileId }));
+        const cleanFiles = files.filter((f) => !isFileUnsaved(f));
+        const activeStillThere = cleanFiles.some((f) => f.id === activeFileId);
+        const payload = {
+          files: cleanFiles,
+          activeFileId: activeStillThere ? activeFileId : cleanFiles[0]?.id ?? null,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       } catch {
         // Quota exceeded or storage unavailable — drop silently.
       }
@@ -136,6 +158,11 @@ function App() {
     if (!isResizing) return;
     const onMove = (e) => {
       const next = window.innerWidth - e.clientX;
+      if (next < 260) {
+        setEditorHidden(true);
+        setIsResizing(false);
+        return;
+      }
       const clamped = Math.max(320, Math.min(next, window.innerWidth - 400));
       setEditorWidth(clamped);
     };
@@ -202,23 +229,113 @@ function App() {
     updateActiveFile({ trace: [], stdout: "" });
   }, [updateActiveFile]);
 
+  const activeFileUnsaved = isFileUnsaved(activeFile);
+  const unsavedIds = useMemo(
+    () => new Set(files.filter(isFileUnsaved).map((f) => f.id)),
+    [files]
+  );
+
+  // Pending action + modal. When the active file is unsaved and the user
+  // tries to switch away, we stash the action as a function and prompt.
+  const [pendingAction, setPendingAction] = useState(null);
+  const promptOpen = pendingAction !== null;
+
+  const withUnsavedGuard = useCallback(
+    (action) => {
+      if (isFileUnsaved(activeFile)) {
+        setPendingAction(() => action);
+      } else {
+        action();
+      }
+    },
+    [activeFile]
+  );
+
+  const handleSaveActive = useCallback(() => {
+    if (!activeFile) return;
+    updateActiveFile({
+      savedSnapshot: {
+        code: activeFile.code ?? "",
+        name: activeFile.name ?? "",
+        stdin: activeFile.stdin ?? "",
+      },
+    });
+  }, [activeFile, updateActiveFile]);
+
+  const handleDiscardActive = useCallback(() => {
+    if (!activeFile) return;
+    const snap = activeFile.savedSnapshot;
+    if (!snap) {
+      // Never saved → drop the file entirely.
+      setFiles((prev) => {
+        const remaining = prev.filter((f) => f.id !== activeFile.id);
+        if (remaining.length === 0) {
+          const fresh = { ...DEFAULT_FILE, id: String(nextId.current++) };
+          setActiveFileId(fresh.id);
+          return [fresh];
+        }
+        setActiveFileId((curId) =>
+          curId === activeFile.id ? remaining[0].id : curId
+        );
+        return remaining;
+      });
+      resetUiState();
+    } else {
+      // Revert to saved snapshot.
+      updateActiveFile({ code: snap.code, name: snap.name, stdin: snap.stdin });
+    }
+  }, [activeFile, resetUiState, updateActiveFile]);
+
+  const runPendingAction = useCallback(() => {
+    const action = pendingAction;
+    setPendingAction(null);
+    if (typeof action === "function") action();
+  }, [pendingAction]);
+
+  const handlePromptSave = useCallback(() => {
+    handleSaveActive();
+    runPendingAction();
+  }, [handleSaveActive, runPendingAction]);
+
+  const handlePromptDiscard = useCallback(() => {
+    handleDiscardActive();
+    runPendingAction();
+  }, [handleDiscardActive, runPendingAction]);
+
+  const handlePromptCancel = useCallback(() => {
+    setPendingAction(null);
+  }, []);
+
   const handleNewFile = useCallback(() => {
-    const id = String(nextId.current++);
-    setFiles((prev) => [
-      ...prev,
-      { id, name: "Untitled", code: "", instrumentedCode: "", stdin: "", trace: [], stdout: "" },
-    ]);
-    setActiveFileId(id);
-    resetUiState();
-  }, [resetUiState]);
+    withUnsavedGuard(() => {
+      const id = String(nextId.current++);
+      setFiles((prev) => [
+        ...prev,
+        {
+          id,
+          name: "Untitled",
+          code: "",
+          instrumentedCode: "",
+          stdin: "",
+          trace: [],
+          stdout: "",
+          savedSnapshot: null,
+        },
+      ]);
+      setActiveFileId(id);
+      resetUiState();
+    });
+  }, [resetUiState, withUnsavedGuard]);
 
   const handleSwitchFile = useCallback(
     (id) => {
       if (id === activeFileId) return;
-      setActiveFileId(id);
-      resetUiState();
+      withUnsavedGuard(() => {
+        setActiveFileId(id);
+        resetUiState();
+      });
     },
-    [activeFileId, resetUiState]
+    [activeFileId, resetUiState, withUnsavedGuard]
   );
 
   const handleRenameFile = useCallback((id, name) => {
@@ -227,39 +344,58 @@ function App() {
 
   const handleDeleteFile = useCallback(
     (id) => {
-      setFiles((prev) => {
-        const remaining = prev.filter((f) => f.id !== id);
-        if (remaining.length === 0) return prev;
-        if (id === activeFileId) {
-          const idx = prev.findIndex((f) => f.id === id);
-          const next = remaining[Math.min(idx, remaining.length - 1)];
-          setActiveFileId(next.id);
-          resetUiState();
-        }
-        return remaining;
-      });
+      const doDelete = () => {
+        setFiles((prev) => {
+          const remaining = prev.filter((f) => f.id !== id);
+          if (remaining.length === 0) return prev;
+          if (id === activeFileId) {
+            const idx = prev.findIndex((f) => f.id === id);
+            const next = remaining[Math.min(idx, remaining.length - 1)];
+            setActiveFileId(next.id);
+            resetUiState();
+          }
+          return remaining;
+        });
+      };
+      // Only guard when deleting the currently-active unsaved file.
+      if (id === activeFileId && isFileUnsaved(activeFile)) {
+        withUnsavedGuard(doDelete);
+      } else {
+        doDelete();
+      }
     },
-    [activeFileId, resetUiState]
+    [activeFile, activeFileId, resetUiState, withUnsavedGuard]
   );
 
   const handleImportFile = useCallback(
     (file) => {
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const contents = typeof e.target?.result === "string" ? e.target.result : "";
-        const id = String(nextId.current++);
-        const name = (file.name || "untitled").replace(/\.c$/i, "");
-        setFiles((prev) => [
-          ...prev,
-          { id, name, code: contents, instrumentedCode: "", stdin: "", trace: [], stdout: "" },
-        ]);
-        setActiveFileId(id);
-        resetUiState();
-      };
-      reader.readAsText(file);
+      withUnsavedGuard(() => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const contents = typeof e.target?.result === "string" ? e.target.result : "";
+          const id = String(nextId.current++);
+          const name = (file.name || "untitled").replace(/\.c$/i, "");
+          setFiles((prev) => [
+            ...prev,
+            {
+              id,
+              name,
+              code: contents,
+              instrumentedCode: "",
+              stdin: "",
+              trace: [],
+              stdout: "",
+              savedSnapshot: null,
+            },
+          ]);
+          setActiveFileId(id);
+          resetUiState();
+        };
+        reader.readAsText(file);
+      });
     },
-    [resetUiState]
+    [resetUiState, withUnsavedGuard]
   );
 
   const handleExportFile = useCallback(() => {
@@ -280,23 +416,26 @@ function App() {
 
   const handleLoadSample = useCallback(
     (sample) => {
-      const id = String(nextId.current++);
-      setFiles((prev) => [
-        ...prev,
-        {
-          id,
-          name: sample.name,
-          code: sample.code,
-          instrumentedCode: sample.instrumentedCode || "",
-          stdin: sample.stdin || "",
-          trace: [],
-          stdout: "",
-        },
-      ]);
-      setActiveFileId(id);
-      resetUiState();
+      withUnsavedGuard(() => {
+        const id = String(nextId.current++);
+        setFiles((prev) => [
+          ...prev,
+          {
+            id,
+            name: sample.name,
+            code: sample.code,
+            instrumentedCode: sample.instrumentedCode || "",
+            stdin: sample.stdin || "",
+            trace: [],
+            stdout: "",
+            savedSnapshot: null,
+          },
+        ]);
+        setActiveFileId(id);
+        resetUiState();
+      });
     },
-    [resetUiState]
+    [resetUiState, withUnsavedGuard]
   );
 
   // --- Execution ---
@@ -469,6 +608,8 @@ function App() {
       <FilePanel
         files={files}
         activeFileId={activeFileId}
+        unsavedIds={unsavedIds}
+        activeFileUnsaved={activeFileUnsaved}
         onNewFile={handleNewFile}
         onSwitchFile={handleSwitchFile}
         onRenameFile={handleRenameFile}
@@ -476,6 +617,14 @@ function App() {
         onLoadSample={handleLoadSample}
         onImportFile={handleImportFile}
         onExportFile={handleExportFile}
+        onSaveFile={handleSaveActive}
+      />
+      <UnsavedPrompt
+        open={promptOpen}
+        fileName={activeFile?.name}
+        onSave={handlePromptSave}
+        onDiscard={handlePromptDiscard}
+        onCancel={handlePromptCancel}
       />
 
       {/* LEFT: Canvas */}

@@ -1,8 +1,10 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { buildState } from "../engine/traceEngine";
-import { greedyLayout, optimalLayout } from "../engine/layout";
+import { optimalLayout } from "../engine/layout";
+
+const LAYOUT_PADDING = 24;
 import VariableView from "./visuals/VariableView";
-import ArrayView from "./visuals/ArrayView";
+import ArrayView, { estimateArraySize } from "./visuals/ArrayView";
 import Array2DView from "./visuals/Array2DView";
 import LinkedListView from "./visuals/LinkedListView";
 import DoublyLinkedListView from "./visuals/DoublyLinkedListView";
@@ -16,9 +18,16 @@ function Canvas({ trace = [], currentStep = 0 }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  // Manual positions: items the user dragged (or that were pinned by an
-  // Optimal-fit click). These override the greedy auto-layout.
+  // Manual positions: items the user dragged. Override greedy placement.
   const [manualPositions, setManualPositions] = useState({});
+
+  // Append-only greedy positions: once an id is placed, it never moves on its
+  // own. New ids drop into the next free shelf slot as their size is measured.
+  const [greedyPositions, setGreedyPositions] = useState({});
+
+  // Continuous optimal-fit mode. When on, positions come from optimalLayout
+  // every render and objects are allowed to jump around.
+  const [optimalMode, setOptimalMode] = useState(false);
 
   // Measured bounding boxes per object id.
   const [sizes, setSizes] = useState({});
@@ -62,22 +71,70 @@ function Canvas({ trace = [], currentStep = 0 }) {
   // Insertion order is preserved by buildState (it iterates the trace).
   const orderedIds = useMemo(() => Object.keys(baseObjects), [baseObjects]);
 
-  // Run the greedy packer using whatever sizes we currently know about.
-  const autoPositions = useMemo(() => {
+  // Append-only greedy placement. For each id in orderedIds: if already placed,
+  // just advance the cursor past it; if new and sized, place it at the cursor
+  // (wrapping to a new shelf when it won't fit). Recomputing the cursor from
+  // scratch keeps this idempotent under strict-mode double invocation.
+  useEffect(() => {
+    setGreedyPositions((prev) => {
+      const next = { ...prev };
+      let mutated = false;
+      for (const id of Object.keys(next)) {
+        if (!orderedIds.includes(id)) {
+          delete next[id];
+          mutated = true;
+        }
+      }
+      let cursor = { x: LAYOUT_PADDING, y: LAYOUT_PADDING, shelfH: 0 };
+      for (const id of orderedIds) {
+        const sz = sizes[id];
+        if (next[id]) {
+          if (!sz) continue;
+          const p = next[id];
+          if (p.y > cursor.y) cursor = { x: LAYOUT_PADDING, y: p.y, shelfH: 0 };
+          cursor.x = Math.max(cursor.x, p.x + sz.w + LAYOUT_PADDING);
+          cursor.shelfH = Math.max(cursor.shelfH, sz.h);
+          continue;
+        }
+        if (!sz || sz.w === 0) continue;
+        if (cursor.x > LAYOUT_PADDING && cursor.x + sz.w + LAYOUT_PADDING > canvasWidth) {
+          cursor = {
+            x: LAYOUT_PADDING,
+            y: cursor.y + cursor.shelfH + LAYOUT_PADDING,
+            shelfH: 0,
+          };
+        }
+        next[id] = { x: cursor.x, y: cursor.y };
+        cursor = {
+          x: cursor.x + sz.w + LAYOUT_PADDING,
+          y: cursor.y,
+          shelfH: Math.max(cursor.shelfH, sz.h),
+        };
+        mutated = true;
+      }
+      return mutated ? next : prev;
+    });
+  }, [orderedIds, sizes, canvasWidth]);
+
+  // Optimal positions: continuously recomputed while optimalMode is on.
+  const optimalPositions = useMemo(() => {
+    if (!optimalMode) return {};
     const items = orderedIds.map((id) => ({
       id,
       w: sizes[id]?.w ?? 0,
       h: sizes[id]?.h ?? 0,
     }));
-    return greedyLayout(items, manualPositions, canvasWidth);
-  }, [orderedIds, sizes, manualPositions, canvasWidth]);
+    return optimalLayout(items, canvasWidth);
+  }, [optimalMode, orderedIds, sizes, canvasWidth]);
 
-  // Final positions = manual ⊕ auto. Re-run buildState so the visuals see the
-  // resolved x/y. Manual takes precedence on overlap.
+  // Final positions: optimal mode ignores manual/greedy and uses the DP
+  // output; greedy mode layers manual drags on top of append-only greedy.
   const objects = useMemo(() => {
-    const merged = { ...autoPositions, ...manualPositions };
+    const merged = optimalMode
+      ? optimalPositions
+      : { ...greedyPositions, ...manualPositions };
     return buildState(trace, currentStep, merged);
-  }, [trace, currentStep, autoPositions, manualPositions]);
+  }, [trace, currentStep, optimalMode, optimalPositions, greedyPositions, manualPositions]);
 
   // ================= MEASUREMENT =================
   // One ResizeObserver watches every visual via [data-viz-id]. Re-attach
@@ -112,6 +169,27 @@ function Canvas({ trace = [], currentStep = 0 }) {
     els.forEach((el) => ro.observe(el));
     return () => ro.disconnect();
   }, [idsKey, handleResize]);
+
+  // Dev-only: sanity-check ArrayView size estimator vs. measured bounding box.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    for (const id of orderedIds) {
+      const obj = objects[id];
+      if (!obj || obj.type !== "array" || !Array.isArray(obj.data)) continue;
+      const measured = sizes[id];
+      if (!measured) continue;
+      const est = estimateArraySize(obj);
+      const dw = est.w - measured.w;
+      const dh = est.h - measured.h;
+      if (Math.abs(dw) > 2 || Math.abs(dh) > 2) {
+        console.warn(
+          `[estimateArraySize drift] ${id} n=${obj.data.length} ` +
+            `measured=${measured.w.toFixed(1)}x${measured.h.toFixed(1)} ` +
+            `est=${est.w}x${est.h} Δ=${dw.toFixed(1)},${dh.toFixed(1)}`,
+        );
+      }
+    }
+  }, [objects, orderedIds, sizes]);
 
   // Drop sizes for objects that no longer exist.
   useEffect(() => {
@@ -153,8 +231,42 @@ function Canvas({ trace = [], currentStep = 0 }) {
     return () => ro.disconnect();
   }, []);
 
+  // ================= AUTO-FIT (optimal mode) =================
+  // Whenever optimal positions or sizes change while in optimal mode, compute
+  // the bounding box of all placed objects and set scale/offset so the whole
+  // layout fits inside the canvas viewport.
+  useEffect(() => {
+    if (!optimalMode) return;
+    let maxX = 0;
+    let maxY = 0;
+    for (const id of orderedIds) {
+      const p = optimalPositions[id];
+      const sz = sizes[id];
+      if (!p || !sz) continue;
+      const right = p.x + sz.w;
+      const bottom = p.y + sz.h;
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    if (maxX === 0 || maxY === 0) return;
+    const el = canvasRef.current;
+    if (!el) return;
+    const viewW = el.clientWidth;
+    const viewH = el.clientHeight;
+    if (viewW === 0 || viewH === 0) return;
+    const pad = LAYOUT_PADDING;
+    const sx = (viewW - pad * 2) / (maxX + pad);
+    const sy = (viewH - pad * 2) / (maxY + pad);
+    const s = Math.min(1, sx, sy);
+    if (s > 0 && isFinite(s)) {
+      setScale(s);
+      setOffset({ x: 0, y: 0 });
+    }
+  }, [optimalMode, optimalPositions, sizes, orderedIds]);
+
   // ================= DRAG =================
   const handleObjectMouseDown = (e, id) => {
+    if (optimalMode) return;
     e.stopPropagation();
     setDraggingId(id);
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -191,20 +303,23 @@ function Canvas({ trace = [], currentStep = 0 }) {
   };
 
   // ================= LAYOUT BUTTONS =================
-  const handleOptimalFit = () => {
-    const items = orderedIds.map((id) => ({
-      id,
-      w: sizes[id]?.w ?? 0,
-      h: sizes[id]?.h ?? 0,
-    }));
-    const positions = optimalLayout(items, canvasWidth);
-    // Pin all items to the optimal positions so the result sticks across
-    // future size changes until the user resets.
-    setManualPositions(positions);
+  // Toggling off freezes the current optimal positions into the greedy
+  // baseline, so existing objects stay put and only future objects follow
+  // append-only greedy placement.
+  const toggleOptimalMode = () => {
+    setOptimalMode((wasOn) => {
+      if (wasOn) {
+        setGreedyPositions({ ...optimalPositions });
+        setManualPositions({});
+      }
+      return !wasOn;
+    });
   };
 
   const handleResetLayout = () => {
     setManualPositions({});
+    setGreedyPositions({});
+    setOptimalMode(false);
   };
 
   // ================= RENDER =================
@@ -230,7 +345,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
           boxSizing: "border-box",
         }}
       >
-        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#3d5270", textTransform: "uppercase", marginRight: "8px" }}>
+        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
           AlgoScope
         </span>
         <button
@@ -258,11 +373,24 @@ function Canvas({ trace = [], currentStep = 0 }) {
         <div style={{ width: 1, height: 20, background: "#1a2535", margin: "0 4px" }} />
 
         <button
-          style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px" }}
-          onClick={handleOptimalFit}
-          title="Optimal fit (DP shelf packing)"
+          style={{
+            ...iconButton,
+            width: "auto",
+            padding: "0 12px",
+            fontSize: "12px",
+            ...(optimalMode
+              ? {
+                  background: "#1a2f5a",
+                  borderColor: "#3d6fc4",
+                  color: "#7ab8ff",
+                  boxShadow: "0 0 0 1px #3d6fc4",
+                }
+              : {}),
+          }}
+          onClick={toggleOptimalMode}
+          title="Optimal fit — continuous DP layout with auto zoom-to-fit"
         >
-          ⊞ Optimal fit
+          ⊞ Optimal fit{optimalMode ? " ✓" : ""}
         </button>
         <button
           style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px" }}
@@ -285,7 +413,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
           overflow: "hidden",
           position: "relative",
           background:
-            "radial-gradient(ellipse at 25% 25%, #111c2e 0%, #080d15 65%)",
+            "radial-gradient(ellipse at 25% 25%, #050912 0%, #02040a 65%)",
         }}
       >
         <div

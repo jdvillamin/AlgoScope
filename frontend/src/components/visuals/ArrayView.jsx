@@ -1,5 +1,29 @@
 import React from "react";
 
+const CELL = 48;
+const CELL_BORDER = 1;
+const CELL_GAP = 6;
+const CARD_PADDING_X = 16;
+const CARD_PADDING_Y = 14;
+const CARD_BORDER = 1;
+const LABEL_HEIGHT = 16;
+const LABEL_MARGIN = 10;
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function estimateArraySize(obj) {
+  const n = Array.isArray(obj?.data) ? obj.data.length : 0;
+  const cellOuter = CELL + CELL_BORDER * 2;
+  const rowWidth = n === 0 ? 0 : n * cellOuter + (n - 1) * CELL_GAP;
+  const w = rowWidth + CARD_PADDING_X * 2 + CARD_BORDER * 2;
+  const h =
+    LABEL_HEIGHT +
+    LABEL_MARGIN +
+    cellOuter +
+    CARD_PADDING_Y * 2 +
+    CARD_BORDER * 2;
+  return { w, h };
+}
+
 function ArrayView({ obj, onMouseDown }) {
   if (!obj || !Array.isArray(obj.data)) return null;
 

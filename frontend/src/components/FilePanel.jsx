@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import SAMPLE_CATEGORIES from "../samples";
 import UserMenu from "./UserMenu";
 
-function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile }) {
+function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile }) {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -123,6 +123,34 @@ function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile,
                 Export
               </button>
             </div>
+            <button
+              onClick={() => activeFileUnsaved && onSaveFile?.()}
+              disabled={!activeFileUnsaved}
+              style={{
+                width: "100%",
+                marginTop: "6px",
+                padding: "7px 10px",
+                borderRadius: "6px",
+                border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
+                background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
+                color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: activeFileUnsaved ? "pointer" : "default",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                fontFamily: "inherit",
+              }}
+              title={
+                activeFileUnsaved
+                  ? "Save the active file to local storage"
+                  : "No unsaved changes"
+              }
+            >
+              {activeFileUnsaved ? "Save file" : "Saved"}
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -227,9 +255,33 @@ function FilePanel({ files, activeFileId, onNewFile, onSwitchFile, onDeleteFile,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      minWidth: 0,
                     }}
                   >
-                    {file.name}
+                    {unsavedIds?.has(file.id) && (
+                      <span
+                        style={{
+                          width: "6px",
+                          height: "6px",
+                          borderRadius: "50%",
+                          background: "#f0a429",
+                          flexShrink: 0,
+                        }}
+                        title="Unsaved changes"
+                      />
+                    )}
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {file.name}
+                    </span>
                   </span>
                 )}
                 {files.length > 1 && (
