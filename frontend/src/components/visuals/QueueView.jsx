@@ -1,6 +1,17 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useChangedKeys } from "../../visuals/useFlash";
+import { themeFor } from "../../visuals/visualTheme";
 
 function QueueView({ obj, onMouseDown }) {
+  const entries = useMemo(() => {
+    const out = {};
+    if (Array.isArray(obj?.items)) {
+      for (let i = 0; i < obj.items.length; i++) out[i] = obj.items[i];
+    }
+    return out;
+  }, [obj?.items]);
+  const changed = useChangedKeys(entries);
+  const theme = themeFor("queue");
   const CELL_WIDTH = 76;
   const CELL_HEIGHT = 48;
   const GAP = 6;
@@ -22,7 +33,7 @@ function QueueView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#506888",
+          color: theme.label,
           textAlign: "center",
           marginBottom: "10px",
         }}
@@ -32,27 +43,32 @@ function QueueView({ obj, onMouseDown }) {
 
       <div style={{ position: "relative" }}>
         <div style={{ display: "flex", gap: GAP }}>
-          {obj.items.map((value, index) => (
-            <div
-              key={index}
-              style={{
-                width: CELL_WIDTH,
-                height: CELL_HEIGHT,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#131d2e",
-                border: "1px solid #1e2d42",
-                color: "#c8d8f0",
-                borderRadius: "8px",
-                fontWeight: 600,
-                fontSize: "15px",
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-              }}
-            >
-              {value}
-            </div>
-          ))}
+          {obj.items.map((value, index) => {
+            const isFlashing = changed.has(String(index));
+            return (
+              <div
+                key={index}
+                style={{
+                  width: CELL_WIDTH,
+                  height: CELL_HEIGHT,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#131d2e",
+                  border: `1px solid ${isFlashing ? theme.flash : theme.border}`,
+                  color: isFlashing ? theme.flash : "#c8d8f0",
+                  borderRadius: "8px",
+                  boxShadow: isFlashing ? `0 0 12px ${theme.flash}33` : "none",
+                  transition: "all 0.2s ease",
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                }}
+              >
+                {value}
+              </div>
+            );
+          })}
         </div>
 
         {obj.items.length > 0 && (

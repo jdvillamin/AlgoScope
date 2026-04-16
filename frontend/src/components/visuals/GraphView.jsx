@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useChangedKeys } from "../../visuals/useFlash";
+import { themeFor } from "../../visuals/visualTheme";
 
 function GraphView({ obj, onMouseDown }) {
   const NODE_SIZE = 48;
@@ -9,6 +11,18 @@ function GraphView({ obj, onMouseDown }) {
   const CENTER_X = WIDTH / 2;
   const CENTER_Y = HEIGHT / 2;
   const RADIUS = 145;
+
+  const nodeEntries = useMemo(() => {
+    const out = {};
+    if (obj.nodes) {
+      for (const [id, node] of Object.entries(obj.nodes)) {
+        out[id] = node?.value;
+      }
+    }
+    return out;
+  }, [obj.nodes]);
+  const changed = useChangedKeys(nodeEntries);
+  const theme = themeFor("graph");
 
   const nodeIds = Object.keys(obj.nodes);
 
@@ -108,6 +122,7 @@ function GraphView({ obj, onMouseDown }) {
         {nodeIds.map((id, i) => {
           const pos = getPosition(id, i);
           const highlighted = obj.currentHighlight === id;
+          const isFlashing = changed.has(id);
 
           return (
             <g
@@ -128,10 +143,14 @@ function GraphView({ obj, onMouseDown }) {
                 cy={pos.y}
                 r={NODE_RADIUS}
                 fill={highlighted ? "#0f2040" : "#131d2e"}
-                stroke={highlighted ? "#1e3a6e" : "#1e2d42"}
+                stroke={highlighted ? "#1e3a6e" : isFlashing ? theme.flash : "#1e2d42"}
                 strokeWidth="1.5"
                 style={{
-                  filter: highlighted ? "drop-shadow(0 0 8px rgba(75,140,247,0.3))" : "none",
+                  filter: highlighted
+                    ? "drop-shadow(0 0 8px rgba(75,140,247,0.3))"
+                    : isFlashing
+                    ? `drop-shadow(0 0 8px ${theme.flash}55)`
+                    : "none",
                   transition: "all 0.2s ease",
                 }}
               />
@@ -139,7 +158,7 @@ function GraphView({ obj, onMouseDown }) {
                 x={pos.x}
                 y={pos.y + 5}
                 textAnchor="middle"
-                fill={highlighted ? "#4b8cf7" : "#dce7f8"}
+                fill={highlighted ? "#4b8cf7" : isFlashing ? theme.flash : "#dce7f8"}
                 fontWeight="600"
                 fontSize="14"
                 fontFamily="'JetBrains Mono', 'Fira Code', 'Consolas', monospace"

@@ -1,6 +1,19 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useChangedKeys } from "../../visuals/useFlash";
+import { themeFor } from "../../visuals/visualTheme";
 
 function DoublyLinkedListView({ obj, onMouseDown }) {
+  const nodeEntries = useMemo(() => {
+    const out = {};
+    if (obj?.nodes) {
+      for (const [id, node] of Object.entries(obj.nodes)) {
+        out[id] = node?.value;
+      }
+    }
+    return out;
+  }, [obj?.nodes]);
+  const changed = useChangedKeys(nodeEntries);
+  const theme = themeFor("dlist");
   const PREV_WIDTH = 52;
   const VALUE_WIDTH = 76;
   const NEXT_WIDTH = 52;
@@ -46,7 +59,7 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#506888",
+          color: theme.label,
           marginBottom: "10px",
         }}
       >
@@ -58,6 +71,7 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
           {nodeIds.map((id) => {
             const node = obj.nodes[id];
             const highlighted = obj.currentHighlight === id;
+            const isFlashing = changed.has(id);
             return (
               <div
                 key={id}
@@ -66,8 +80,14 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
                   borderRadius: "10px",
                   overflow: "hidden",
                   background: highlighted ? "#0f2040" : "#131d2e",
-                  border: `1px solid ${highlighted ? "#1e3a6e" : "#1e2d42"}`,
-                  boxShadow: highlighted ? "0 0 14px rgba(75,140,247,0.2)" : "0 4px 16px rgba(0,0,0,0.4)",
+                  border: `1px solid ${
+                    highlighted ? "#1e3a6e" : isFlashing ? theme.flash : theme.border
+                  }`,
+                  boxShadow: highlighted
+                    ? "0 0 14px rgba(75,140,247,0.2)"
+                    : isFlashing
+                    ? `0 0 14px ${theme.flash}33, 0 4px 16px rgba(0,0,0,0.4)`
+                    : "0 4px 16px rgba(0,0,0,0.4)",
                   transition: "all 0.2s ease",
                 }}
               >
@@ -96,7 +116,11 @@ function DoublyLinkedListView({ obj, onMouseDown }) {
                     justifyContent: "center",
                     fontWeight: 600,
                     fontSize: "15px",
-                    color: highlighted ? "#4b8cf7" : "#dce7f8",
+                    color: highlighted
+                      ? "#4b8cf7"
+                      : isFlashing
+                      ? theme.flash
+                      : "#dce7f8",
                     borderRight: "1px solid #1e2d42",
                     fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
                   }}

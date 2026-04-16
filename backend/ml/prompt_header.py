@@ -708,6 +708,26 @@ trace_graph_highlight(char* graph, char* id)
 
 Rules:
 
+0. MANDATORY — ALWAYS EMIT A GRAPH VIEW.
+   If the source code defines, builds, or traverses a graph in ANY representation,
+   you MUST emit trace_graph_init, trace_graph_node (for every vertex),
+   trace_graph_edge (for every edge), and trace_graph_highlight (for every visited
+   node during traversal). This is not optional.
+
+   "Graph representation" explicitly includes ALL of the following — do NOT skip
+   graph tracing just because the code does not look like the canonical examples:
+     - Adjacency matrix: int adj[N][N] or similar.
+     - Adjacency list as separate linked lists: Node** adj, Node* adj[N].
+     - Struct-based graphs: a Graph/Vertex/Node struct with an array of vertices
+       where each vertex owns a neighbor pointer (e.g. Vertex.head, Vertex.next,
+       Vertex.adj) — even if the list is embedded in the vertex struct instead of
+       a separate array.
+     - Edge lists: a flat array of {from, to} pairs.
+     - Any BFS, DFS, shortest-path, cycle-detect, or traversal routine, regardless
+       of how neighbors are stored.
+
+   If in doubt, emit the graph view. A missing graph view is always a bug.
+
 1. Call trace_graph_init ONCE before any node or edge traces.
 
 2. Call trace_graph_node after the vertex's string id field is set.

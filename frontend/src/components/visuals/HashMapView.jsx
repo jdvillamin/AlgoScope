@@ -1,6 +1,22 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useChangedKeys } from "../../visuals/useFlash";
+import { themeFor } from "../../visuals/visualTheme";
 
 function HashMapView({ obj, onMouseDown }) {
+  const entries = useMemo(() => {
+    const out = {};
+    if (obj?.buckets) {
+      for (const [bIdx, chain] of Object.entries(obj.buckets)) {
+        if (!Array.isArray(chain)) continue;
+        for (const e of chain) {
+          if (e && e.key !== undefined) out[`${bIdx}:${e.key}`] = e.value;
+        }
+      }
+    }
+    return out;
+  }, [obj?.buckets]);
+  const changed = useChangedKeys(entries);
+  const theme = themeFor("hashmap");
   const BUCKET_WIDTH = 64;
   const BUCKET_HEIGHT = 40;
   const ENTRY_WIDTH = 120;
@@ -27,7 +43,7 @@ function HashMapView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#506888",
+          color: theme.label,
           marginBottom: "14px",
         }}
       >
@@ -67,6 +83,7 @@ function HashMapView({ obj, onMouseDown }) {
               {/* Entry chain */}
               {entries.map((entry, i) => {
                 const entryX = BUCKET_WIDTH + 52 + i * (ENTRY_WIDTH + CHAIN_GAP);
+                const isFlashing = changed.has(`${index}:${entry.key}`);
                 return (
                   <div
                     key={i}
@@ -77,9 +94,12 @@ function HashMapView({ obj, onMouseDown }) {
                       width: ENTRY_WIDTH,
                       height: ENTRY_HEIGHT,
                       borderRadius: "8px",
-                      border: "1px solid #1e2d42",
+                      border: `1px solid ${isFlashing ? theme.flash : theme.border}`,
                       background: "#131d2e",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+                      boxShadow: isFlashing
+                        ? `0 0 12px ${theme.flash}33, 0 2px 10px rgba(0,0,0,0.3)`
+                        : "0 2px 10px rgba(0,0,0,0.3)",
+                      transition: "all 0.2s ease",
                       display: "flex",
                       overflow: "hidden",
                     }}

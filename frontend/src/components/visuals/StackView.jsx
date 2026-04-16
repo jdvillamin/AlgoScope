@@ -1,6 +1,17 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { useChangedKeys } from "../../visuals/useFlash";
+import { themeFor } from "../../visuals/visualTheme";
 
 function StackView({ obj, onMouseDown }) {
+  const entries = useMemo(() => {
+    const out = {};
+    if (Array.isArray(obj?.items)) {
+      for (let i = 0; i < obj.items.length; i++) out[i] = obj.items[i];
+    }
+    return out;
+  }, [obj?.items]);
+  const changed = useChangedKeys(entries);
+  const theme = themeFor("stack");
   const CELL_WIDTH = 96;
   const CELL_HEIGHT = 48;
   const GAP = 6;
@@ -22,7 +33,7 @@ function StackView({ obj, onMouseDown }) {
           fontSize: "11px",
           fontWeight: 600,
           letterSpacing: "0.8px",
-          color: "#506888",
+          color: theme.label,
           textAlign: "center",
           marginBottom: "10px",
         }}
@@ -38,7 +49,10 @@ function StackView({ obj, onMouseDown }) {
           gap: GAP,
         }}
       >
-        {obj.items.map((value, index) => (
+        {obj.items.map((value, index) => {
+          const isTop = index === obj.topIndex;
+          const isFlashing = changed.has(String(index));
+          return (
           <div
             key={index}
             style={{
@@ -47,11 +61,15 @@ function StackView({ obj, onMouseDown }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: index === obj.topIndex ? "#0f2040" : "#131d2e",
-              border: `1px solid ${index === obj.topIndex ? "#1e3a6e" : "#1e2d42"}`,
-              color: index === obj.topIndex ? "#4b8cf7" : "#c8d8f0",
+              background: isTop ? "#0f2040" : "#131d2e",
+              border: `1px solid ${isTop ? "#1e3a6e" : isFlashing ? theme.flash : theme.border}`,
+              color: isTop ? "#4b8cf7" : isFlashing ? theme.flash : "#c8d8f0",
               borderRadius: "8px",
-              boxShadow: index === obj.topIndex ? "0 0 12px rgba(75,140,247,0.15)" : "none",
+              boxShadow: isTop
+                ? "0 0 12px rgba(75,140,247,0.15)"
+                : isFlashing
+                ? `0 0 12px ${theme.flash}33`
+                : "none",
               transition: "all 0.2s ease",
               fontWeight: 600,
               fontSize: "15px",
@@ -60,7 +78,8 @@ function StackView({ obj, onMouseDown }) {
           >
             {value}
           </div>
-        ))}
+          );
+        })}
 
         {obj.topIndex >= 0 && (
           <div
