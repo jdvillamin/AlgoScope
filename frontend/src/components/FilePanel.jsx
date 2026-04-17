@@ -26,6 +26,22 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
     fontFamily: "inherit",
   };
 
+  const collapsedBtn = {
+    width: "32px",
+    height: "32px",
+    borderRadius: "8px",
+    border: "1px solid #1e2d42",
+    background: "#0f1928",
+    color: "#8fa3c8",
+    fontSize: "14px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    fontFamily: "inherit",
+  };
+
   const toggleCategory = (name) => {
     setExpandedCategories((prev) => ({ ...prev, [name]: !prev[name] }));
   };
@@ -80,92 +96,127 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         </button>
       </div>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".c,text/x-c,text/plain"
+        multiple
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const picked = Array.from(e.target.files || []);
+          picked.forEach((f) => onImportFile?.(f));
+          e.target.value = "";
+        }}
+      />
+
       {/* New File + Import / Export */}
-      <div style={{ padding: "10px 12px 4px" }}>
-        {!collapsed && (
-          <>
+      {collapsed ? (
+        <div style={{ padding: "8px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+          <button onClick={onNewFile} style={collapsedBtn} title="New File">
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} style={collapsedBtn} title="Import file">
+            <span style={{ fontSize: "13px", lineHeight: 1 }}>↑</span>
+          </button>
+          <button onClick={onExportFile} style={collapsedBtn} title="Export file">
+            <span style={{ fontSize: "13px", lineHeight: 1 }}>↓</span>
+          </button>
+          <button
+            onClick={() => activeFileUnsaved && onSaveFile?.()}
+            disabled={!activeFileUnsaved}
+            style={{
+              ...collapsedBtn,
+              border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
+              background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
+              color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
+              cursor: activeFileUnsaved ? "pointer" : "default",
+              fontSize: "13px",
+            }}
+            title={activeFileUnsaved ? "Save file" : "No unsaved changes"}
+          >
+            ✓
+          </button>
+
+          <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
+
+          <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Files">
+            <span style={{ fontSize: "12px", lineHeight: 1 }}>📄</span>
+          </button>
+          <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Sample files">
+            <span style={{ fontSize: "12px", lineHeight: 1 }}>📂</span>
+          </button>
+        </div>
+      ) : (
+        <div style={{ padding: "10px 12px 4px" }}>
+          <button
+            onClick={onNewFile}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "1px solid #1e2d42",
+              background: "#0f1928",
+              color: "#8fa3c8",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontFamily: "inherit",
+            }}
+          >
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+            New File
+          </button>
+          <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
             <button
-              onClick={onNewFile}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                border: "1px solid #1e2d42",
-                background: "#0f1928",
-                color: "#8fa3c8",
-                fontSize: "12.5px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontFamily: "inherit",
-              }}
+              onClick={() => fileInputRef.current?.click()}
+              style={smallBtn}
+              title="Import a .c file from disk"
             >
-              <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
-              New File
+              <span style={{ fontSize: "13px", lineHeight: 1 }}>↑</span>
+              Import
             </button>
-            <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={smallBtn}
-                title="Import a .c file from disk"
-              >
-                <span style={{ fontSize: "13px", lineHeight: 1 }}>↑</span>
-                Import
-              </button>
-              <button
-                onClick={onExportFile}
-                style={smallBtn}
-                title="Download the active file as .c"
-              >
-                <span style={{ fontSize: "13px", lineHeight: 1 }}>↓</span>
-                Export
-              </button>
-            </div>
             <button
-              onClick={() => activeFileUnsaved && onSaveFile?.()}
-              disabled={!activeFileUnsaved}
-              style={{
-                width: "100%",
-                marginTop: "6px",
-                padding: "7px 10px",
-                borderRadius: "6px",
-                border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
-                background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
-                color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: activeFileUnsaved ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                fontFamily: "inherit",
-              }}
-              title={
-                activeFileUnsaved
-                  ? "Save the active file to local storage"
-                  : "No unsaved changes"
-              }
+              onClick={onExportFile}
+              style={smallBtn}
+              title="Download the active file as .c"
             >
-              {activeFileUnsaved ? "Save file" : "Saved"}
+              <span style={{ fontSize: "13px", lineHeight: 1 }}>↓</span>
+              Export
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".c,text/x-c,text/plain"
-              multiple
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const picked = Array.from(e.target.files || []);
-                picked.forEach((f) => onImportFile?.(f));
-                e.target.value = "";
-              }}
-            />
-          </>
-        )}
-      </div>
+          </div>
+          <button
+            onClick={() => activeFileUnsaved && onSaveFile?.()}
+            disabled={!activeFileUnsaved}
+            style={{
+              width: "100%",
+              marginTop: "6px",
+              padding: "7px 10px",
+              borderRadius: "6px",
+              border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
+              background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
+              color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
+              fontSize: "12px",
+              fontWeight: 600,
+              cursor: activeFileUnsaved ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              fontFamily: "inherit",
+            }}
+            title={
+              activeFileUnsaved
+                ? "Save the active file to local storage"
+                : "No unsaved changes"
+            }
+          >
+            {activeFileUnsaved ? "Save file" : "Saved"}
+          </button>
+        </div>
+      )}
 
       {/* File list */}
       {!collapsed && <div
