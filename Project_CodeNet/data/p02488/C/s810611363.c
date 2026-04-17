@@ -1,0 +1,1 @@
+m[6]={123},t[6];main(){for(gets(t);~scanf("%s",t);strcmp(t,m)<0&&strcpy(m,t));*m=!printf("%s\n",m);}

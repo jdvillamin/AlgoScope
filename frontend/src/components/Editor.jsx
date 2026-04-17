@@ -243,7 +243,7 @@ function Editor({
           language="c"
           value={displayedCode}
           onChange={(value) => {
-            if (isProcessing) return;
+            if (isProcessing || isRunning) return;
             if (isInstrumentedTab) {
               setInstrumentedCode?.(value ?? "");
             } else {

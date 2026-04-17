@@ -1,0 +1,2 @@
+#include<stdlib.h>
+p(int*a,int*b){return*a-*b;}c,V,i,f[999];main(d){for(;f[1]=scanf("%d%d",&V,&d)+1;printf("%d\n",c)){for(f[0]=i=2;i<V;f[i++]=f[i-2]+f[i-3]%1001);qsort(f,V,4,p);for(i=c=1;i<V;f[i]-f[i++-1]<d?:c++);}exit(0);}

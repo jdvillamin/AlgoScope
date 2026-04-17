@@ -1,0 +1,1 @@
+n;main(i){for(;n||~(i=scanf("%d",&n));n%2&&printf("%d%c",i,n<2?10:32),i*=2,n/=2);}

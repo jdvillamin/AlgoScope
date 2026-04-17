@@ -53,7 +53,8 @@ int main() {
   trace_line(__LINE__ - 2);
 
   trace_dll_node("list", n2->id, n2->value);
-  trace_dll_link("list", n1->id, n2->id);
+  trace_dll_next_link("list", n1->id, n2->id);
+  trace_dll_prev_link("list", n2->id, n1->id);
 
   // ---- Create third node ----
   Node* n3 = (Node*)malloc(sizeof(Node));
@@ -75,7 +76,8 @@ int main() {
   trace_line(__LINE__ - 2);
 
   trace_dll_node("list", n3->id, n3->value);
-  trace_dll_link("list", n2->id, n3->id);
+  trace_dll_next_link("list", n2->id, n3->id);
+  trace_dll_prev_link("list", n3->id, n2->id);
 
   // ---- Forward Traversal ----
   Node* temp = head;

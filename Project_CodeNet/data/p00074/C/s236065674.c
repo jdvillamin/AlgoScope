@@ -1,0 +1,1 @@
+main(h,m,s){for(;scanf("%d%d%d",&h,&m,&s)*~h;)for(h=(120-h*60-m)*60-s,m=2;m--;h*=3)printf("%02d:%02d:%02d\n",h/3600,h/60%60,h%60);}

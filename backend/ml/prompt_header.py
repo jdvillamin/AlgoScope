@@ -730,11 +730,19 @@ Rules:
 
 1. Call trace_graph_init ONCE before any node or edge traces.
 
-2. Call trace_graph_node after the vertex's string id field is set.
+2. Call trace_graph_node at the exact point where the vertex is created —
+   INSIDE the function that builds or registers the vertex (e.g. addVertex),
+   right after the vertex's string id field is set.
+   Do NOT defer trace_graph_node to the call site in main(); place it inside
+   the creation function so it fires the moment the vertex exists.
    The id argument must be the string identifier of the vertex, NOT an integer index.
-   Call it once per vertex, as soon as the vertex is ready.
+   Call it once per vertex.
 
-3. Call trace_graph_edge after the adjacency link is established in the data structure.
+3. Call trace_graph_edge at the exact point where the adjacency link is established —
+   INSIDE the function that creates the edge (e.g. addEdge), right after the
+   link is wired into the data structure.
+   Do NOT defer trace_graph_edge to the call site in main(); place it inside
+   the edge-creation function so it fires the moment the edge exists.
    Both from_id and to_id must be string IDs previously registered with trace_graph_node.
    Do NOT pass integer indices — pass the string vertex IDs.
 
@@ -1015,22 +1023,35 @@ void dfs(Graph* g, int v) {
     ...
 }
 
-Example (full BFS):
+Example (full BFS with struct-based graph):
 
+/* trace_graph_node goes INSIDE addVertex, not at the call site: */
+int addVertex(Graph* g, char* id) {
+    strcpy(g->vertices[g->size].id, id);
+    g->vertices[g->size].head = NULL;
+    trace_graph_node("G", id);           /* fires the moment vertex exists */
+    g->size++;
+    return g->size - 1;
+}
+
+/* trace_graph_edge goes INSIDE addEdge, not at the call site: */
+void addEdge(Graph* g, int from, int to) {
+    AdjNode* newNode = (AdjNode*)malloc(sizeof(AdjNode));
+    newNode->index = to;
+    newNode->next = g->vertices[from].head;
+    g->vertices[from].head = newNode;
+    trace_graph_edge("G", g->vertices[from].id, g->vertices[to].id);  /* fires the moment edge exists */
+}
+
+/* In main — only trace_graph_init; node/edge traces happen inside the functions: */
 trace_graph_init("G");
-
-int A = addVertex(&g, "A");
-trace_graph_node("G", g.vertices[A].id);
-
-int B = addVertex(&g, "B");
-trace_graph_node("G", g.vertices[B].id);
-
-addEdge(&g, A, B);
-trace_graph_edge("G", g.vertices[A].id, g.vertices[B].id);
+int A = addVertex(&g, "A");   /* trace_graph_node fires inside */
+int B = addVertex(&g, "B");   /* trace_graph_node fires inside */
+addEdge(&g, A, B);            /* trace_graph_edge fires inside */
 
 /* Inside BFS loop: */
 int current = queue[front++];
-trace_graph_highlight("G", g.vertices[current].id);
+trace_graph_highlight("G", g->vertices[current].id);
 
 ==================================================
 INSTRUMENTATION STRATEGY

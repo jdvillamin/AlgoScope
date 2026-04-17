@@ -1,0 +1,23 @@
+#include<stdio.h>
+
+int main()
+{
+  char b;
+
+  scanf("%c", &b);
+
+  if(b=='A'){
+    print("T\n");
+  }
+  else if(b=='T'){
+    printf("A\n");
+  }
+  else if(b=='C'){
+    printf("G\n");
+  }
+  else if(b=='G'){
+    printf("C\n");
+  }
+
+  return 0;
+}

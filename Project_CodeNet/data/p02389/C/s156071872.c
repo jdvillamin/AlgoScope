@@ -1,0 +1,11 @@
+#include<stdio.h>
+#include<stdbool.h>
+
+int main()
+{
+  int a, b;
+  scanf("%d %d", &a, &b);
+  printf("%d\n", a*b);
+  printf("%d\n", 2*a+2*b);
+  return 0;
+}

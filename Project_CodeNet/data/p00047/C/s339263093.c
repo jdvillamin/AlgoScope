@@ -1,0 +1,1 @@
+char a[9];b=65;main(){for(;read(0,a,5);)b=b-*a?b-a[2]?b:*a:a[2];exit(!puts(&b));}

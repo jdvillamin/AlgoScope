@@ -4,6 +4,7 @@ import Canvas from "./components/Canvas";
 import Controls from "./components/Controls";
 import FilePanel from "./components/FilePanel";
 import UnsavedPrompt from "./components/UnsavedPrompt";
+import ConfirmPrompt from "./components/ConfirmPrompt";
 import API from "./api/backend";
 
 const STORAGE_KEY = "algoscope:state:v2";
@@ -136,6 +137,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [runPhase, setRunPhase] = useState("Idle");
   const [lockToLine, setLockToLine] = useState(true);
+  const [overwritePromptOpen, setOverwritePromptOpen] = useState(false);
 
   // Resizable / hidable editor panel.
   const [editorWidth, setEditorWidth] = useState(() => {
@@ -523,48 +525,56 @@ function App() {
         setIsProcessing(false);
       }
     } else {
-      try {
-        setIsProcessing(true);
-        setRunPhase("Preparing source code...");
-        setError("");
-        clearActiveFileTrace();
-        setCurrentStep(0);
-
-        await new Promise((r) => setTimeout(r, 120));
-
-        setRunPhase("Sending code to server...");
-        await new Promise((r) => setTimeout(r, 120));
-
-        setRunPhase("Instrumenting source code...");
-        const res = await API.post("/run", {
-          code: code,
-          instrument_only: true,
-        });
-
-        console.log("Backend response:", res.data);
-
-        if (res.data.error) {
-          setRunPhase("Instrumentation failed.");
-          setError(res.data.error);
-          setIsProcessing(false);
-          return;
-        }
-
-        if (typeof res.data.instrumented_code === "string") {
-          setInstrumentedCode(res.data.instrumented_code);
-        }
-
-        setRunPhase("Instrumentation complete.");
-        setActiveTab("instrumented");
-        setTimeout(() => {
-          setIsProcessing(false);
-        }, 250);
-      } catch (err) {
-        console.error(err);
-        setRunPhase("Connection error.");
-        setError("Unable to reach the server. Please check your connection and try again.");
-        setIsProcessing(false);
+      if (instrumentedCode.trim()) {
+        setOverwritePromptOpen(true);
+        return;
       }
+      doInstrument();
+    }
+  };
+
+  const doInstrument = async () => {
+    try {
+      setIsProcessing(true);
+      setRunPhase("Preparing source code...");
+      setError("");
+      clearActiveFileTrace();
+      setCurrentStep(0);
+
+      await new Promise((r) => setTimeout(r, 120));
+
+      setRunPhase("Sending code to server...");
+      await new Promise((r) => setTimeout(r, 120));
+
+      setRunPhase("Instrumenting source code...");
+      const res = await API.post("/run", {
+        code: code,
+        instrument_only: true,
+      });
+
+      console.log("Backend response:", res.data);
+
+      if (res.data.error) {
+        setRunPhase("Instrumentation failed.");
+        setError(res.data.error);
+        setIsProcessing(false);
+        return;
+      }
+
+      if (typeof res.data.instrumented_code === "string") {
+        setInstrumentedCode(res.data.instrumented_code);
+      }
+
+      setRunPhase("Instrumentation complete.");
+      setActiveTab("instrumented");
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 250);
+    } catch (err) {
+      console.error(err);
+      setRunPhase("Connection error.");
+      setError("Unable to reach the server. Please check your connection and try again.");
+      setIsProcessing(false);
     }
   };
 
@@ -625,6 +635,14 @@ function App() {
         onSave={handlePromptSave}
         onDiscard={handlePromptDiscard}
         onCancel={handlePromptCancel}
+      />
+      <ConfirmPrompt
+        open={overwritePromptOpen}
+        title="Overwrite instrumented code"
+        message="Instrumented code already exists for this file. Re-instrumenting will replace it."
+        confirmLabel="Overwrite"
+        onConfirm={() => { setOverwritePromptOpen(false); doInstrument(); }}
+        onCancel={() => setOverwritePromptOpen(false)}
       />
 
       {/* LEFT: Canvas */}

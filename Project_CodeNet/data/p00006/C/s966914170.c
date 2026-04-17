@@ -1,0 +1,1 @@
+n;main(i){n=i+1?main(getchar())&putchar(i-1?i:10):0;}

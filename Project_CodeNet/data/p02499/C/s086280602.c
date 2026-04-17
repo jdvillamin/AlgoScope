@@ -1,0 +1,1 @@
+n[];main(i){for(;read(0,n,1);n[toupper(*n)]++);for(i=65;*n=i<91;printf("%c : %d\n",i+++32,n[i]));}

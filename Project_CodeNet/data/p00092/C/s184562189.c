@@ -1,0 +1,1 @@
+z[2002],*a=z,*b=z+1001,m,i,j;main(n){for(;scanf("%d",&n),i=n;printf("%d\n",m))for(memset(a,m=0,4004);i--;j=a,a=b,b=j)for(j=scanf(" ");j++<n;)m=fmax(m,b[j]=getchar()-42?1+fmin(fmin(b[j-1],a[j-1]),a[j]):0);}

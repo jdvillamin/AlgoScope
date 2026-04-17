@@ -30,7 +30,7 @@ int main() {
   trace_line(__LINE__ - 1);
 
   trace_ll_node("head", n1->id, n1->value);
-  trace_ll_pointer("head", n1->id);
+  trace_ll_pointer("head", "head", n1->id);
 
   // ---- Create second node ----
   Node* n2 = (Node*)malloc(sizeof(Node));
@@ -73,11 +73,11 @@ int main() {
   // ---- Traversal ----
   Node* temp = head;
   trace_line(__LINE__ - 1);
-  trace_ll_pointer("temp", temp->id);
+  trace_ll_pointer("head", "temp", temp->id);
 
   while (temp != NULL) {
     trace_ll_highlight("head", temp->id);
-    trace_ll_pointer("temp", temp->id);
+    trace_ll_pointer("head", "temp", temp->id);
 
     temp = temp->next;
     trace_line(__LINE__ - 1);
