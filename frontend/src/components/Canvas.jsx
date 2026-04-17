@@ -343,6 +343,8 @@ function Canvas({ trace = [], currentStep = 0 }) {
           gap: "6px",
           alignItems: "center",
           boxSizing: "border-box",
+          overflow: "hidden",
+          minWidth: 0,
         }}
       >
         <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
@@ -378,6 +380,8 @@ function Canvas({ trace = [], currentStep = 0 }) {
             width: "auto",
             padding: "0 12px",
             fontSize: "12px",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
             ...(optimalMode
               ? {
                   background: "#1a2f5a",
@@ -393,7 +397,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
           ⊞ Optimal fit{optimalMode ? " ✓" : ""}
         </button>
         <button
-          style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px" }}
+          style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={handleResetLayout}
           title="Reset layout — unpin all objects, return to greedy auto-layout"
         >

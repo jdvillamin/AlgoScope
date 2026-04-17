@@ -16,3 +16,6 @@ a.out
 
 # Editor
 .vscode/
+
+# Datasets
+datasets/

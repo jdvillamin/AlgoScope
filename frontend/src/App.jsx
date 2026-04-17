@@ -140,7 +140,7 @@ function App() {
   // Resizable / hidable editor panel.
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = parseInt(localStorage.getItem("algoscope:editorWidth") || "", 10);
-    return Number.isFinite(saved) && saved >= 320 ? saved : 560;
+    return Number.isFinite(saved) && saved >= 360 ? saved : 560;
   });
   const [editorHidden, setEditorHidden] = useState(
     () => localStorage.getItem("algoscope:editorHidden") === "1"
@@ -158,12 +158,12 @@ function App() {
     if (!isResizing) return;
     const onMove = (e) => {
       const next = window.innerWidth - e.clientX;
-      if (next < 260) {
+      if (next < 300) {
         setEditorHidden(true);
         setIsResizing(false);
         return;
       }
-      const clamped = Math.max(320, Math.min(next, window.innerWidth - 400));
+      const clamped = Math.max(360, Math.min(next, window.innerWidth - 400));
       setEditorWidth(clamped);
     };
     const onUp = () => setIsResizing(false);
@@ -518,8 +518,8 @@ function App() {
         }, 250);
       } catch (err) {
         console.error(err);
-        setRunPhase("Backend error.");
-        setError("Backend error. Is Flask running?");
+        setRunPhase("Connection error.");
+        setError("Unable to reach the server. Please check your connection and try again.");
         setIsProcessing(false);
       }
     } else {
@@ -532,7 +532,7 @@ function App() {
 
         await new Promise((r) => setTimeout(r, 120));
 
-        setRunPhase("Sending code to backend...");
+        setRunPhase("Sending code to server...");
         await new Promise((r) => setTimeout(r, 120));
 
         setRunPhase("Instrumenting source code...");
@@ -561,8 +561,8 @@ function App() {
         }, 250);
       } catch (err) {
         console.error(err);
-        setRunPhase("Backend error.");
-        setError("Backend error. Is Flask running?");
+        setRunPhase("Connection error.");
+        setError("Unable to reach the server. Please check your connection and try again.");
         setIsProcessing(false);
       }
     }
@@ -732,6 +732,7 @@ function App() {
             setLockToLine={setLockToLine}
             onDeInstrument={deInstrument}
             onHide={() => setEditorHidden(true)}
+            editorWidth={editorWidth}
           />
         </div>
 

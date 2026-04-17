@@ -53,8 +53,9 @@ def run_code():
         try:
             code = instrument_code(code)
         except Exception as e:
+            app.logger.error("Instrumentation failed: %s", e)
             return jsonify({
-                "error": f"Instrumentation error: {str(e)}"
+                "error": "Instrumentation failed. Please check your code and try again."
             })
 
     if instrument_only:
@@ -84,8 +85,17 @@ def run_code():
         )
 
         if compile_proc.returncode != 0:
+            raw_stderr = compile_proc.stderr or ""
+            clean_lines = []
+            for line in raw_stderr.splitlines():
+                if "main.c:" in line:
+                    parts = line.split("main.c:", 1)
+                    clean_lines.append("Line " + parts[1] if len(parts) > 1 else line)
+                elif line.strip() and not line.startswith("/"):
+                    clean_lines.append(line)
+            user_msg = "\n".join(clean_lines).strip() if clean_lines else "Compilation failed. Please check your code for syntax errors."
             return jsonify({
-                "error": compile_proc.stderr,
+                "error": user_msg,
                 "instrumented_code": code
             })
 
@@ -98,12 +108,13 @@ def run_code():
             )
         except subprocess.TimeoutExpired:
             return jsonify({
-                "error": "Execution timed out.",
+                "error": "Your program took too long to finish and was stopped. Check for infinite loops or reduce input size.",
                 "instrumented_code": code
             })
         except Exception as e:
+            app.logger.error("Runtime error: %s", e)
             return jsonify({
-                "error": f"Runtime error: {str(e)}",
+                "error": "Something went wrong while running your program. Please try again.",
                 "instrumented_code": code
             })
 
@@ -111,8 +122,12 @@ def run_code():
         stderr_text = safe_decode(run_proc.stderr)
 
         if run_proc.returncode != 0:
+            if stderr_text.strip():
+                user_msg = re.sub(r'/[^\s:]+/', '', stderr_text).strip()
+            else:
+                user_msg = f"Your program exited with an error (code {run_proc.returncode})."
             return jsonify({
-                "error": stderr_text if stderr_text.strip() else f"Program exited with code {run_proc.returncode}.",
+                "error": user_msg,
                 "trace": stdout_text.splitlines(),
                 "instrumented_code": code
             })
@@ -125,4 +140,4 @@ def run_code():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1")

@@ -19,6 +19,7 @@ function Editor({
   setLockToLine,
   onDeInstrument,
   onHide,
+  editorWidth = 560,
 }) {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -118,6 +119,11 @@ function Editor({
     letterSpacing: "0.1px",
     marginBottom: "-1px",
     transition: "color 0.15s, border-color 0.15s",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    flexShrink: 1,
+    minWidth: 0,
   });
 
   return (
@@ -141,10 +147,12 @@ function Editor({
           alignItems: "stretch",
           gap: "16px",
           height: "44px",
+          overflow: "hidden",
+          minWidth: 0,
         }}
       >
         {/* Tabs */}
-        <div style={{ display: "flex", alignItems: "stretch", gap: "20px" }}>
+        <div style={{ display: "flex", alignItems: "stretch", gap: "20px", minWidth: 0, overflow: "hidden" }}>
           <button
             onClick={() => setActiveTab("raw")}
             style={tabStyle(activeTab === "raw")}
@@ -162,7 +170,7 @@ function Editor({
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
           <button
             onClick={() => setLockToLine((v) => !v)}
             style={{
@@ -205,7 +213,7 @@ function Editor({
             }}
             title={isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
           >
-            {isProcessing ? "⋯" : "▶"}&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}
+            {isProcessing ? "⋯" : "▶"}{editorWidth >= 480 && <>&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}</>}
           </button>
 
           <button
