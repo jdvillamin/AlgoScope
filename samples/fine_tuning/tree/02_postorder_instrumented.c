@@ -36,6 +36,7 @@ void postorder(Node* node) {
     trace_line(29);
     for (int i = 0; i < node->childCount; i++) {
         trace_line(29);
+        trace_var_init("i", i);
         trace_line(30);
         postorder(node->children[i]);
     }

@@ -66,6 +66,7 @@ int main() {
     trace_line(43);
     for (int i = 0; i < n; i++) {
         trace_line(43);
+        trace_var_init("i", i);
         trace_line(44);
         int complement = target - arr[i];
         trace_var_init("complement", complement);

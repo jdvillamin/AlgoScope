@@ -68,3 +68,4 @@ python app.py    # Flask dev server on :5000
 | File | When to read |
 |------|--------------|
 | `.claude/docs/architectural_patterns.md` | Before modifying state flow, adding new data structure support, or extending the backend pipeline |
+| `.claude/docs/datasets.md` | Before creating or editing sample files, or when handling user code with large constants |

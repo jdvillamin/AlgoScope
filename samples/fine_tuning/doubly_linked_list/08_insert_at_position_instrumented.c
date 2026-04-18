@@ -104,6 +104,7 @@ int main() {
     trace_line(51);
     for (int i = 0; i < 1; i++) {
         trace_line(51);
+        trace_var_init("i", i);
         trace_dll_highlight("dll", curr->id);
         trace_line(52);
         curr = curr->next;

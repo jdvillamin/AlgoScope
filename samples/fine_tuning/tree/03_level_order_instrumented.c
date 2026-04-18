@@ -88,6 +88,7 @@ int main() {
         trace_line(50);
         for (int i = 0; i < current->childCount; i++) {
             trace_line(50);
+            trace_var_init("i", i);
             trace_line(51);
             queue[rear++] = current->children[i];
         }

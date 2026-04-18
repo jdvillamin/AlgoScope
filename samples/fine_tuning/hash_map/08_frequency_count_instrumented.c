@@ -63,6 +63,7 @@ int main() {
     trace_line(42);
     for (int i = 0; i < n; i++) {
         trace_line(42);
+        trace_var_init("i", i);
         trace_line(43);
         Entry* e = find(arr[i]);
         trace_line(44);

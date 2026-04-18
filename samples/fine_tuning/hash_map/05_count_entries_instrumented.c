@@ -55,6 +55,7 @@ int main() {
     trace_line(37);
     for (int i = 0; i < SIZE; i++) {
         trace_line(37);
+        trace_var_init("i", i);
         trace_line(38);
         Entry* e = table[i];
         trace_line(39);

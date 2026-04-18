@@ -39,6 +39,7 @@ int search(Node* node, const char* target) {
     trace_line(30);
     for (int i = 0; i < node->childCount; i++) {
         trace_line(30);
+        trace_var_init("i", i);
         trace_line(31);
         if (search(node->children[i], target)) return 1;
     }

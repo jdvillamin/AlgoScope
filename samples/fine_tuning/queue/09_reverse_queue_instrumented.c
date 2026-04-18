@@ -50,6 +50,7 @@ int main() {
   trace_line(25);
   for (int i = 0; i < count; i++) {
     trace_line(25);
+    trace_var_init("i", i);
     trace_line(26);
     temp[i] = queue[front];
     trace_queue_dequeue("Q");
@@ -68,6 +69,7 @@ int main() {
   trace_line(33);
   for (int i = count - 1; i >= 0; i--) {
     trace_line(33);
+    trace_var_init("i", i);
     trace_line(34);
     rear++;
     trace_var("rear", rear);

@@ -25,12 +25,14 @@ int main() {
   trace_line(10);
   for (int i = 0; i < 3; i++) {
     trace_line(10);
+    trace_var_init("i", i);
     trace_line(11);
     int sum = 0;
     trace_var_init("sum", sum);
     trace_line(12);
     for (int j = 0; j < 4; j++) {
       trace_line(12);
+      trace_var_init("j", j);
       trace_line(13);
       trace_array2d_highlight("mat", i, j);
       sum += mat[i][j];

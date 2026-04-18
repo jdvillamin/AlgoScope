@@ -23,6 +23,7 @@ int main() {
   trace_line(13);
   for (int i = 0; i < n; i++) {
     trace_line(13);
+    trace_var_init("i", i);
     trace_line(14);
     int val;
     trace_line(15);

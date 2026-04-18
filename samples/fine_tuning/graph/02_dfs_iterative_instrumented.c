@@ -16,63 +16,75 @@ typedef struct {
 } Graph;
 
 int addVertex(Graph* g, const char* id) {
-    trace_line(18);
+    trace_line(17);
     int idx = g->vertexCount;
-    trace_line(19);
+    trace_var_init("idx", idx);
+    trace_line(18);
     strcpy(g->vertices[idx].id, id);
-    trace_line(20);
+    trace_graph_node("G", g->vertices[idx].id);
+    trace_line(19);
     g->vertexCount++;
     return idx;
 }
 
 void addEdge(Graph* g, int from, int to) {
-    trace_line(25);
+    trace_line(24);
     g->adj[from][to] = 1;
-    trace_line(26);
+    trace_array2d("adj", from, to, 1);
+    trace_line(25);
     g->adj[to][from] = 1;
+    trace_array2d("adj", to, from, 1);
+    trace_graph_edge("G", g->vertices[from].id, g->vertices[to].id);
 }
 
 int main() {
     Graph g;
+    trace_line(30);
     memset(&g, 0, sizeof(Graph));
     trace_graph_init("G");
 
     trace_line(32);
     int A = addVertex(&g, "A");
-    trace_graph_node("G", g.vertices[A].id);
+    trace_var_init("A", A);
     trace_line(33);
     int B = addVertex(&g, "B");
-    trace_graph_node("G", g.vertices[B].id);
+    trace_var_init("B", B);
     trace_line(34);
     int C = addVertex(&g, "C");
-    trace_graph_node("G", g.vertices[C].id);
+    trace_var_init("C", C);
     trace_line(35);
     int D = addVertex(&g, "D");
-    trace_graph_node("G", g.vertices[D].id);
+    trace_var_init("D", D);
+
+    trace_array2d_init("adj", g.vertexCount, g.vertexCount);
+    for (int _r = 0; _r < g.vertexCount; _r++)
+        for (int _c = 0; _c < g.vertexCount; _c++)
+            trace_array2d("adj", _r, _c, g.adj[_r][_c]);
 
     trace_line(37);
     addEdge(&g, A, B);
-    trace_graph_edge("G", g.vertices[A].id, g.vertices[B].id);
     trace_line(38);
     addEdge(&g, A, C);
-    trace_graph_edge("G", g.vertices[A].id, g.vertices[C].id);
     trace_line(39);
     addEdge(&g, B, D);
-    trace_graph_edge("G", g.vertices[B].id, g.vertices[D].id);
 
     int visited[MAX_V] = {0};
     int stack[MAX_V];
     trace_line(43);
     int top = -1;
+    trace_var_init("top", top);
 
     trace_line(45);
     stack[++top] = A;
+    trace_var("top", top);
 
     trace_line(47);
     while (top >= 0) {
         trace_line(47);
         trace_line(48);
         int current = stack[top--];
+        trace_var_init("current", current);
+        trace_var("top", top);
         trace_line(49);
         if (visited[current]) continue;
         trace_line(50);
@@ -83,10 +95,13 @@ int main() {
         trace_line(52);
         for (int i = g.vertexCount - 1; i >= 0; i--) {
             trace_line(52);
+            trace_var_init("i", i);
+            trace_array2d_highlight("adj", current, i);
             trace_line(53);
             if (g.adj[current][i] && !visited[i]) {
                 trace_line(54);
                 stack[++top] = i;
+                trace_var("top", top);
             }
         }
     }

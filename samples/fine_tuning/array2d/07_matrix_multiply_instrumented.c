@@ -29,15 +29,18 @@ int main() {
   trace_line(16);
   for (int i = 0; i < 2; i++) {
     trace_line(16);
+    trace_var_init("i", i);
     trace_line(17);
     for (int j = 0; j < 2; j++) {
       trace_line(17);
+      trace_var_init("j", j);
       trace_line(18);
       c[i][j] = 0;
       trace_array2d("c", i, j, 0);
       trace_line(19);
       for (int k = 0; k < 2; k++) {
         trace_line(19);
+        trace_var_init("k", k);
         trace_line(20);
         trace_array2d_highlight("a", i, k);
         trace_array2d_highlight("b", k, j);
@@ -50,9 +53,11 @@ int main() {
   trace_line(25);
   for (int i = 0; i < 2; i++) {
     trace_line(25);
+    trace_var_init("i", i);
     trace_line(26);
     for (int j = 0; j < 2; j++) {
       trace_line(26);
+      trace_var_init("j", j);
       trace_line(27);
       printf("%d ", c[i][j]);
     }

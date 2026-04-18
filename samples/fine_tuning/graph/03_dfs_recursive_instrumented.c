@@ -20,18 +20,23 @@ int visited[MAX_V] = {0};
 int addVertex(Graph* g, const char* id) {
     trace_line(19);
     int idx = g->vertexCount;
+    trace_var_init("idx", idx);
     trace_line(20);
     strcpy(g->vertices[idx].id, id);
+    trace_graph_node("G", g->vertices[idx].id);
     trace_line(21);
     g->vertexCount++;
     return idx;
 }
 
 void addEdge(Graph* g, int from, int to) {
-    trace_line(26);
+    trace_line(25);
     g->adj[from][to] = 1;
-    trace_line(27);
+    trace_array2d("adj", from, to, 1);
+    trace_line(26);
     g->adj[to][from] = 1;
+    trace_array2d("adj", to, from, 1);
+    trace_graph_edge("G", g->vertices[from].id, g->vertices[to].id);
 }
 
 void dfs(Graph* g, int v) {
@@ -43,6 +48,8 @@ void dfs(Graph* g, int v) {
     trace_line(33);
     for (int i = 0; i < g->vertexCount; i++) {
         trace_line(33);
+        trace_var_init("i", i);
+        trace_array2d_highlight("adj", v, i);
         trace_line(34);
         if (g->adj[v][i] && !visited[i]) {
             trace_line(35);
@@ -53,43 +60,45 @@ void dfs(Graph* g, int v) {
 
 int main() {
     Graph g;
+    trace_line(42);
     memset(&g, 0, sizeof(Graph));
     trace_graph_init("G");
 
-    trace_line(43);
-    int A = addVertex(&g, "A");
-    trace_graph_node("G", g.vertices[A].id);
     trace_line(44);
-    int B = addVertex(&g, "B");
-    trace_graph_node("G", g.vertices[B].id);
+    int A = addVertex(&g, "A");
+    trace_var_init("A", A);
     trace_line(45);
-    int C = addVertex(&g, "C");
-    trace_graph_node("G", g.vertices[C].id);
+    int B = addVertex(&g, "B");
+    trace_var_init("B", B);
     trace_line(46);
-    int D = addVertex(&g, "D");
-    trace_graph_node("G", g.vertices[D].id);
+    int C = addVertex(&g, "C");
+    trace_var_init("C", C);
     trace_line(47);
+    int D = addVertex(&g, "D");
+    trace_var_init("D", D);
+    trace_line(48);
     int E = addVertex(&g, "E");
-    trace_graph_node("G", g.vertices[E].id);
+    trace_var_init("E", E);
 
-    trace_line(49);
-    addEdge(&g, A, B);
-    trace_graph_edge("G", g.vertices[A].id, g.vertices[B].id);
+    trace_array2d_init("adj", g.vertexCount, g.vertexCount);
+    for (int _r = 0; _r < g.vertexCount; _r++)
+        for (int _c = 0; _c < g.vertexCount; _c++)
+            trace_array2d("adj", _r, _c, g.adj[_r][_c]);
+
     trace_line(50);
-    addEdge(&g, A, C);
-    trace_graph_edge("G", g.vertices[A].id, g.vertices[C].id);
+    addEdge(&g, A, B);
     trace_line(51);
-    addEdge(&g, B, D);
-    trace_graph_edge("G", g.vertices[B].id, g.vertices[D].id);
+    addEdge(&g, A, C);
     trace_line(52);
+    addEdge(&g, B, D);
+    trace_line(53);
     addEdge(&g, C, E);
-    trace_graph_edge("G", g.vertices[C].id, g.vertices[E].id);
 
-    trace_line(54);
-    dfs(&g, A);
     trace_line(55);
+    dfs(&g, A);
+    trace_line(56);
     printf("\n");
 
-    trace_line(57);
+    trace_line(58);
     return 0;
 }
