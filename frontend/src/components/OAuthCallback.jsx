@@ -28,10 +28,12 @@ function OAuthCallback({ onTokens }) {
     const refreshToken = params.get("refresh_token");
 
     if (accessToken && refreshToken) {
-      onTokens(accessToken, refreshToken);
+      onTokens(accessToken, refreshToken).then(() => {
+        window.location.href = "/";
+      });
+    } else {
+      window.location.href = "/";
     }
-
-    window.history.replaceState(null, "", "/");
   }, [onTokens]);
 
   if (error) {
