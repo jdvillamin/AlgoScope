@@ -58,7 +58,6 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         borderRight: "1px solid #1a2535",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
         transition: "width 0.2s ease, min-width 0.2s ease",
       }}
     >

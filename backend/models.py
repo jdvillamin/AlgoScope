@@ -3,9 +3,12 @@ from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
+limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
 
 
 class User(db.Model):
@@ -14,7 +17,7 @@ class User(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(128), nullable=True)
+    password_hash = db.Column(db.String(255), nullable=True)
     oauth_provider = db.Column(db.String(20), nullable=True)
     oauth_id = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))

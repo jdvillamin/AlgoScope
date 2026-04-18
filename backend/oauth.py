@@ -1,11 +1,10 @@
 import os
-from urllib.parse import urlencode
 
 from authlib.integrations.flask_client import OAuth
 from flask import Blueprint, redirect, url_for, current_app
-from flask_jwt_extended import create_access_token, create_refresh_token
 
-from models import db, User
+from models import db, limiter, User
+from auth_utils import create_exchange_code
 
 oauth_bp = Blueprint("oauth", __name__, url_prefix="/api/auth")
 oauth = OAuth()
@@ -62,17 +61,13 @@ def _find_or_create_user(provider, oauth_id, email, name):
     return user
 
 
-def _redirect_with_tokens(user):
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
-    params = urlencode({
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    })
-    return redirect(f"{FRONTEND_URL}/auth/callback#{params}")
+def _redirect_with_code(user):
+    code = create_exchange_code(user.id)
+    return redirect(f"{FRONTEND_URL}/auth/callback?code={code}")
 
 
 @oauth_bp.route("/google", methods=["GET"])
+@limiter.limit("10/minute")
 def google_login():
     redirect_uri = url_for("oauth.google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
@@ -84,20 +79,21 @@ def google_callback():
         token = oauth.google.authorize_access_token()
     except Exception as e:
         current_app.logger.error("Google OAuth error: %s", e)
-        return redirect(f"{FRONTEND_URL}/auth/callback#error=oauth_failed")
+        return redirect(f"{FRONTEND_URL}/auth/callback?error=oauth_failed")
     userinfo = token.get("userinfo") or oauth.google.userinfo()
     if not userinfo.get("email_verified"):
-        return redirect(f"{FRONTEND_URL}/auth/callback#error=email_not_verified")
+        return redirect(f"{FRONTEND_URL}/auth/callback?error=email_not_verified")
     user = _find_or_create_user(
         provider="google",
         oauth_id=userinfo["sub"],
         email=userinfo["email"],
         name=userinfo.get("name"),
     )
-    return _redirect_with_tokens(user)
+    return _redirect_with_code(user)
 
 
 @oauth_bp.route("/github", methods=["GET"])
+@limiter.limit("10/minute")
 def github_login():
     redirect_uri = url_for("oauth.github_callback", _external=True)
     return oauth.github.authorize_redirect(redirect_uri)
@@ -109,7 +105,7 @@ def github_callback():
         token = oauth.github.authorize_access_token()
     except Exception as e:
         current_app.logger.error("GitHub OAuth error: %s", e)
-        return redirect(f"{FRONTEND_URL}/auth/callback#error=oauth_failed")
+        return redirect(f"{FRONTEND_URL}/auth/callback?error=oauth_failed")
     resp = oauth.github.get("user", token=token)
     profile = resp.json()
 
@@ -121,7 +117,7 @@ def github_callback():
         if not primary:
             primary = next((e for e in emails if e.get("verified")), None)
         if not primary:
-            return redirect(f"{FRONTEND_URL}/auth/callback#error=email_not_verified")
+            return redirect(f"{FRONTEND_URL}/auth/callback?error=email_not_verified")
         email = primary["email"]
 
     user = _find_or_create_user(
@@ -130,4 +126,4 @@ def github_callback():
         email=email,
         name=profile.get("login"),
     )
-    return _redirect_with_tokens(user)
+    return _redirect_with_code(user)

@@ -14,7 +14,7 @@ import os
 import shutil
 
 from ml.instrumenter import instrument_code
-from models import db, bcrypt, RunHistory
+from models import db, bcrypt, limiter, RunHistory
 
 app = Flask(__name__)
 
@@ -26,14 +26,14 @@ if _db_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+_is_production = os.environ.get("FLASK_ENV") == "production"
 _secret = os.environ.get("SECRET_KEY")
 _jwt_secret = os.environ.get("JWT_SECRET_KEY")
 if not _secret or not _jwt_secret:
-    if os.environ.get("FLASK_DEBUG") == "1" or os.environ.get("RENDER") is None:
-        _secret = _secret or "dev-secret-change-in-production"
-        _jwt_secret = _jwt_secret or "dev-jwt-secret-change-in-production"
-    else:
+    if _is_production:
         raise RuntimeError("SECRET_KEY and JWT_SECRET_KEY must be set in production")
+    _secret = _secret or "dev-secret-change-in-production"
+    _jwt_secret = _jwt_secret or "dev-jwt-secret-change-in-production"
 app.config["SECRET_KEY"] = _secret
 app.config["JWT_SECRET_KEY"] = _jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
@@ -42,6 +42,7 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 db.init_app(app)
 bcrypt.init_app(app)
 jwt = JWTManager(app)
+limiter.init_app(app)
 migrate = Migrate(app, db)
 
 from auth import auth_bp
@@ -62,7 +63,12 @@ _allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 _allowed_origins.extend(
     origin.strip() for origin in _frontend_origin_env.split(",") if origin.strip()
 )
-CORS(app, origins=_allowed_origins)
+CORS(app, origins=_allowed_origins, supports_credentials=True)
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Too many requests. Please try again later."}), 429
 
 
 @app.route("/health", methods=["GET"])
@@ -93,12 +99,19 @@ def _save_run_history(user_id, code, trace, status):
 
 
 @app.route("/run", methods=["POST"])
+@limiter.limit("10/minute")
 def run_code():
-    body = request.json
-    code = body["code"]
+    body = request.get_json(silent=True) or {}
+    code = body.get("code") or ""
+    if not code:
+        return jsonify({"error": "Code is required."}), 400
+    if len(code) > 50_000:
+        return jsonify({"error": "Code exceeds the maximum allowed length (50 000 characters)."}), 400
     skip_instrumentation = body.get("skip_instrumentation", False)
     instrument_only = body.get("instrument_only", False)
     stdin_text = body.get("stdin", "")
+    if len(stdin_text) > 1_000:
+        return jsonify({"error": "Input exceeds the maximum allowed length (1 000 characters)."}), 400
     user_id = _get_optional_user_id()
 
     if not instrument_only:

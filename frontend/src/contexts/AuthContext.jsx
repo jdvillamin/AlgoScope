@@ -2,30 +2,12 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import API from "../api/backend";
 import { AuthContext } from "./authContext";
 
-const TOKEN_KEY = "algoscope:tokens";
-
-function loadTokens() {
-  try {
-    const raw = localStorage.getItem(TOKEN_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
+function setAuthHeader(token) {
+  if (token) {
+    API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete API.defaults.headers.common["Authorization"];
   }
-}
-
-function saveTokens(tokens) {
-  if (tokens) localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
-  else localStorage.removeItem(TOKEN_KEY);
-}
-
-function applyTokens(tokens) {
-  saveTokens(tokens);
-  API.defaults.headers.common["Authorization"] = `Bearer ${tokens.access_token}`;
-}
-
-function clearTokens() {
-  saveTokens(null);
-  delete API.defaults.headers.common["Authorization"];
 }
 
 export function AuthProvider({ children }) {
@@ -36,21 +18,18 @@ export function AuthProvider({ children }) {
 
   const clearAuth = useCallback(() => {
     setUser(null);
-    clearTokens();
+    setAuthHeader(null);
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
   }, []);
 
   useEffect(() => {
-    scheduleRef.current = (tokens) => {
+    scheduleRef.current = () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
       refreshTimer.current = setTimeout(async () => {
         try {
-          const res = await API.post("/api/auth/refresh", null, {
-            headers: { Authorization: `Bearer ${tokens.refresh_token}` },
-          });
-          const newTokens = { ...tokens, access_token: res.data.access_token };
-          applyTokens(newTokens);
-          scheduleRef.current?.(newTokens);
+          const res = await API.post("/api/auth/refresh");
+          setAuthHeader(res.data.access_token);
+          scheduleRef.current?.();
         } catch {
           clearAuth();
         }
@@ -60,15 +39,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const init = async () => {
-      const tokens = loadTokens();
-      if (!tokens?.access_token) return;
-      API.defaults.headers.common["Authorization"] = `Bearer ${tokens.access_token}`;
       try {
-        const res = await API.get("/api/auth/me");
+        const res = await API.post("/api/auth/refresh");
+        setAuthHeader(res.data.access_token);
         setUser(res.data.user);
-        scheduleRef.current?.(tokens);
+        scheduleRef.current?.();
       } catch {
-        clearAuth();
+        // No valid session
       }
     };
     init().finally(() => setLoading(false));
@@ -82,40 +59,39 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (email, username, password) => {
     const res = await API.post("/api/auth/register", { email, username, password });
-    const tokens = { access_token: res.data.access_token, refresh_token: res.data.refresh_token };
-    applyTokens(tokens);
+    setAuthHeader(res.data.access_token);
     setUser(res.data.user);
-    scheduleRef.current?.(tokens);
+    scheduleRef.current?.();
     return res.data;
   }, []);
 
   const login = useCallback(async (email, password) => {
     const res = await API.post("/api/auth/login", { email, password });
-    const tokens = { access_token: res.data.access_token, refresh_token: res.data.refresh_token };
-    applyTokens(tokens);
+    setAuthHeader(res.data.access_token);
     setUser(res.data.user);
-    scheduleRef.current?.(tokens);
+    scheduleRef.current?.();
     return res.data;
   }, []);
 
-  const loginWithTokens = useCallback(async (accessToken, refreshToken) => {
-    const tokens = { access_token: accessToken, refresh_token: refreshToken };
-    applyTokens(tokens);
+  const exchangeOAuthCode = useCallback(async (code) => {
+    const res = await API.post("/api/auth/exchange", { code });
+    setAuthHeader(res.data.access_token);
+    setUser(res.data.user);
+    scheduleRef.current?.();
+    return res.data;
+  }, []);
+
+  const logout = useCallback(async () => {
+    clearAuth();
     try {
-      const res = await API.get("/api/auth/me");
-      setUser(res.data.user);
-      scheduleRef.current?.(tokens);
+      await API.post("/api/auth/logout");
     } catch {
-      clearAuth();
+      // Best effort
     }
   }, [clearAuth]);
 
-  const logout = useCallback(() => {
-    clearAuth();
-  }, [clearAuth]);
-
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, loginWithTokens, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, exchangeOAuthCode, logout }}>
       {children}
     </AuthContext.Provider>
   );

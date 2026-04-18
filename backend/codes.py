@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from models import db, SavedCode
+from models import db, limiter, SavedCode
+
+MAX_TITLE_LENGTH = 255
+MAX_CODE_LENGTH = 50_000
 
 codes_bp = Blueprint("codes", __name__, url_prefix="/api/codes")
 
@@ -28,6 +31,7 @@ def list_codes():
 
 
 @codes_bp.route("", methods=["POST"])
+@limiter.limit("20/minute")
 @jwt_required()
 def create_code():
     user_id = get_jwt_identity()
@@ -37,8 +41,12 @@ def create_code():
 
     if not title:
         return jsonify({"errors": ["Title is required."]}), 400
+    if len(title) > MAX_TITLE_LENGTH:
+        return jsonify({"errors": [f"Title must be at most {MAX_TITLE_LENGTH} characters."]}), 400
     if not code:
         return jsonify({"errors": ["Code is required."]}), 400
+    if len(code) > MAX_CODE_LENGTH:
+        return jsonify({"errors": [f"Code must be at most {MAX_CODE_LENGTH} characters."]}), 400
 
     saved = SavedCode(user_id=user_id, title=title, code=code)
     db.session.add(saved)
@@ -69,11 +77,15 @@ def update_code(code_id):
         title = (body["title"] or "").strip()
         if not title:
             return jsonify({"errors": ["Title is required."]}), 400
+        if len(title) > MAX_TITLE_LENGTH:
+            return jsonify({"errors": [f"Title must be at most {MAX_TITLE_LENGTH} characters."]}), 400
         saved.title = title
     if "code" in body:
         code = body["code"] or ""
         if not code:
             return jsonify({"errors": ["Code is required."]}), 400
+        if len(code) > MAX_CODE_LENGTH:
+            return jsonify({"errors": [f"Code must be at most {MAX_CODE_LENGTH} characters."]}), 400
         saved.code = code
 
     db.session.commit()

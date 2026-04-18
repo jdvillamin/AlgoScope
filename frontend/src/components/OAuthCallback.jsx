@@ -1,40 +1,45 @@
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../contexts/useAuth";
 
 const ERROR_MESSAGES = {
   oauth_failed: "Sign-in was cancelled or failed. Please try again.",
-  email_not_verified: "Your email is not verified with this provider. Please verify your email and try again.",
+  email_not_verified:
+    "Your email is not verified with this provider. Please verify your email and try again.",
 };
 
-function OAuthCallback({ onTokens }) {
+function OAuthCallback() {
+  const { exchangeOAuthCode } = useAuth();
   const processed = useRef(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (processed.current) return;
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
-    processed.current = true;
-
-    const params = new URLSearchParams(hash);
+    const params = new URLSearchParams(window.location.search);
 
     const err = params.get("error");
     if (err) {
-      setError(ERROR_MESSAGES[err] || "Something went wrong. Please try again.");
-      window.history.replaceState(null, "", "/");
+      processed.current = true;
+      const handle = async () => {
+        setError(ERROR_MESSAGES[err] || "Something went wrong. Please try again.");
+      };
+      handle();
       return;
     }
 
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
+    const code = params.get("code");
+    if (!code) return;
+    processed.current = true;
 
-    if (accessToken && refreshToken) {
-      onTokens(accessToken, refreshToken).then(() => {
+    const handle = async () => {
+      try {
+        await exchangeOAuthCode(code);
         window.location.href = "/";
-      });
-    } else {
-      window.location.href = "/";
-    }
-  }, [onTokens]);
+      } catch {
+        setError("Sign-in failed. Please try again.");
+      }
+    };
+    handle();
+  }, [exchangeOAuthCode]);
 
   if (error) {
     return (
