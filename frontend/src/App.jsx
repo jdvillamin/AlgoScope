@@ -6,6 +6,7 @@ import FilePanel from "./components/FilePanel";
 import UnsavedPrompt from "./components/UnsavedPrompt";
 import ConfirmPrompt from "./components/ConfirmPrompt";
 import API from "./api/backend";
+import { getHistoryRun } from "./api/history";
 
 const STORAGE_KEY = "algoscope:state:v2";
 const DEFAULT_FILE = {
@@ -440,6 +441,74 @@ function App() {
     [resetUiState, withUnsavedGuard]
   );
 
+  const handleLoadCloudCode = useCallback(
+    (cloudCode) => {
+      withUnsavedGuard(() => {
+        const id = String(nextId.current++);
+        setFiles((prev) => [
+          ...prev,
+          {
+            id,
+            name: cloudCode.title,
+            code: cloudCode.code,
+            instrumentedCode: "",
+            stdin: "",
+            trace: [],
+            stdout: "",
+            savedSnapshot: { code: cloudCode.code, name: cloudCode.title, stdin: "" },
+          },
+        ]);
+        setActiveFileId(id);
+        resetUiState();
+      });
+    },
+    [resetUiState, withUnsavedGuard]
+  );
+
+  const handleLoadHistoryRun = useCallback(
+    async (run) => {
+      withUnsavedGuard(async () => {
+        const id = String(nextId.current++);
+        let trace = [];
+        try {
+          const full = await getHistoryRun(run.id);
+          if (Array.isArray(full.trace)) {
+            const parsed = [];
+            const outputLines = [];
+            for (const line of full.trace) {
+              try {
+                parsed.push(typeof line === "string" ? JSON.parse(line) : line);
+              } catch {
+                if (typeof line === "string" && line.trim()) outputLines.push(line);
+              }
+            }
+            trace = parsed;
+          }
+        } catch {
+          // load code only if trace fetch fails
+        }
+        const firstLine = run.code.split("\n")[0].slice(0, 30) || "History";
+        setFiles((prev) => [
+          ...prev,
+          {
+            id,
+            name: firstLine,
+            code: run.code,
+            instrumentedCode: "",
+            stdin: "",
+            trace,
+            stdout: "",
+            savedSnapshot: null,
+          },
+        ]);
+        setActiveFileId(id);
+        resetUiState();
+        if (trace.length > 0) setCurrentStep(0);
+      });
+    },
+    [resetUiState, withUnsavedGuard]
+  );
+
   // --- Execution ---
 
   const handleTrace = useCallback(
@@ -628,6 +697,10 @@ function App() {
         onImportFile={handleImportFile}
         onExportFile={handleExportFile}
         onSaveFile={handleSaveActive}
+        onLoadCloudCode={handleLoadCloudCode}
+        onLoadHistoryRun={handleLoadHistoryRun}
+        currentCode={code}
+        currentName={activeFile?.name}
       />
       <UnsavedPrompt
         open={promptOpen}

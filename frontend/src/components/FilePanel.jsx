@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
 import SAMPLE_CATEGORIES from "../samples";
 import UserMenu from "./UserMenu";
+import SavedCodes from "./SavedCodes";
+import RunHistory from "./RunHistory";
 
-function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile }) {
+function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadCloudCode, onLoadHistoryRun, currentCode, currentName }) {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -362,13 +364,20 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         </div>
 
         {/* Divider */}
-        <div
-          style={{
-            height: "1px",
-            background: "#1a2535",
-            margin: "4px 14px",
-          }}
+        <div style={{ height: "1px", background: "#1a2535", margin: "4px 14px" }} />
+
+        {/* Cloud Saves */}
+        <SavedCodes
+          onLoadCode={onLoadCloudCode}
+          currentCode={currentCode}
+          currentName={currentName}
         />
+
+        {/* Run History */}
+        <RunHistory onLoadRun={onLoadHistoryRun} />
+
+        {/* Divider */}
+        <div style={{ height: "1px", background: "#1a2535", margin: "4px 14px" }} />
 
         {/* Samples */}
         <div style={{ padding: "8px 0" }}>

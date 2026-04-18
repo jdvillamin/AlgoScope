@@ -17,5 +17,8 @@ a.out
 # Editor
 .vscode/
 
+# Database
+*.db
+
 # Datasets
 datasets/
