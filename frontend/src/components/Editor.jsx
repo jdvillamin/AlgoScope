@@ -92,9 +92,9 @@ function Editor({
   }, [currentLine, isRunning, isInstrumentedTab, lockToLine]);
 
   const iconBtn = (active = true) => ({
-    width: "32px",
-    height: "32px",
-    borderRadius: "8px",
+    width: isMobile ? "28px" : "32px",
+    height: isMobile ? "28px" : "32px",
+    borderRadius: isMobile ? "6px" : "8px",
     background: active ? "#19243a" : "transparent",
     border: `1px solid ${active ? "#243347" : "transparent"}`,
     color: isProcessing ? "#506888" : "#8fa3c8",
@@ -102,20 +102,20 @@ function Editor({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "15px",
+    fontSize: isMobile ? "13px" : "15px",
     padding: 0,
     lineHeight: 1,
     flexShrink: 0,
   });
 
   const tabStyle = (selected) => ({
-    padding: "6px 2px",
+    padding: isMobile ? "4px 1px" : "6px 2px",
     background: "none",
     border: "none",
     borderBottom: selected ? "2px solid #4b8cf7" : "2px solid transparent",
     color: selected ? "#c8d8f0" : "#647e9c",
     cursor: "pointer",
-    fontSize: "13px",
+    fontSize: isMobile ? "11px" : "13px",
     fontWeight: selected ? 600 : 500,
     letterSpacing: "0.1px",
     marginBottom: "-1px",
@@ -141,19 +141,19 @@ function Editor({
       {/* Header */}
       <div
         style={{
-          padding: "0 16px",
+          padding: isMobile ? "0 8px" : "0 16px",
           borderBottom: "1px solid #1a2535",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "stretch",
-          gap: "16px",
-          height: "44px",
+          gap: isMobile ? "6px" : "16px",
+          height: isMobile ? "36px" : "44px",
           overflow: "hidden",
           minWidth: 0,
         }}
       >
         {/* Tabs */}
-        <div style={{ display: "flex", alignItems: "stretch", gap: "20px", minWidth: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "stretch", gap: isMobile ? "10px" : "20px", minWidth: 0, overflow: "hidden" }}>
           <button
             onClick={() => setActiveTab("raw")}
             style={tabStyle(activeTab === "raw")}
@@ -255,18 +255,18 @@ function Editor({
           options={{
             readOnly: isRunning || isProcessing,
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-            fontSize: 13.5,
-            lineHeight: 22,
+            fontSize: isMobile ? 11 : 13.5,
+            lineHeight: isMobile ? 18 : 22,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
             smoothScrolling: true,
             renderLineHighlight: "none",
             tabSize: 4,
             automaticLayout: true,
-            padding: { top: 16, bottom: 16 },
+            padding: { top: isMobile ? 8 : 16, bottom: isMobile ? 8 : 16 },
             scrollbar: {
-              verticalScrollbarSize: 10,
-              horizontalScrollbarSize: 10,
+              verticalScrollbarSize: isMobile ? 6 : 10,
+              horizontalScrollbarSize: isMobile ? 6 : 10,
             },
             overviewRulerLanes: 0,
             hideCursorInOverviewRuler: true,
@@ -295,7 +295,7 @@ function Editor({
       >
         <div
           style={{
-            padding: "7px 16px",
+            padding: isMobile ? "5px 12px" : "7px 16px",
             borderBottom: "1px solid #1a2535",
             display: "flex",
             justifyContent: "space-between",
@@ -304,7 +304,7 @@ function Editor({
         >
           <span
             style={{
-              fontSize: "11px",
+              fontSize: isMobile ? "9px" : "11px",
               fontWeight: 600,
               letterSpacing: "0.8px",
               color: "#647e9c",
@@ -315,11 +315,11 @@ function Editor({
           </span>
           <span
             style={{
-              fontSize: "11px",
+              fontSize: isMobile ? "9px" : "11px",
               color: "#506888",
             }}
           >
-            Numbers must not exceed 20
+            {isMobile ? "Max: 20" : "Numbers must not exceed 20"}
           </span>
         </div>
         <textarea
@@ -330,16 +330,16 @@ function Editor({
           spellCheck={false}
           style={{
             width: "100%",
-            height: "56px",
+            height: isMobile ? "40px" : "56px",
             resize: "none",
             border: "none",
             outline: "none",
             background: "#080d15",
             color: "#cdd9f0",
-            padding: "10px 16px",
+            padding: isMobile ? "6px 12px" : "10px 16px",
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-            fontSize: "13px",
-            lineHeight: "20px",
+            fontSize: isMobile ? "11px" : "13px",
+            lineHeight: isMobile ? "16px" : "20px",
             boxSizing: "border-box",
             caretColor: "#4b8cf7",
             opacity: isProcessing ? 0.6 : 1,

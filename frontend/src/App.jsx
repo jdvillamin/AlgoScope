@@ -689,7 +689,7 @@ function App() {
   if (isMobile) {
     const getSnapHeight = (snap) => {
       const vh = window.innerHeight;
-      if (snap === "collapsed") return 70;
+      if (snap === "collapsed") return 120;
       if (snap === "half") return Math.round(vh * 0.5);
       return Math.round(vh - 52);
     };
@@ -705,7 +705,7 @@ function App() {
       if (!sheetTouchRef.current) return;
       const touch = e.touches[0];
       const dy = sheetTouchRef.current.y - touch.clientY;
-      const newHeight = Math.max(70, Math.min(window.innerHeight - 52, sheetTouchRef.current.startHeight + dy));
+      const newHeight = Math.max(120, Math.min(window.innerHeight - 52, sheetTouchRef.current.startHeight + dy));
       setSheetDragHeight(newHeight);
     };
 
@@ -715,7 +715,7 @@ function App() {
         return;
       }
       const vh = window.innerHeight;
-      const snaps = [70, Math.round(vh * 0.5), Math.round(vh - 52)];
+      const snaps = [120, Math.round(vh * 0.5), Math.round(vh - 52)];
       const names = ["collapsed", "half", "full"];
       let closestIdx = 0;
       let minDist = Math.abs(sheetDragHeight - snaps[0]);
@@ -732,7 +732,7 @@ function App() {
       if (sheetSnap === "collapsed") setSheetSnap("half");
     };
 
-    const isSheetExpanded = sheetSnap !== "collapsed" || (sheetDragHeight !== null && sheetDragHeight > 100);
+    const isSheetExpanded = sheetSnap !== "collapsed" || (sheetDragHeight !== null && sheetDragHeight > 140);
 
     return (
       <div
@@ -893,38 +893,38 @@ function App() {
                   background: "#0a1018",
                   position: "relative",
                   overflow: "hidden",
-                  minHeight: "60px",
+                  minHeight: "50px",
                 }}
               >
                 <div
                   style={{
-                    padding: "7px 12px",
+                    padding: "4px 10px",
                     borderBottom: "1px solid #1a2535",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
-                  <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
                     Console
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
                     {runPhase}
                   </span>
                 </div>
                 {isProcessing && (
-                  <div style={{ position: "absolute", top: 32, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
+                  <div style={{ position: "absolute", top: 26, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
                 )}
                 <div
                   style={{
                     flex: 1,
-                    padding: "8px 12px",
+                    padding: "6px 10px",
                     overflowY: "auto",
-                    fontSize: "11.5px",
+                    fontSize: "10px",
                     fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
                     color: error ? "#f87171" : "#647e9c",
                     whiteSpace: "pre-wrap",
-                    lineHeight: 1.5,
+                    lineHeight: 1.4,
                   }}
                 >
                   {isProcessing ? (
