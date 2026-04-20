@@ -20,6 +20,7 @@ function Editor({
   onDeInstrument,
   onHide,
   editorWidth = 560,
+  isMobile = false,
 }) {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -213,7 +214,7 @@ function Editor({
             }}
             title={isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
           >
-            {isProcessing ? "⋯" : "▶"}{editorWidth >= 480 && <>&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}</>}
+            {isProcessing ? "⋯" : "▶"}{(isMobile || editorWidth >= 480) && <>&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}</>}
           </button>
 
           <button
@@ -224,7 +225,7 @@ function Editor({
             ↺
           </button>
 
-          {onHide && (
+          {onHide && !isMobile && (
             <button
               onClick={onHide}
               style={iconBtn()}

@@ -4,12 +4,13 @@ import UserMenu from "./UserMenu";
 import SavedCodes from "./SavedCodes";
 import RunHistory from "./RunHistory";
 
-function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadCloudCode, onLoadHistoryRun, currentCode, currentName }) {
+function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadCloudCode, onLoadHistoryRun, currentCode, currentName, isMobile }) {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const fileInputRef = useRef(null);
+  const effectiveCollapsed = isMobile ? false : collapsed;
 
   const smallBtn = {
     flex: 1,
@@ -51,50 +52,56 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
   return (
     <div
       style={{
-        width: collapsed ? "44px" : "220px",
-        minWidth: collapsed ? "44px" : "220px",
+        width: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
+        minWidth: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
         height: "100%",
         background: "#0a1018",
-        borderRight: "1px solid #1a2535",
+        borderRight: isMobile ? "none" : "1px solid #1a2535",
         display: "flex",
         flexDirection: "column",
-        transition: "width 0.2s ease, min-width 0.2s ease",
+        transition: isMobile ? "none" : "width 0.2s ease, min-width 0.2s ease",
       }}
     >
-      {/* Header row — 44px to align with Canvas toolbar & Editor tabs */}
+      {/* Header row */}
       <div
         style={{
           height: "44px",
-          padding: collapsed ? "0 6px" : "0 12px",
+          padding: isMobile ? "0 16px" : (effectiveCollapsed ? "0 6px" : "0 12px"),
           borderBottom: "1px solid #1a2535",
           display: "flex",
           alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
+          justifyContent: isMobile ? "flex-start" : (effectiveCollapsed ? "center" : "flex-start"),
           boxSizing: "border-box",
           flexShrink: 0,
         }}
       >
-        <button
-          onClick={() => setCollapsed((v) => !v)}
-          style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "8px",
-            border: "1px solid #1e2d42",
-            background: "#0f1928",
-            color: "#8fa3c8",
-            fontSize: "14px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-            fontFamily: "inherit",
-          }}
-          title={collapsed ? "Expand panel" : "Collapse panel"}
-        >
-          {collapsed ? "☰" : "◀"}
-        </button>
+        {isMobile ? (
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase" }}>
+            Files
+          </span>
+        ) : (
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              border: "1px solid #1e2d42",
+              background: "#0f1928",
+              color: "#8fa3c8",
+              fontSize: "14px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              fontFamily: "inherit",
+            }}
+            title={effectiveCollapsed ? "Expand panel" : "Collapse panel"}
+          >
+            {effectiveCollapsed ? "☰" : "◀"}
+          </button>
+        )}
       </div>
 
       <input
@@ -111,7 +118,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
       />
 
       {/* New File + Import / Export */}
-      {collapsed ? (
+      {effectiveCollapsed ? (
         <div style={{ padding: "8px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
           <button onClick={onNewFile} style={collapsedBtn} title="New File">
             <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
@@ -140,7 +147,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
 
           <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
 
-          <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Files">
+          <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Show files">
             <span style={{ fontSize: "12px", lineHeight: 1 }}>📄</span>
           </button>
           <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Sample files">
@@ -220,7 +227,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
       )}
 
       {/* File list */}
-      {!collapsed && <div
+      {!effectiveCollapsed && <div
         style={{
           flex: 1,
           overflowY: "auto",
@@ -453,7 +460,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         </div>
       </div>}
 
-      <UserMenu collapsed={collapsed} />
+      <UserMenu collapsed={effectiveCollapsed} />
     </div>
   );
 }

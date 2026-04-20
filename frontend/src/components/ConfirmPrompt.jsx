@@ -31,7 +31,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          minWidth: "360px",
+          width: "calc(100vw - 32px)",
           maxWidth: "440px",
           background: "#0e1520",
           border: "1px solid #1e2d42",

@@ -140,6 +140,9 @@ function App() {
   const [lockToLine, setLockToLine] = useState(true);
   const [overwritePromptOpen, setOverwritePromptOpen] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
+  const [mobileView, setMobileView] = useState("canvas");
+
   // Resizable / hidable editor panel.
   const [editorWidth, setEditorWidth] = useState(() => {
     const saved = parseInt(localStorage.getItem("algoscope:editorWidth") || "", 10);
@@ -183,6 +186,13 @@ function App() {
       document.body.style.userSelect = prevSelect;
     };
   }, [isResizing]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   // Derive code/instrumentedCode/stdin/trace/stdout from active file
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -672,6 +682,257 @@ function App() {
     }
     return null;
   }, [currentStep, trace]);
+
+  if (isMobile) {
+    const mobileNavItem = (view, label, icon) => (
+      <button
+        key={view}
+        onClick={() => setMobileView(view)}
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "3px",
+          background: "transparent",
+          border: "none",
+          color: mobileView === view ? "#4b8cf7" : "#506888",
+          fontSize: "10px",
+          fontWeight: 600,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          padding: "6px 0",
+          position: "relative",
+        }}
+      >
+        <span style={{ fontSize: "18px", lineHeight: 1 }}>{icon}</span>
+        <span>{label}</span>
+        {mobileView === view && (
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: "20%",
+            right: "20%",
+            height: "2px",
+            background: "#4b8cf7",
+            borderRadius: "0 0 1px 1px",
+          }} />
+        )}
+      </button>
+    );
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          width: "100vw",
+          overflow: "hidden",
+          background: "#080d15",
+        }}
+      >
+        <UnsavedPrompt
+          open={promptOpen}
+          fileName={activeFile?.name}
+          onSave={handlePromptSave}
+          onDiscard={handlePromptDiscard}
+          onCancel={handlePromptCancel}
+        />
+        <ConfirmPrompt
+          open={overwritePromptOpen}
+          title="Overwrite instrumented code"
+          message="Instrumented code already exists for this file. Re-instrumenting will replace it."
+          confirmLabel="Overwrite"
+          onConfirm={() => { setOverwritePromptOpen(false); doInstrument(); }}
+          onCancel={() => setOverwritePromptOpen(false)}
+        />
+
+        {/* Mobile files view */}
+        {mobileView === "files" && (
+          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <FilePanel
+              isMobile
+              files={files}
+              activeFileId={activeFileId}
+              unsavedIds={unsavedIds}
+              activeFileUnsaved={activeFileUnsaved}
+              onNewFile={handleNewFile}
+              onSwitchFile={(id) => { handleSwitchFile(id); setMobileView("editor"); }}
+              onRenameFile={handleRenameFile}
+              onDeleteFile={handleDeleteFile}
+              onLoadSample={(sample) => { handleLoadSample(sample); setMobileView("editor"); }}
+              onImportFile={(file) => { handleImportFile(file); setMobileView("editor"); }}
+              onExportFile={handleExportFile}
+              onSaveFile={handleSaveActive}
+              onLoadCloudCode={(cloudCode) => { handleLoadCloudCode(cloudCode); setMobileView("editor"); }}
+              onLoadHistoryRun={(run) => { handleLoadHistoryRun(run); setMobileView("canvas"); }}
+              currentCode={code}
+              currentName={activeFile?.name}
+            />
+          </div>
+        )}
+
+        {/* Canvas + Controls — kept mounted, hidden when inactive */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            flexDirection: "column",
+            display: mobileView === "canvas" ? "flex" : "none",
+          }}
+        >
+          <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+            <Canvas trace={trace} currentStep={currentStep} isMobile />
+          </div>
+          <div
+            style={{
+              height: "80px",
+              borderTop: "1px solid #1a2535",
+              background: "#0e1520",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Controls trace={trace} currentStep={currentStep} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
+          </div>
+        </div>
+
+        {/* Editor + Console — kept mounted, hidden when inactive */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            flexDirection: "column",
+            display: mobileView === "editor" ? "flex" : "none",
+          }}
+        >
+          <div style={{ flex: 3, minHeight: 0 }}>
+            <Editor
+              code={code}
+              setCode={setCode}
+              instrumentedCode={instrumentedCode}
+              setInstrumentedCode={setInstrumentedCode}
+              currentLine={currentLine}
+              isRunning={isRunning}
+              isProcessing={isProcessing}
+              onRun={runCode}
+              onReset={resetExecution}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              stdin={stdin}
+              setStdin={setStdin}
+              lockToLine={lockToLine}
+              setLockToLine={setLockToLine}
+              onDeInstrument={deInstrument}
+              isMobile
+            />
+          </div>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              borderTop: "1px solid #1a2535",
+              background: "#0e1520",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "9px 16px",
+                borderBottom: "1px solid #1a2535",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
+                Console
+              </span>
+              <span style={{ fontSize: "12px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
+                {runPhase}
+              </span>
+            </div>
+            {isProcessing && (
+              <div style={{ position: "absolute", top: 38, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
+            )}
+            <div
+              style={{
+                flex: 1,
+                padding: "14px 16px",
+                overflowY: "auto",
+                fontSize: "12.5px",
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                color: error ? "#f87171" : "#647e9c",
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.6,
+              }}
+            >
+              {isProcessing ? (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", color: "#c8d8f0" }}>
+                  <div style={{ width: "13px", height: "13px", border: "2px solid #1e2d42", borderTop: "2px solid #f0a429", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginTop: "3px", flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 600, color: "#f0a429", fontFamily: "inherit" }}>Processing...</div>
+                    <div style={{ marginTop: "5px", color: "#7b96bf", fontFamily: "inherit" }}>{runPhase}</div>
+                  </div>
+                </div>
+              ) : error ? (
+                error
+              ) : trace.length > 0 ? (
+                <>
+                  <div style={{ color: "#506888", marginBottom: stdout ? "10px" : 0 }}>
+                    {`Trace: ${trace.length}  ·  Step: ${currentStep}  ·  Line: ${currentLine ?? "—"}`}
+                  </div>
+                  {stdout && (
+                    <>
+                      <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#3d5270", textTransform: "uppercase", marginBottom: "6px" }}>
+                        Standard Output
+                      </div>
+                      <div style={{ color: "#c8d8f0" }}>{stdout}</div>
+                    </>
+                  )}
+                </>
+              ) : (
+                "Waiting for execution..."
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile bottom navigation */}
+        <div
+          style={{
+            height: "calc(52px + env(safe-area-inset-bottom, 0px))",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            background: "#0a1018",
+            borderTop: "1px solid #1a2535",
+            display: "flex",
+            flexShrink: 0,
+          }}
+        >
+          {mobileNavItem("canvas", "Visualize", "◈")}
+          {mobileNavItem("editor", "Code", "⟨⟩")}
+          {mobileNavItem("files", "Files", "☰")}
+        </div>
+
+        <style>
+          {`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+            @keyframes consoleShimmer {
+              0% { background-position: 200% 0; }
+              100% { background-position: -200% 0; }
+            }
+          `}
+        </style>
+      </div>
+    );
+  }
 
   return (
     <div

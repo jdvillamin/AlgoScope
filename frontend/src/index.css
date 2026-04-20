@@ -22,6 +22,11 @@
 
 body {
   margin: 0;
+  overscroll-behavior: none;
+}
+
+html, body, #root {
+  touch-action: manipulation;
 }
 
 button {

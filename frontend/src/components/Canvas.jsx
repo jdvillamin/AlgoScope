@@ -14,7 +14,7 @@ import HashMapView from "./visuals/HashMapView";
 import TreeView from "./visuals/TreeView";
 import GraphView from "./visuals/GraphView";
 
-function Canvas({ trace = [], currentStep = 0 }) {
+function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -41,6 +41,7 @@ function Canvas({ trace = [], currentStep = 0 }) {
 
   const canvasRef = useRef(null);
   const worldRef = useRef(null);
+  const touchRef = useRef(null);
 
   const iconButton = {
     width: "32px",
@@ -302,6 +303,30 @@ function Canvas({ trace = [], currentStep = 0 }) {
     setPanning(false);
   };
 
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchRef.current = { x: t.clientX, y: t.clientY };
+      setPanning(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 1 && touchRef.current) {
+      const t = e.touches[0];
+      const dx = t.clientX - touchRef.current.x;
+      const dy = t.clientY - touchRef.current.y;
+      setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      touchRef.current = { x: t.clientX, y: t.clientY };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchRef.current = null;
+    setPanning(false);
+    setDraggingId(null);
+  };
+
   // ================= LAYOUT BUTTONS =================
   // Toggling off freezes the current optimal positions into the greedy
   // baseline, so existing objects stay put and only future objects follow
@@ -336,20 +361,22 @@ function Canvas({ trace = [], currentStep = 0 }) {
       <div
         style={{
           height: "44px",
-          padding: "0 16px",
+          padding: isMobile ? "0 10px" : "0 16px",
           background: "#0e1520",
           borderBottom: "1px solid #1a2535",
           display: "flex",
-          gap: "6px",
+          gap: isMobile ? "4px" : "6px",
           alignItems: "center",
           boxSizing: "border-box",
           overflow: "hidden",
           minWidth: 0,
         }}
       >
-        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
-          AlgoScope
-        </span>
+        {!isMobile && (
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
+            AlgoScope
+          </span>
+        )}
         <button
           style={iconButton}
           onClick={() => setScale((s) => Math.min(s + 0.2, 3))}
@@ -394,14 +421,14 @@ function Canvas({ trace = [], currentStep = 0 }) {
           onClick={toggleOptimalMode}
           title="Optimal fit — continuous DP layout with auto zoom-to-fit"
         >
-          ⊞ Optimal fit{optimalMode ? " ✓" : ""}
+          ⊞ {isMobile ? "Fit" : "Optimal fit"}{optimalMode ? " ✓" : ""}
         </button>
         <button
-          style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}
+          style={{ ...iconButton, width: "auto", padding: isMobile ? "0 8px" : "0 12px", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={handleResetLayout}
           title="Reset layout — unpin all objects, return to greedy auto-layout"
         >
-          ⤺ Reset layout
+          ⤺ {isMobile ? "Reset" : "Reset layout"}
         </button>
       </div>
 
@@ -412,12 +439,16 @@ function Canvas({ trace = [], currentStep = 0 }) {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onMouseDown={() => setPanning(true)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           flex: 1,
           overflow: "hidden",
           position: "relative",
           background:
             "radial-gradient(ellipse at 25% 25%, #050912 0%, #02040a 65%)",
+          touchAction: "none",
         }}
       >
         <div
