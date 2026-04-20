@@ -358,25 +358,39 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
       }}
     >
       {/* Toolbar */}
+      {isMobile ? (
+        <div
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            display: "flex",
+            gap: "4px",
+            zIndex: 10,
+          }}
+        >
+          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.min(s + 0.2, 3))} title="Zoom in">+</button>
+          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.max(s - 0.2, 0.3))} title="Zoom out">−</button>
+          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} title="Reset view">↺</button>
+        </div>
+      ) : (
       <div
         style={{
           height: "44px",
-          padding: isMobile ? "0 10px" : "0 16px",
+          padding: "0 16px",
           background: "#0e1520",
           borderBottom: "1px solid #1a2535",
           display: "flex",
-          gap: isMobile ? "4px" : "6px",
+          gap: "6px",
           alignItems: "center",
           boxSizing: "border-box",
           overflow: "hidden",
           minWidth: 0,
         }}
       >
-        {!isMobile && (
-          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
-            AlgoScope
-          </span>
-        )}
+        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
+          AlgoScope
+        </span>
         <button
           style={iconButton}
           onClick={() => setScale((s) => Math.min(s + 0.2, 3))}
@@ -421,16 +435,17 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
           onClick={toggleOptimalMode}
           title="Optimal fit — continuous DP layout with auto zoom-to-fit"
         >
-          ⊞ {isMobile ? "Fit" : "Optimal fit"}{optimalMode ? " ✓" : ""}
+          ⊞ Optimal fit{optimalMode ? " ✓" : ""}
         </button>
         <button
-          style={{ ...iconButton, width: "auto", padding: isMobile ? "0 8px" : "0 12px", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}
+          style={{ ...iconButton, width: "auto", padding: "0 12px", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}
           onClick={handleResetLayout}
           title="Reset layout — unpin all objects, return to greedy auto-layout"
         >
-          ⤺ {isMobile ? "Reset" : "Reset layout"}
+          ⤺ Reset layout
         </button>
       </div>
+      )}
 
       {/* Canvas */}
       <div

@@ -141,7 +141,10 @@ function App() {
   const [overwritePromptOpen, setOverwritePromptOpen] = useState(false);
 
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
-  const [mobileView, setMobileView] = useState("canvas");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sheetSnap, setSheetSnap] = useState("collapsed");
+  const [sheetDragHeight, setSheetDragHeight] = useState(null);
+  const sheetTouchRef = useRef(null);
 
   // Resizable / hidable editor panel.
   const [editorWidth, setEditorWidth] = useState(() => {
@@ -684,49 +687,57 @@ function App() {
   }, [currentStep, trace]);
 
   if (isMobile) {
-    const mobileNavItem = (view, label, icon) => (
-      <button
-        key={view}
-        onClick={() => setMobileView(view)}
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "3px",
-          background: "transparent",
-          border: "none",
-          color: mobileView === view ? "#4b8cf7" : "#506888",
-          fontSize: "10px",
-          fontWeight: 600,
-          cursor: "pointer",
-          fontFamily: "inherit",
-          padding: "6px 0",
-          position: "relative",
-        }}
-      >
-        <span style={{ fontSize: "18px", lineHeight: 1 }}>{icon}</span>
-        <span>{label}</span>
-        {mobileView === view && (
-          <div style={{
-            position: "absolute",
-            top: 0,
-            left: "20%",
-            right: "20%",
-            height: "2px",
-            background: "#4b8cf7",
-            borderRadius: "0 0 1px 1px",
-          }} />
-        )}
-      </button>
-    );
+    const getSnapHeight = (snap) => {
+      const vh = window.innerHeight;
+      if (snap === "collapsed") return 70;
+      if (snap === "half") return Math.round(vh * 0.5);
+      return Math.round(vh - 52);
+    };
+
+    const currentSheetHeight = sheetDragHeight ?? getSnapHeight(sheetSnap);
+
+    const handleSheetTouchStart = (e) => {
+      const touch = e.touches[0];
+      sheetTouchRef.current = { y: touch.clientY, startHeight: currentSheetHeight };
+    };
+
+    const handleSheetTouchMove = (e) => {
+      if (!sheetTouchRef.current) return;
+      const touch = e.touches[0];
+      const dy = sheetTouchRef.current.y - touch.clientY;
+      const newHeight = Math.max(70, Math.min(window.innerHeight - 52, sheetTouchRef.current.startHeight + dy));
+      setSheetDragHeight(newHeight);
+    };
+
+    const handleSheetTouchEnd = () => {
+      if (sheetDragHeight === null) {
+        sheetTouchRef.current = null;
+        return;
+      }
+      const vh = window.innerHeight;
+      const snaps = [70, Math.round(vh * 0.5), Math.round(vh - 52)];
+      const names = ["collapsed", "half", "full"];
+      let closestIdx = 0;
+      let minDist = Math.abs(sheetDragHeight - snaps[0]);
+      for (let i = 1; i < snaps.length; i++) {
+        const d = Math.abs(sheetDragHeight - snaps[i]);
+        if (d < minDist) { closestIdx = i; minDist = d; }
+      }
+      setSheetSnap(names[closestIdx]);
+      setSheetDragHeight(null);
+      sheetTouchRef.current = null;
+    };
+
+    const handleSheetTap = () => {
+      if (sheetSnap === "collapsed") setSheetSnap("half");
+    };
+
+    const isSheetExpanded = sheetSnap !== "collapsed" || (sheetDragHeight !== null && sheetDragHeight > 100);
 
     return (
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
+          position: "relative",
           height: "100vh",
           width: "100vw",
           overflow: "hidden",
@@ -749,175 +760,248 @@ function App() {
           onCancel={() => setOverwritePromptOpen(false)}
         />
 
-        {/* Mobile files view */}
-        {mobileView === "files" && (
-          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <FilePanel
-              isMobile
-              files={files}
-              activeFileId={activeFileId}
-              unsavedIds={unsavedIds}
-              activeFileUnsaved={activeFileUnsaved}
-              onNewFile={handleNewFile}
-              onSwitchFile={(id) => { handleSwitchFile(id); setMobileView("editor"); }}
-              onRenameFile={handleRenameFile}
-              onDeleteFile={handleDeleteFile}
-              onLoadSample={(sample) => { handleLoadSample(sample); setMobileView("editor"); }}
-              onImportFile={(file) => { handleImportFile(file); setMobileView("editor"); }}
-              onExportFile={handleExportFile}
-              onSaveFile={handleSaveActive}
-              onLoadCloudCode={(cloudCode) => { handleLoadCloudCode(cloudCode); setMobileView("editor"); }}
-              onLoadHistoryRun={(run) => { handleLoadHistoryRun(run); setMobileView("canvas"); }}
-              currentCode={code}
-              currentName={activeFile?.name}
-            />
-          </div>
-        )}
+        {/* Canvas — full viewport background */}
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+          <Canvas trace={trace} currentStep={currentStep} isMobile />
+        </div>
 
-        {/* Canvas + Controls — kept mounted, hidden when inactive */}
+        {/* Floating top toolbar */}
         <div
           style={{
-            flex: 1,
-            minHeight: 0,
-            flexDirection: "column",
-            display: mobileView === "canvas" ? "flex" : "none",
+            position: "absolute",
+            top: 8,
+            left: 8,
+            right: 8,
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            zIndex: 20,
+            pointerEvents: "none",
           }}
         >
-          <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
-            <Canvas trace={trace} currentStep={currentStep} isMobile />
-          </div>
-          <div
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
             style={{
-              height: "80px",
-              borderTop: "1px solid #1a2535",
-              background: "#0e1520",
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              background: "rgba(14, 21, 32, 0.9)",
+              border: "1px solid #1e2d42",
+              color: "#8fa3c8",
+              fontSize: "18px",
+              cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              pointerEvents: "auto",
+              backdropFilter: "blur(8px)",
+            }}
+            title="Open files"
+          >
+            ☰
+          </button>
+        </div>
+
+        {/* Bottom sheet */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: `${currentSheetHeight}px`,
+            display: "flex",
+            flexDirection: "column",
+            background: "#0e1520",
+            borderRadius: "14px 14px 0 0",
+            boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
+            transition: sheetDragHeight !== null ? "none" : "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            zIndex: 30,
+            overflow: "hidden",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          }}
+        >
+          {/* Drag handle */}
+          <div
+            onTouchStart={handleSheetTouchStart}
+            onTouchMove={handleSheetTouchMove}
+            onTouchEnd={handleSheetTouchEnd}
+            onClick={handleSheetTap}
+            style={{
+              padding: "10px 0 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "grab",
+              touchAction: "none",
+              flexShrink: 0,
+            }}
+          >
+            <div style={{
+              width: "36px",
+              height: "4px",
+              borderRadius: "2px",
+              background: "#2a3f5c",
+            }} />
+          </div>
+
+          {/* Controls row — always visible in collapsed state */}
+          <div
+            style={{
+              padding: "0 12px 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              flexShrink: 0,
             }}
           >
             <Controls trace={trace} currentStep={currentStep} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
           </div>
-        </div>
 
-        {/* Editor + Console — kept mounted, hidden when inactive */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            flexDirection: "column",
-            display: mobileView === "editor" ? "flex" : "none",
-          }}
-        >
-          <div style={{ flex: 3, minHeight: 0 }}>
-            <Editor
-              code={code}
-              setCode={setCode}
-              instrumentedCode={instrumentedCode}
-              setInstrumentedCode={setInstrumentedCode}
-              currentLine={currentLine}
-              isRunning={isRunning}
-              isProcessing={isProcessing}
-              onRun={runCode}
-              onReset={resetExecution}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              stdin={stdin}
-              setStdin={setStdin}
-              lockToLine={lockToLine}
-              setLockToLine={setLockToLine}
-              onDeInstrument={deInstrument}
-              isMobile
-            />
-          </div>
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              borderTop: "1px solid #1a2535",
-              background: "#0e1520",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "9px 16px",
-                borderBottom: "1px solid #1a2535",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
-                Console
-              </span>
-              <span style={{ fontSize: "12px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
-                {runPhase}
-              </span>
-            </div>
-            {isProcessing && (
-              <div style={{ position: "absolute", top: 38, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
-            )}
-            <div
-              style={{
-                flex: 1,
-                padding: "14px 16px",
-                overflowY: "auto",
-                fontSize: "12.5px",
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                color: error ? "#f87171" : "#647e9c",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.6,
-              }}
-            >
-              {isProcessing ? (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", color: "#c8d8f0" }}>
-                  <div style={{ width: "13px", height: "13px", border: "2px solid #1e2d42", borderTop: "2px solid #f0a429", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginTop: "3px", flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: 600, color: "#f0a429", fontFamily: "inherit" }}>Processing...</div>
-                    <div style={{ marginTop: "5px", color: "#7b96bf", fontFamily: "inherit" }}>{runPhase}</div>
-                  </div>
+          {/* Editor content — visible when expanded */}
+          {isSheetExpanded && (
+            <>
+              <div style={{ flex: 3, minHeight: 0, borderTop: "1px solid #1a2535" }}>
+                <Editor
+                  code={code}
+                  setCode={setCode}
+                  instrumentedCode={instrumentedCode}
+                  setInstrumentedCode={setInstrumentedCode}
+                  currentLine={currentLine}
+                  isRunning={isRunning}
+                  isProcessing={isProcessing}
+                  onRun={runCode}
+                  onReset={resetExecution}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  stdin={stdin}
+                  setStdin={setStdin}
+                  lockToLine={lockToLine}
+                  setLockToLine={setLockToLine}
+                  onDeInstrument={deInstrument}
+                  isMobile
+                />
+              </div>
+              {/* Console */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  borderTop: "1px solid #1a2535",
+                  background: "#0a1018",
+                  position: "relative",
+                  overflow: "hidden",
+                  minHeight: "60px",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "7px 12px",
+                    borderBottom: "1px solid #1a2535",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
+                    Console
+                  </span>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
+                    {runPhase}
+                  </span>
                 </div>
-              ) : error ? (
-                error
-              ) : trace.length > 0 ? (
-                <>
-                  <div style={{ color: "#506888", marginBottom: stdout ? "10px" : 0 }}>
-                    {`Trace: ${trace.length}  ·  Step: ${currentStep}  ·  Line: ${currentLine ?? "—"}`}
-                  </div>
-                  {stdout && (
+                {isProcessing && (
+                  <div style={{ position: "absolute", top: 32, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
+                )}
+                <div
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    overflowY: "auto",
+                    fontSize: "11.5px",
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                    color: error ? "#f87171" : "#647e9c",
+                    whiteSpace: "pre-wrap",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {isProcessing ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8d8f0" }}>
+                      <div style={{ width: "12px", height: "12px", border: "2px solid #1e2d42", borderTop: "2px solid #f0a429", borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+                      <span style={{ color: "#f0a429", fontWeight: 600, fontSize: "11px" }}>
+                        {runPhase}
+                      </span>
+                    </div>
+                  ) : error ? (
+                    error
+                  ) : trace.length > 0 ? (
                     <>
-                      <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#3d5270", textTransform: "uppercase", marginBottom: "6px" }}>
-                        Standard Output
+                      <div style={{ color: "#506888", marginBottom: stdout ? "6px" : 0 }}>
+                        {`Trace: ${trace.length} · Step: ${currentStep} · Line: ${currentLine ?? "—"}`}
                       </div>
-                      <div style={{ color: "#c8d8f0" }}>{stdout}</div>
+                      {stdout && <div style={{ color: "#c8d8f0" }}>{stdout}</div>}
                     </>
+                  ) : (
+                    "Waiting for execution..."
                   )}
-                </>
-              ) : (
-                "Waiting for execution..."
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Mobile bottom navigation */}
-        <div
-          style={{
-            height: "calc(52px + env(safe-area-inset-bottom, 0px))",
-            paddingBottom: "env(safe-area-inset-bottom, 0px)",
-            background: "#0a1018",
-            borderTop: "1px solid #1a2535",
-            display: "flex",
-            flexShrink: 0,
-          }}
-        >
-          {mobileNavItem("canvas", "Visualize", "◈")}
-          {mobileNavItem("editor", "Code", "⟨⟩")}
-          {mobileNavItem("files", "Files", "☰")}
-        </div>
+        {/* Sidebar overlay */}
+        {mobileSidebarOpen && (
+          <>
+            <div
+              onClick={() => setMobileSidebarOpen(false)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(2, 4, 10, 0.6)",
+                zIndex: 100,
+                backdropFilter: "blur(2px)",
+              }}
+            />
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: "280px",
+                maxWidth: "80vw",
+                zIndex: 101,
+                display: "flex",
+                flexDirection: "column",
+                boxShadow: "4px 0 24px rgba(0,0,0,0.6)",
+                animation: "slideInLeft 0.2s ease-out",
+              }}
+            >
+              <FilePanel
+                isMobile
+                files={files}
+                activeFileId={activeFileId}
+                unsavedIds={unsavedIds}
+                activeFileUnsaved={activeFileUnsaved}
+                onNewFile={() => { handleNewFile(); setMobileSidebarOpen(false); setSheetSnap("half"); }}
+                onSwitchFile={(id) => { handleSwitchFile(id); setMobileSidebarOpen(false); setSheetSnap("half"); }}
+                onRenameFile={handleRenameFile}
+                onDeleteFile={handleDeleteFile}
+                onLoadSample={(sample) => { handleLoadSample(sample); setMobileSidebarOpen(false); setSheetSnap("half"); }}
+                onImportFile={(file) => { handleImportFile(file); setMobileSidebarOpen(false); setSheetSnap("half"); }}
+                onExportFile={handleExportFile}
+                onSaveFile={handleSaveActive}
+                onLoadCloudCode={(cloudCode) => { handleLoadCloudCode(cloudCode); setMobileSidebarOpen(false); setSheetSnap("half"); }}
+                onLoadHistoryRun={(run) => { handleLoadHistoryRun(run); setMobileSidebarOpen(false); }}
+                currentCode={code}
+                currentName={activeFile?.name}
+              />
+            </div>
+          </>
+        )}
 
         <style>
           {`
@@ -927,6 +1011,10 @@ function App() {
             @keyframes consoleShimmer {
               0% { background-position: 200% 0; }
               100% { background-position: -200% 0; }
+            }
+            @keyframes slideInLeft {
+              from { transform: translateX(-100%); }
+              to { transform: translateX(0); }
             }
           `}
         </style>
