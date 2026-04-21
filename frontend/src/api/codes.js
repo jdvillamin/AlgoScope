@@ -4,8 +4,8 @@ export function listCodes() {
   return API.get("/api/codes").then((r) => r.data.codes);
 }
 
-export function createCode(title, code) {
-  return API.post("/api/codes", { title, code }).then((r) => r.data.code);
+export function createCode(title, code, stdin = "") {
+  return API.post("/api/codes", { title, code, stdin }).then((r) => r.data.code);
 }
 
 export function updateCode(id, updates) {

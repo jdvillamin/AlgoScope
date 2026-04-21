@@ -14,6 +14,7 @@ def _serialize(code):
         "id": code.id,
         "title": code.title,
         "code": code.code,
+        "stdin": code.stdin or "",
         "created_at": code.created_at.isoformat(),
         "updated_at": code.updated_at.isoformat(),
     }
@@ -48,7 +49,9 @@ def create_code():
     if len(code) > MAX_CODE_LENGTH:
         return jsonify({"errors": [f"Code must be at most {MAX_CODE_LENGTH} characters."]}), 400
 
-    saved = SavedCode(user_id=user_id, title=title, code=code)
+    stdin = body.get("stdin") or ""
+
+    saved = SavedCode(user_id=user_id, title=title, code=code, stdin=stdin)
     db.session.add(saved)
     db.session.commit()
     return jsonify({"code": _serialize(saved)}), 201
@@ -87,6 +90,8 @@ def update_code(code_id):
         if len(code) > MAX_CODE_LENGTH:
             return jsonify({"errors": [f"Code must be at most {MAX_CODE_LENGTH} characters."]}), 400
         saved.code = code
+    if "stdin" in body:
+        saved.stdin = body["stdin"] or ""
 
     db.session.commit()
     return jsonify({"code": _serialize(saved)}), 200

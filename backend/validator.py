@@ -183,23 +183,29 @@ def validate_code(code):
     violations = []
     stripped = _strip_comments_and_strings(code)
     lines = stripped.split("\n")
+    original_lines = code.split("\n")
 
     for lineno, line in enumerate(lines, start=1):
-        # Check includes against whitelist
-        inc_match = _INCLUDE_RE.match(line)
-        if inc_match:
-            header = inc_match.group(1)
-            if header not in ALLOWED_INCLUDES:
-                violations.append({
-                    "line": lineno,
-                    "message": (
-                        f'Blocked include: <{header}>. '
-                        f"Only standard algorithm headers are allowed."
-                    ),
-                })
+        orig_line = original_lines[lineno - 1] if lineno <= len(original_lines) else ""
 
-        # Check for path-based includes
-        if _PATH_INCLUDE_RE.match(line):
+        # Check includes: use stripped line to confirm it's not commented out,
+        # but extract the header name from the original line (stripping blanks
+        # the contents of "quoted" includes).
+        if _INCLUDE_RE.match(line):
+            orig_inc = _INCLUDE_RE.match(orig_line)
+            if orig_inc:
+                header = orig_inc.group(1)
+                if header not in ALLOWED_INCLUDES:
+                    violations.append({
+                        "line": lineno,
+                        "message": (
+                            f'Blocked include: <{header}>. '
+                            f"Only standard algorithm headers are allowed."
+                        ),
+                    })
+
+        # Check for path-based includes (use original line to see actual paths)
+        if _PATH_INCLUDE_RE.match(orig_line):
             violations.append({
                 "line": lineno,
                 "message": "Path-based includes are not allowed.",

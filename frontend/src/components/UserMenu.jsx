@@ -307,8 +307,8 @@ function AuthModal({ onClose }) {
   );
 }
 
-function UserMenu({ collapsed }) {
-  const { user, logout } = useAuth();
+function UserMenu({ collapsed, onLogout }) {
+  const { user } = useAuth();
   const [popupOpen, setPopupOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const buttonRef = useRef(null);
@@ -494,7 +494,7 @@ function UserMenu({ collapsed }) {
             style={{ ...menuItem, color: "#f87171" }}
             onClick={() => {
               setPopupOpen(false);
-              logout();
+              onLogout?.();
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#1d1318")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}

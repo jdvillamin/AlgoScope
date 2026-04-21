@@ -8,12 +8,14 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, get_jwt_identity, verify_jwt_in_request
 import re
+import resource
 import subprocess
 import tempfile
 import os
 import shutil
 
 from ml.instrumenter import instrument_code
+from validator import validate_code
 from models import db, bcrypt, limiter, RunHistory
 
 app = Flask(__name__)
@@ -114,6 +116,14 @@ def run_code():
         return jsonify({"error": "Input exceeds the maximum allowed length (1 000 characters)."}), 400
     user_id = _get_optional_user_id()
 
+    # Validate code for dangerous constructs before any processing
+    violations = validate_code(code)
+    if violations:
+        return jsonify({
+            "error": "Code contains blocked constructs.",
+            "violations": violations,
+        }), 400
+
     if not instrument_only:
         # Validate that no number in stdin exceeds 20
         numbers = re.findall(r'-?\d+', stdin_text)
@@ -174,12 +184,18 @@ def run_code():
                 "instrumented_code": code
             })
 
+        def _set_limits():
+            resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+            resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
+            resource.setrlimit(resource.RLIMIT_NOFILE, (8, 8))
+
         try:
             run_proc = subprocess.run(
                 [exe],
                 input=stdin_text.encode("utf-8") if stdin_text else None,
                 capture_output=True,
-                timeout=5
+                timeout=5,
+                preexec_fn=_set_limits,
             )
         except subprocess.TimeoutExpired:
             _save_run_history(user_id, code, None, "timeout")

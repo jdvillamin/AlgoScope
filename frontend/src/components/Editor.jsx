@@ -18,6 +18,7 @@ function Editor({
   lockToLine,
   setLockToLine,
   onDeInstrument,
+  securityViolations = [],
   onHide,
   editorWidth = 560,
   isMobile = false,
@@ -90,6 +91,34 @@ function Editor({
     if (!editor || !isRunning || !currentLine || isInstrumentedTab || !lockToLine) return;
     editor.revealLineInCenter(currentLine);
   }, [currentLine, isRunning, isInstrumentedTab, lockToLine]);
+
+  // Security violation markers
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    const editor = editorRef.current;
+    if (!monaco || !editor) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    if (isInstrumentedTab || securityViolations.length === 0) {
+      monaco.editor.setModelMarkers(model, "security", []);
+      return;
+    }
+
+    const markers = securityViolations.map((v) => ({
+      startLineNumber: v.line,
+      startColumn: 1,
+      endLineNumber: v.line,
+      endColumn: model.getLineMaxColumn(v.line),
+      message: v.message,
+      severity: monaco.MarkerSeverity.Error,
+      source: "Security",
+    }));
+    monaco.editor.setModelMarkers(model, "security", markers);
+  }, [securityViolations, isInstrumentedTab]);
+
+  const hasViolations = !isInstrumentedTab && securityViolations.length > 0;
 
   const iconBtn = (active = true) => ({
     width: isMobile ? "28px" : "32px",
@@ -200,7 +229,7 @@ function Editor({
           )}
 
           <button
-            onClick={!isProcessing ? onRun : undefined}
+            onClick={!isProcessing && !hasViolations ? onRun : undefined}
             style={{
               ...iconBtn(),
               width: "auto",
@@ -208,13 +237,14 @@ function Editor({
               gap: "6px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: isProcessing ? "#506888" : "#4b8cf7",
-              border: `1px solid ${isProcessing ? "#1a2535" : "#1e3a6e"}`,
-              background: isProcessing ? "#0f1928" : "#0f1e3a",
+              color: hasViolations ? "#f87171" : isProcessing ? "#506888" : "#4b8cf7",
+              border: `1px solid ${hasViolations ? "#5c1e1e" : isProcessing ? "#1a2535" : "#1e3a6e"}`,
+              background: hasViolations ? "#1a0f0f" : isProcessing ? "#0f1928" : "#0f1e3a",
+              cursor: isProcessing || hasViolations ? "not-allowed" : "pointer",
             }}
-            title={isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
+            title={hasViolations ? "Fix security violations before running" : isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
           >
-            {isProcessing ? "⋯" : "▶"}{(isMobile || editorWidth >= 480) && <>&nbsp;{isProcessing ? "Running" : isInstrumentedTab ? "Run" : "Instrument"}</>}
+            {isProcessing ? "⋯" : hasViolations ? "!" : "▶"}{(isMobile || editorWidth >= 480) && <>&nbsp;{isProcessing ? "Running" : hasViolations ? "Blocked" : isInstrumentedTab ? "Run" : "Instrument"}</>}
           </button>
 
           <button

@@ -41,6 +41,7 @@ class SavedCode(db.Model):
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False, index=True)
     title = db.Column(db.String(255), nullable=False)
     code = db.Column(db.Text, nullable=False)
+    stdin = db.Column(db.Text, nullable=False, server_default="")
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc))

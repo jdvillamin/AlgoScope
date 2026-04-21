@@ -7,10 +7,14 @@ import UnsavedPrompt from "./components/UnsavedPrompt";
 import ConfirmPrompt from "./components/ConfirmPrompt";
 import API from "./api/backend";
 import { getHistoryRun } from "./api/history";
+import { listCodes, createCode, updateCode, deleteCode } from "./api/codes";
+import { useAuth } from "./contexts/useAuth";
+import { validateCode } from "./utils/codeValidator";
 
 const STORAGE_KEY = "algoscope:state:v2";
 const DEFAULT_FILE = {
   id: "1",
+  cloudId: null,
   name: "Untitled",
   code: "",
   instrumentedCode: "",
@@ -42,6 +46,7 @@ function loadPersistedState() {
         const stdin = typeof f.stdin === "string" ? f.stdin : "";
         return {
           id: f.id,
+          cloudId: null,
           name,
           code,
           instrumentedCode: typeof f.instrumentedCode === "string" ? f.instrumentedCode : "",
@@ -99,9 +104,9 @@ function reverseInstrument(instrumentedCode) {
 }
 
 function App() {
-  // Read persisted state exactly once on mount via a lazy useState initializer
-  // — lint forbids touching ref.current during render, but a useState init
-  // function runs exactly once per mount.
+  const { user, loading: authLoading, logout } = useAuth();
+  const prevUserRef = useRef(undefined);
+
   const [persisted] = useState(loadPersistedState);
 
   const nextId = useRef(
@@ -111,11 +116,86 @@ function App() {
   );
   const [files, setFiles] = useState(() => persisted?.files ?? [DEFAULT_FILE]);
   const [activeFileId, setActiveFileId] = useState(() => persisted?.activeFileId ?? "1");
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Debounced write-through to localStorage. Only files that are saved (clean
-  // vs. their savedSnapshot) are persisted — unsaved samples / new files /
-  // dirty edits disappear on reload.
+  // On auth change: fetch codes from DB when logged in, reset on logout
   useEffect(() => {
+    if (authLoading) return;
+    const prev = prevUserRef.current;
+    prevUserRef.current = user;
+    if (prev === undefined) {
+      // Initial auth resolution
+      if (user) {
+        listCodes()
+          .then((codes) => {
+            if (codes.length > 0) {
+              const loaded = codes.map((c) => {
+                const id = String(nextId.current++);
+                return {
+                  id,
+                  cloudId: c.id,
+                  name: c.title,
+                  code: c.code,
+                  instrumentedCode: "",
+                  stdin: c.stdin || "",
+                  trace: [],
+                  stdout: "",
+                  savedSnapshot: { code: c.code, name: c.title, stdin: c.stdin || "" },
+                };
+              });
+              setFiles(loaded);
+              setActiveFileId(loaded[0].id);
+            } else {
+              const id = String(nextId.current++);
+              setFiles([{ ...DEFAULT_FILE, id }]);
+              setActiveFileId(id);
+            }
+          })
+          .catch(() => {});
+      }
+      // If not logged in on mount, localStorage state is already loaded
+      return;
+    }
+    if (!prev && user) {
+      // Just logged in
+      listCodes()
+        .then((codes) => {
+          if (codes.length > 0) {
+            const loaded = codes.map((c) => {
+              const id = String(nextId.current++);
+              return {
+                id,
+                cloudId: c.id,
+                name: c.title,
+                code: c.code,
+                instrumentedCode: "",
+                stdin: c.stdin || "",
+                trace: [],
+                stdout: "",
+                savedSnapshot: { code: c.code, name: c.title, stdin: c.stdin || "" },
+              };
+            });
+            setFiles(loaded);
+            setActiveFileId(loaded[0].id);
+          } else {
+            const id = String(nextId.current++);
+            setFiles([{ ...DEFAULT_FILE, id }]);
+            setActiveFileId(id);
+          }
+        })
+        .catch(() => {});
+    } else if (prev && !user) {
+      // Just logged out — reset to fresh state
+      const id = String(nextId.current++);
+      setFiles([{ ...DEFAULT_FILE, id }]);
+      setActiveFileId(id);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [user, authLoading]);
+
+  // localStorage persistence — only for anonymous users
+  useEffect(() => {
+    if (user) return;
     const handle = setTimeout(() => {
       try {
         const cleanFiles = files.filter((f) => !isFileUnsaved(f));
@@ -130,7 +210,16 @@ function App() {
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [files, activeFileId]);
+  }, [files, activeFileId, user]);
+
+  // Warn before closing/reloading with unsaved changes
+  useEffect(() => {
+    const handler = (e) => {
+      if (files.some(isFileUnsaved)) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [files]);
 
   const [activeTab, setActiveTab] = useState("raw");
   const [currentStep, setCurrentStep] = useState(0);
@@ -139,6 +228,8 @@ function App() {
   const [runPhase, setRunPhase] = useState("Idle");
   const [lockToLine, setLockToLine] = useState(true);
   const [overwritePromptOpen, setOverwritePromptOpen] = useState(false);
+  const [logoutPromptOpen, setLogoutPromptOpen] = useState(false);
+  const [securityViolations, setSecurityViolations] = useState([]);
 
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -206,6 +297,14 @@ function App() {
   const stdout = activeFile?.stdout || "";
   const isRunning = trace.length > 0;
 
+  // Debounced frontend code validation
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setSecurityViolations(validateCode(code));
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [code]);
+
   const updateActiveFile = useCallback(
     (updates) => {
       setFiles((prev) =>
@@ -267,16 +366,43 @@ function App() {
     [activeFile]
   );
 
-  const handleSaveActive = useCallback(() => {
+  const handleSaveActive = useCallback(async () => {
     if (!activeFile) return;
-    updateActiveFile({
-      savedSnapshot: {
-        code: activeFile.code ?? "",
-        name: activeFile.name ?? "",
-        stdin: activeFile.stdin ?? "",
-      },
-    });
-  }, [activeFile, updateActiveFile]);
+
+    const fileId = activeFile.id;
+    const cloudId = activeFile.cloudId;
+    const name = activeFile.name || "Untitled";
+    const code = activeFile.code ?? "";
+    const stdinVal = activeFile.stdin ?? "";
+
+    if (user) {
+      setIsSaving(true);
+      try {
+        if (cloudId) {
+          await updateCode(cloudId, { title: name, code, stdin: stdinVal });
+        } else {
+          const saved = await createCode(name, code, stdinVal);
+          setFiles((prev) =>
+            prev.map((f) => (f.id === fileId ? { ...f, cloudId: saved.id } : f))
+          );
+        }
+      } catch (err) {
+        console.error("Save failed:", err);
+        setError("Failed to save. Please try again.");
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
+    }
+
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, savedSnapshot: { code: f.code ?? "", name: f.name ?? "", stdin: f.stdin ?? "" } }
+          : f
+      )
+    );
+  }, [activeFile, user]);
 
   const handleDiscardActive = useCallback(() => {
     if (!activeFile) return;
@@ -308,8 +434,8 @@ function App() {
     if (typeof action === "function") action();
   }, [pendingAction]);
 
-  const handlePromptSave = useCallback(() => {
-    handleSaveActive();
+  const handlePromptSave = useCallback(async () => {
+    await handleSaveActive();
     runPendingAction();
   }, [handleSaveActive, runPendingAction]);
 
@@ -329,6 +455,7 @@ function App() {
         ...prev,
         {
           id,
+          cloudId: null,
           name: "Untitled",
           code: "",
           instrumentedCode: "",
@@ -361,6 +488,10 @@ function App() {
   const handleDeleteFile = useCallback(
     (id) => {
       const doDelete = () => {
+        const fileToDelete = files.find((f) => f.id === id);
+        if (user && fileToDelete?.cloudId) {
+          deleteCode(fileToDelete.cloudId).catch(() => {});
+        }
         setFiles((prev) => {
           const remaining = prev.filter((f) => f.id !== id);
           if (remaining.length === 0) return prev;
@@ -373,14 +504,13 @@ function App() {
           return remaining;
         });
       };
-      // Only guard when deleting the currently-active unsaved file.
       if (id === activeFileId && isFileUnsaved(activeFile)) {
         withUnsavedGuard(doDelete);
       } else {
         doDelete();
       }
     },
-    [activeFile, activeFileId, resetUiState, withUnsavedGuard]
+    [activeFile, activeFileId, files, user, resetUiState, withUnsavedGuard]
   );
 
   const handleImportFile = useCallback(
@@ -396,6 +526,7 @@ function App() {
             ...prev,
             {
               id,
+              cloudId: null,
               name,
               code: contents,
               instrumentedCode: "",
@@ -438,6 +569,7 @@ function App() {
           ...prev,
           {
             id,
+            cloudId: null,
             name: sample.name,
             code: sample.code,
             instrumentedCode: sample.instrumentedCode || "",
@@ -445,30 +577,6 @@ function App() {
             trace: [],
             stdout: "",
             savedSnapshot: null,
-          },
-        ]);
-        setActiveFileId(id);
-        resetUiState();
-      });
-    },
-    [resetUiState, withUnsavedGuard]
-  );
-
-  const handleLoadCloudCode = useCallback(
-    (cloudCode) => {
-      withUnsavedGuard(() => {
-        const id = String(nextId.current++);
-        setFiles((prev) => [
-          ...prev,
-          {
-            id,
-            name: cloudCode.title,
-            code: cloudCode.code,
-            instrumentedCode: "",
-            stdin: "",
-            trace: [],
-            stdout: "",
-            savedSnapshot: { code: cloudCode.code, name: cloudCode.title, stdin: "" },
           },
         ]);
         setActiveFileId(id);
@@ -505,6 +613,7 @@ function App() {
           ...prev,
           {
             id,
+            cloudId: null,
             name: firstLine,
             code: run.code,
             instrumentedCode: "",
@@ -521,6 +630,21 @@ function App() {
     },
     [resetUiState, withUnsavedGuard]
   );
+
+  // --- Logout ---
+
+  const doLogout = useCallback(async () => {
+    setLogoutPromptOpen(false);
+    await logout();
+  }, [logout]);
+
+  const handleLogout = useCallback(() => {
+    if (files.some(isFileUnsaved)) {
+      setLogoutPromptOpen(true);
+    } else {
+      doLogout();
+    }
+  }, [files, doLogout]);
 
   // --- Execution ---
 
@@ -549,6 +673,11 @@ function App() {
 
     if (!codeToRun.trim()) {
       alert("Please enter C code first.");
+      return;
+    }
+
+    if (!isInstrumentedTab && securityViolations.length > 0) {
+      setError("Code contains blocked constructs. Fix the highlighted issues before running.");
       return;
     }
 
@@ -602,8 +731,13 @@ function App() {
         }, 250);
       } catch (err) {
         console.error(err);
-        setRunPhase("Connection error.");
-        setError("Unable to reach the server. Please check your connection and try again.");
+        if (err.response?.data?.violations) {
+          setRunPhase("Blocked by security validator.");
+          setError(err.response.data.violations.map((v) => `Line ${v.line}: ${v.message}`).join("\n"));
+        } else {
+          setRunPhase("Connection error.");
+          setError("Unable to reach the server. Please check your connection and try again.");
+        }
         setIsProcessing(false);
       }
     } else {
@@ -654,8 +788,13 @@ function App() {
       }, 250);
     } catch (err) {
       console.error(err);
-      setRunPhase("Connection error.");
-      setError("Unable to reach the server. Please check your connection and try again.");
+      if (err.response?.data?.violations) {
+        setRunPhase("Blocked by security validator.");
+        setError(err.response.data.violations.map((v) => `Line ${v.line}: ${v.message}`).join("\n"));
+      } else {
+        setRunPhase("Connection error.");
+        setError("Unable to reach the server. Please check your connection and try again.");
+      }
       setIsProcessing(false);
     }
   };
@@ -758,6 +897,14 @@ function App() {
           confirmLabel="Overwrite"
           onConfirm={() => { setOverwritePromptOpen(false); doInstrument(); }}
           onCancel={() => setOverwritePromptOpen(false)}
+        />
+        <ConfirmPrompt
+          open={logoutPromptOpen}
+          title="Unsaved changes"
+          message="You have unsaved files that will be lost after logging out."
+          confirmLabel="Log out"
+          onConfirm={doLogout}
+          onCancel={() => setLogoutPromptOpen(false)}
         />
 
         {/* Canvas — full viewport background */}
@@ -880,6 +1027,7 @@ function App() {
                   lockToLine={lockToLine}
                   setLockToLine={setLockToLine}
                   onDeInstrument={deInstrument}
+                  securityViolations={securityViolations}
                   isMobile
                 />
               </div>
@@ -936,6 +1084,15 @@ function App() {
                     </div>
                   ) : error ? (
                     error
+                  ) : securityViolations.length > 0 ? (
+                    <div style={{ color: "#f0a429" }}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>Security violations ({securityViolations.length})</div>
+                      {securityViolations.map((v, i) => (
+                        <div key={i} style={{ color: "#d4956a", fontSize: "10px", marginBottom: "2px" }}>
+                          Line {v.line}: {v.message}
+                        </div>
+                      ))}
+                    </div>
                   ) : trace.length > 0 ? (
                     <>
                       <div style={{ color: "#506888", marginBottom: stdout ? "6px" : 0 }}>
@@ -994,10 +1151,9 @@ function App() {
                 onImportFile={(file) => { handleImportFile(file); setMobileSidebarOpen(false); setSheetSnap("half"); }}
                 onExportFile={handleExportFile}
                 onSaveFile={handleSaveActive}
-                onLoadCloudCode={(cloudCode) => { handleLoadCloudCode(cloudCode); setMobileSidebarOpen(false); setSheetSnap("half"); }}
                 onLoadHistoryRun={(run) => { handleLoadHistoryRun(run); setMobileSidebarOpen(false); }}
-                currentCode={code}
-                currentName={activeFile?.name}
+                onLogout={handleLogout}
+                isSaving={isSaving}
               />
             </div>
           </>
@@ -1046,10 +1202,9 @@ function App() {
         onImportFile={handleImportFile}
         onExportFile={handleExportFile}
         onSaveFile={handleSaveActive}
-        onLoadCloudCode={handleLoadCloudCode}
         onLoadHistoryRun={handleLoadHistoryRun}
-        currentCode={code}
-        currentName={activeFile?.name}
+        onLogout={handleLogout}
+        isSaving={isSaving}
       />
       <UnsavedPrompt
         open={promptOpen}
@@ -1065,6 +1220,14 @@ function App() {
         confirmLabel="Overwrite"
         onConfirm={() => { setOverwritePromptOpen(false); doInstrument(); }}
         onCancel={() => setOverwritePromptOpen(false)}
+      />
+      <ConfirmPrompt
+        open={logoutPromptOpen}
+        title="Unsaved changes"
+        message="You have unsaved files that will be lost after logging out."
+        confirmLabel="Log out"
+        onConfirm={doLogout}
+        onCancel={() => setLogoutPromptOpen(false)}
       />
 
       {/* LEFT: Canvas */}
@@ -1171,6 +1334,7 @@ function App() {
             lockToLine={lockToLine}
             setLockToLine={setLockToLine}
             onDeInstrument={deInstrument}
+            securityViolations={securityViolations}
             onHide={() => setEditorHidden(true)}
             editorWidth={editorWidth}
           />
@@ -1294,6 +1458,17 @@ function App() {
               </div>
             ) : error ? (
               error
+            ) : securityViolations.length > 0 ? (
+              <div style={{ color: "#f0a429" }}>
+                <div style={{ fontWeight: 600, marginBottom: "6px", fontSize: "12px" }}>
+                  Security violations ({securityViolations.length})
+                </div>
+                {securityViolations.map((v, i) => (
+                  <div key={i} style={{ color: "#d4956a", fontSize: "12px", marginBottom: "3px" }}>
+                    Line {v.line}: {v.message}
+                  </div>
+                ))}
+              </div>
             ) : trace.length > 0 ? (
               <>
                 <div style={{ color: "#506888", marginBottom: stdout ? "10px" : 0 }}>

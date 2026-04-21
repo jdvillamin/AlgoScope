@@ -1,10 +1,9 @@
 import { useState, useRef } from "react";
 import SAMPLE_CATEGORIES from "../samples";
 import UserMenu from "./UserMenu";
-import SavedCodes from "./SavedCodes";
 import RunHistory from "./RunHistory";
 
-function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadCloudCode, onLoadHistoryRun, currentCode, currentName, isMobile }) {
+function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadHistoryRun, onLogout, isSaving, isMobile }) {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -130,19 +129,19 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
             <span style={{ fontSize: "13px", lineHeight: 1 }}>↓</span>
           </button>
           <button
-            onClick={() => activeFileUnsaved && onSaveFile?.()}
-            disabled={!activeFileUnsaved}
+            onClick={() => activeFileUnsaved && !isSaving && onSaveFile?.()}
+            disabled={!activeFileUnsaved || isSaving}
             style={{
               ...collapsedBtn,
               border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
               background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
               color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
-              cursor: activeFileUnsaved ? "pointer" : "default",
+              cursor: activeFileUnsaved && !isSaving ? "pointer" : "default",
               fontSize: "13px",
             }}
-            title={activeFileUnsaved ? "Save file" : "No unsaved changes"}
+            title={isSaving ? "Saving..." : activeFileUnsaved ? "Save file" : "No unsaved changes"}
           >
-            ✓
+            {isSaving ? "⋯" : "✓"}
           </button>
 
           <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
@@ -216,12 +215,14 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               fontFamily: "inherit",
             }}
             title={
-              activeFileUnsaved
-                ? "Save the active file to local storage"
-                : "No unsaved changes"
+              isSaving
+                ? "Saving..."
+                : activeFileUnsaved
+                  ? "Save file"
+                  : "No unsaved changes"
             }
           >
-            {activeFileUnsaved ? "Save file" : "Saved"}
+            {isSaving ? "Saving..." : activeFileUnsaved ? "Save file" : "Saved"}
           </button>
         </div>
       )}
@@ -369,16 +370,6 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
           })}
         </div>
 
-        {/* Divider */}
-        <div style={{ height: "1px", background: "#1a2535", margin: "4px 14px" }} />
-
-        {/* Cloud Saves */}
-        <SavedCodes
-          onLoadCode={onLoadCloudCode}
-          currentCode={currentCode}
-          currentName={currentName}
-        />
-
         {/* Run History */}
         <RunHistory onLoadRun={onLoadHistoryRun} />
 
@@ -460,7 +451,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         </div>
       </div>}
 
-      <UserMenu collapsed={effectiveCollapsed} />
+      <UserMenu collapsed={effectiveCollapsed} onLogout={onLogout} />
     </div>
   );
 }
