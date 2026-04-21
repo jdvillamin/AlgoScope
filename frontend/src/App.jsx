@@ -351,14 +351,19 @@ function App() {
   );
 
   // Pending action + modal. When the active file is unsaved and the user
-  // tries to switch away, we stash the action as a function and prompt.
+  // tries to switch away, we stash the action and prompt. Some actions, like
+  // deleting the active file, should skip a separate discard because the
+  // action itself already removes the unsaved file.
   const [pendingAction, setPendingAction] = useState(null);
   const promptOpen = pendingAction !== null;
 
   const withUnsavedGuard = useCallback(
-    (action) => {
+    (action, options = {}) => {
       if (isFileUnsaved(activeFile)) {
-        setPendingAction(() => action);
+        setPendingAction({
+          run: action,
+          discardCurrent: options.discardCurrent !== false,
+        });
       } else {
         action();
       }
@@ -431,7 +436,7 @@ function App() {
   const runPendingAction = useCallback(() => {
     const action = pendingAction;
     setPendingAction(null);
-    if (typeof action === "function") action();
+    if (typeof action?.run === "function") action.run();
   }, [pendingAction]);
 
   const handlePromptSave = useCallback(async () => {
@@ -440,9 +445,11 @@ function App() {
   }, [handleSaveActive, runPendingAction]);
 
   const handlePromptDiscard = useCallback(() => {
-    handleDiscardActive();
+    if (pendingAction?.discardCurrent !== false) {
+      handleDiscardActive();
+    }
     runPendingAction();
-  }, [handleDiscardActive, runPendingAction]);
+  }, [handleDiscardActive, pendingAction, runPendingAction]);
 
   const handlePromptCancel = useCallback(() => {
     setPendingAction(null);
@@ -488,29 +495,33 @@ function App() {
   const handleDeleteFile = useCallback(
     (id) => {
       const doDelete = () => {
-        const fileToDelete = files.find((f) => f.id === id);
-        if (user && fileToDelete?.cloudId) {
-          deleteCode(fileToDelete.cloudId).catch(() => {});
-        }
         setFiles((prev) => {
+          const target = prev.find((f) => f.id === id);
+          if (!target) return prev;
+
+          if (user && target.cloudId) {
+            deleteCode(target.cloudId).catch(() => {});
+          }
+
           const remaining = prev.filter((f) => f.id !== id);
           if (remaining.length === 0) return prev;
-          if (id === activeFileId) {
+
+          setActiveFileId((curId) => {
+            if (curId !== id) return curId;
             const idx = prev.findIndex((f) => f.id === id);
-            const next = remaining[Math.min(idx, remaining.length - 1)];
-            setActiveFileId(next.id);
-            resetUiState();
-          }
+            return remaining[Math.min(idx, remaining.length - 1)].id;
+          });
+          resetUiState();
           return remaining;
         });
       };
       if (id === activeFileId && isFileUnsaved(activeFile)) {
-        withUnsavedGuard(doDelete);
+        withUnsavedGuard(doDelete, { discardCurrent: false });
       } else {
         doDelete();
       }
     },
-    [activeFile, activeFileId, files, user, resetUiState, withUnsavedGuard]
+    [activeFile, activeFileId, user, resetUiState, withUnsavedGuard]
   );
 
   const handleImportFile = useCallback(
