@@ -40,6 +40,12 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       newObjects[step.name].highlightIndex = step.i;
     }
 
+    if (step.type === "array_cell" && newObjects[step.name]) {
+      const markers = { ...(newObjects[step.name].cellMarkers || {}) };
+      markers[step.var] = step.i;
+      newObjects[step.name].cellMarkers = markers;
+    }
+
     // ================= 2D ARRAY =================
     if (step.type === "array2d_init") {
       newObjects[step.name] = {
@@ -63,6 +69,12 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
     if (step.type === "array2d_highlight" && newObjects[step.name]) {
       newObjects[step.name].highlightRow = step.r;
       newObjects[step.name].highlightCol = step.c;
+    }
+
+    if (step.type === "array2d_cell" && newObjects[step.name]) {
+      const markers = { ...(newObjects[step.name].cellMarkers || {}) };
+      markers[step.var] = { r: step.r, c: step.c };
+      newObjects[step.name].cellMarkers = markers;
     }
 
     // ================= LINKED LIST =================

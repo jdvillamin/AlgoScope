@@ -1745,10 +1745,12 @@ int main() {
   for (int i = 0; i < n - 1; i++) {
     trace_line(13);
     trace_var_init("i", i);
+    trace_array_cell("arr", "i", i);
     trace_line(14);
     for (int j = 0; j < n - 1 - i; j++) {
       trace_line(14);
       trace_var_init("j", j);
+      trace_array_cell("arr", "j", j);
       trace_array_highlight("arr", j);
       trace_line(15);
       if (arr[j] > arr[j + 1]) {
@@ -1826,19 +1828,23 @@ int main() {
   for (int i = 0; i < n - 1; i++) {
     trace_line(14);
     trace_var_init("i", i);
+    trace_array_cell("arr", "i", i);
     trace_line(15);
     int minIdx = i;
     trace_var_init("minIdx", minIdx);
+    trace_array_cell("arr", "min", minIdx);
     trace_line(16);
     for (int j = i + 1; j < n; j++) {
       trace_line(16);
       trace_var_init("j", j);
+      trace_array_cell("arr", "j", j);
       trace_array_highlight("arr", j);
       trace_line(17);
       if (arr[j] < arr[minIdx]) {
         trace_line(18);
         minIdx = j;
         trace_var("minIdx", minIdx);
+        trace_array_cell("arr", "min", minIdx);
       }
     }
     trace_line(21);
@@ -1912,6 +1918,7 @@ int main() {
   for (int i = 1; i < n; i++) {
     trace_line(13);
     trace_var_init("i", i);
+    trace_array_cell("arr", "i", i);
     trace_line(14);
     int key = arr[i];
     trace_var_init("key", key);
@@ -1919,10 +1926,12 @@ int main() {
     trace_line(15);
     int j = i - 1;
     trace_var_init("j", j);
+    trace_array_cell("arr", "j", j);
     trace_line(16);
     while (j >= 0 && arr[j] > key) {
       trace_line(16);
       trace_var("j", j);
+      trace_array_cell("arr", "j", j);
       trace_array_highlight("arr", j);
       trace_line(17);
       arr[j + 1] = arr[j];
@@ -2292,6 +2301,7 @@ int main() {
   for (int i = 0; i < n; i++) {
     trace_line(17);
     trace_var_init("i", i);
+    trace_array_cell("arr", "i", i);
     trace_array_highlight("arr", i);
     trace_line(18);
     if (arr[i] == target) {
@@ -2389,7 +2399,9 @@ int main() {
   int low = 0, high = n - 1;
   trace_line(16);
   trace_var_init("low", low);
+  trace_array_cell("arr", "low", low);
   trace_var_init("high", high);
+  trace_array_cell("arr", "high", high);
   int found = -1;
   trace_line(17);
   trace_var_init("found", found);
@@ -2398,10 +2410,13 @@ int main() {
   while (low <= high) {
     trace_line(19);
     trace_var("low", low);
+    trace_array_cell("arr", "low", low);
     trace_var("high", high);
+    trace_array_cell("arr", "high", high);
     trace_line(20);
     int mid = (low + high) / 2;
     trace_var_init("mid", mid);
+    trace_array_cell("arr", "mid", mid);
     trace_array_highlight("arr", mid);
     trace_line(21);
     if (arr[mid] == target) {
@@ -2414,10 +2429,12 @@ int main() {
       trace_line(25);
       low = mid + 1;
       trace_var("low", low);
+      trace_array_cell("arr", "low", low);
     } else {
       trace_line(27);
       high = mid - 1;
       trace_var("high", high);
+      trace_array_cell("arr", "high", high);
     }
   }
 
