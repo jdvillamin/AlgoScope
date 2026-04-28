@@ -50,6 +50,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
 
   return (
     <div
+      data-tutorial="file-panel"
       style={{
         width: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
         minWidth: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
@@ -377,7 +378,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         <div style={{ height: "1px", background: "#1a2535", margin: "4px 14px" }} />
 
         {/* Samples */}
-        <div style={{ padding: "8px 0" }}>
+        <div data-tutorial="samples" style={{ padding: "8px 0" }}>
           <div
             style={{
               padding: "0 14px 6px",

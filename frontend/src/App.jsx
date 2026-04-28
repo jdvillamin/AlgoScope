@@ -5,6 +5,7 @@ import Controls from "./components/Controls";
 import FilePanel from "./components/FilePanel";
 import UnsavedPrompt from "./components/UnsavedPrompt";
 import ConfirmPrompt from "./components/ConfirmPrompt";
+import Tutorial from "./components/Tutorial";
 import API from "./api/backend";
 import { getHistoryRun } from "./api/history";
 import { listCodes, createCode, updateCode, deleteCode } from "./api/codes";
@@ -1251,7 +1252,7 @@ function App() {
           position: "relative",
         }}
       >
-        <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+        <div data-tutorial="canvas" style={{ flex: 1, position: "relative", minHeight: 0 }}>
           <Canvas trace={trace} currentStep={currentStep} />
         </div>
         {editorHidden && (
@@ -1285,6 +1286,7 @@ function App() {
           )}
 
         <div
+          data-tutorial="controls"
           style={{
             height: "100px",
             borderTop: "1px solid #1a2535",
@@ -1352,6 +1354,7 @@ function App() {
         </div>
 
         <div
+          data-tutorial="console"
           style={{
             flex: 1,
             display: "flex",
@@ -1500,6 +1503,8 @@ function App() {
           </div>
         </div>
       </div>
+
+      <Tutorial />
 
       <style>
         {`

@@ -158,6 +158,7 @@ function Editor({
 
   return (
     <div
+      data-tutorial="editor"
       style={{
         width: "100%",
         height: "100%",
@@ -229,6 +230,7 @@ function Editor({
           )}
 
           <button
+            data-tutorial="run-btn"
             onClick={!isProcessing && !hasViolations ? onRun : undefined}
             style={{
               ...iconBtn(),
