@@ -26,6 +26,7 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
         id: step.name,
         type: "array",
         data: Array(step.size).fill(""),
+        ...(step.display && { display: step.display }),
       };
     }
 

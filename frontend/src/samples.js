@@ -1730,7 +1730,7 @@ int main() {
 
   int arr[20];
   trace_line(7);
-  trace_array_init("arr", n);
+  trace_array_init_bars("arr", n);
   trace_line(8);
   for (int i = 0; i < n; i++) {
     trace_line(8);
