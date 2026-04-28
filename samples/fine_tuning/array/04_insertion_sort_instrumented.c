@@ -4,7 +4,7 @@
 
 int main() {
   int arr[5] = {7, 3, 5, 1, 9};
-  trace_array_init("arr", 5);
+  trace_array_init_bars("arr", 5);
   trace_array("arr", 0, 7);
   trace_array("arr", 1, 3);
   trace_array("arr", 2, 5);

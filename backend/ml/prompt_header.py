@@ -205,10 +205,21 @@ ARRAY TRACES
 ==================================================
 
 trace_array_init(char* name, int size)
+trace_array_init_bars(char* name, int size)
 trace_array(char* name, int index, int value)
 trace_array_highlight(char* name, int index)
+trace_array_cell(char* array_name, char* var_name, int index)
 
 Rules:
+
+SORTING ALGORITHM DETECTION:
+If the algorithm is a sorting algorithm (bubble sort, selection sort, insertion sort,
+merge sort, quick sort, heap sort, counting sort, radix sort, shell sort, or any
+algorithm whose primary purpose is to reorder array elements), use
+trace_array_init_bars instead of trace_array_init for the array being sorted.
+This renders the array as vertical bars with heights proportional to values,
+making sort progress visually clear. All other trace calls (trace_array,
+trace_array_highlight) remain the same.
 
 Initialize once after declaration.
 
@@ -274,6 +285,70 @@ if (arr[j] > arr[j + 1]) {
     trace_array("arr", j + 1, arr[j + 1]);
 }
 
+CELL MARKERS (Iterator-to-Array binding):
+
+trace_array_cell(char* array_name, char* var_name, int index)
+
+Purpose:
+Persistently highlights the array cell that a variable currently points to,
+with a small label showing the variable name beneath the cell. Multiple
+variables can mark different cells simultaneously (e.g., i and j in a sort,
+or low/mid/high in binary search). The marker moves when the variable
+value changes.
+
+When to use:
+Call trace_array_cell every time a variable that indexes into the array
+changes value. Place it right after any trace_var or trace_var_init call
+for that variable.
+
+When NOT to use:
+Do NOT use for temporary expressions or one-time accesses. Only use for
+named iterator/index variables that the user would want to track across
+multiple steps.
+
+Example (binary search):
+
+int low = 0, high = n - 1;
+trace_var_init("low", low);
+trace_array_cell("arr", "low", low);
+trace_var_init("high", high);
+trace_array_cell("arr", "high", high);
+
+while (low <= high) {
+    int mid = (low + high) / 2;
+    trace_var_init("mid", mid);
+    trace_array_cell("arr", "mid", mid);
+    if (arr[mid] == target) { ... }
+    else if (arr[mid] < target) {
+        low = mid + 1;
+        trace_var("low", low);
+        trace_array_cell("arr", "low", low);
+    } else {
+        high = mid - 1;
+        trace_var("high", high);
+        trace_array_cell("arr", "high", high);
+    }
+}
+
+Example (selection sort):
+
+for (int i = 0; i < n - 1; i++) {
+    trace_var_init("i", i);
+    trace_array_cell("arr", "i", i);
+    int minIdx = i;
+    trace_var_init("minIdx", minIdx);
+    trace_array_cell("arr", "minIdx", minIdx);
+    for (int j = i + 1; j < n; j++) {
+        trace_var_init("j", j);
+        trace_array_cell("arr", "j", j);
+        if (arr[j] < arr[minIdx]) {
+            minIdx = j;
+            trace_var("minIdx", minIdx);
+            trace_array_cell("arr", "minIdx", minIdx);
+        }
+    }
+}
+
 ==================================================
 2D ARRAY TRACES
 ==================================================
@@ -281,6 +356,7 @@ if (arr[j] > arr[j + 1]) {
 trace_array2d_init(char* name, int rows, int cols)
 trace_array2d(char* name, int r, int c, int value)
 trace_array2d_highlight(char* name, int r, int c)
+trace_array2d_cell(char* array_name, char* var_name, int r, int c)
 
 Rules:
 
@@ -315,6 +391,26 @@ trace_array2d("mat", r, c, mat[r][c]);
 Highlight the cell currently being accessed or compared.
 
 trace_array2d_highlight("mat", r, c);
+
+CELL MARKERS (Iterator-to-2D-Array binding):
+
+trace_array2d_cell(char* array_name, char* var_name, int r, int c)
+
+Same concept as trace_array_cell but for 2D arrays. Persistently highlights
+the cell at (r, c) with a label showing the variable name. Call it after
+each trace_var or trace_var_init for loop iterators that index into the
+matrix.
+
+Example:
+
+for (int r = 0; r < rows; r++) {
+    trace_var_init("r", r);
+    for (int c = 0; c < cols; c++) {
+        trace_var_init("c", c);
+        trace_array2d_cell("mat", "r,c", r, c);
+        // ... process mat[r][c] ...
+    }
+}
 
 ==================================================
 SINGLY LINKED LIST TRACES
@@ -578,6 +674,10 @@ Rules:
 
 1. Call trace_hash_init ONCE before any put or remove traces.
    Pass the total number of buckets as size.
+   CRITICAL: trace_hash_init is a function call and MUST be placed inside a function
+   body (typically at the start of main). If the hash table array is declared at file
+   scope (global), do NOT place trace_hash_init next to that declaration — place it
+   as the first statement inside main() instead.
 
 2. Call trace_hash_put AFTER the new node has been fully inserted into the bucket chain.
    Pass the key, value, and the bucket index returned by the hash function.

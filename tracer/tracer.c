@@ -26,6 +26,10 @@ void trace_array_init(char* name, int size) {
   printf("{\"type\":\"array_init\",\"name\":\"%s\",\"size\":%d}\n", name, size);
 }
 
+void trace_array_init_bars(char* name, int size) {
+  printf("{\"type\":\"array_init\",\"name\":\"%s\",\"size\":%d,\"display\":\"bars\"}\n", name, size);
+}
+
 void _trace_array_ll(char* name, int index, long long value) {
   printf("{\"type\":\"array\",\"name\":\"%s\",\"i\":%d,\"v\":%lld}\n", name,
          index, value);
@@ -39,6 +43,11 @@ void _trace_array_char(char* name, int index, char value) {
 void trace_array_highlight(char* name, int index) {
   printf("{\"type\":\"array_highlight\",\"name\":\"%s\",\"i\":%d}\n", name,
          index);
+}
+
+void trace_array_cell(char* array_name, char* var_name, int index) {
+  printf("{\"type\":\"array_cell\",\"name\":\"%s\",\"var\":\"%s\",\"i\":%d}\n",
+         array_name, var_name, index);
 }
 
 /* ── 2D Array ───────────────────────────────────────────────────── */
@@ -63,6 +72,11 @@ void trace_array2d_highlight(char* name, int r, int c) {
   printf(
       "{\"type\":\"array2d_highlight\",\"name\":\"%s\",\"r\":%d,\"c\":%d}\n",
       name, r, c);
+}
+
+void trace_array2d_cell(char* array_name, char* var_name, int r, int c) {
+  printf("{\"type\":\"array2d_cell\",\"name\":\"%s\",\"var\":\"%s\",\"r\":%d,\"c\":%d}\n",
+         array_name, var_name, r, c);
 }
 
 /* ── Singly Linked List ─────────────────────────────────────────── */

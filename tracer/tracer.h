@@ -90,10 +90,13 @@ void _trace_hash_remove_ll(char* name, long long key, int index);
 /* ── Functions without value parameters (no dispatch needed) ──── */
 
 void trace_array_init(char* name, int size);
+void trace_array_init_bars(char* name, int size);
 void trace_array_highlight(char* name, int index);
+void trace_array_cell(char* array_name, char* var_name, int index);
 
 void trace_array2d_init(char* name, int rows, int cols);
 void trace_array2d_highlight(char* name, int r, int c);
+void trace_array2d_cell(char* array_name, char* var_name, int r, int c);
 
 void trace_ll_init(char* name);
 void trace_ll_link(char* list, char* from, char* to);
