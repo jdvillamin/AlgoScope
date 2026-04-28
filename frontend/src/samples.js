@@ -1689,7 +1689,7 @@ int main() {
     ],
   },
   {
-    name: "Algorithms",
+    name: "Sorting Algorithms",
     samples: [
       {
         name: "Bubble Sort",
@@ -1770,6 +1770,459 @@ int main() {
 }
 `,
       },
+      {
+        name: "Selection Sort",
+        stdin: "5 8 3 6 1 4",
+        code: `#include <stdio.h>
+
+int main() {
+  int n;
+  scanf("%d", &n);
+
+  int arr[20];
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+  }
+
+  // Selection Sort
+  for (int i = 0; i < n - 1; i++) {
+    int minIdx = i;
+    for (int j = i + 1; j < n; j++) {
+      if (arr[j] < arr[minIdx]) {
+        minIdx = j;
+      }
+    }
+    int temp = arr[i];
+    arr[i] = arr[minIdx];
+    arr[minIdx] = temp;
+  }
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int main() {
+  int n;
+  trace_line(5);
+  scanf("%d", &n);
+  trace_var_init("n", n);
+
+  int arr[20];
+  trace_line(7);
+  trace_array_init_bars("arr", n);
+  trace_line(8);
+  for (int i = 0; i < n; i++) {
+    trace_line(8);
+    trace_var_init("i", i);
+    trace_line(9);
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+  }
+
+  // Selection Sort
+  trace_line(14);
+  for (int i = 0; i < n - 1; i++) {
+    trace_line(14);
+    trace_var_init("i", i);
+    trace_line(15);
+    int minIdx = i;
+    trace_var_init("minIdx", minIdx);
+    trace_line(16);
+    for (int j = i + 1; j < n; j++) {
+      trace_line(16);
+      trace_var_init("j", j);
+      trace_array_highlight("arr", j);
+      trace_line(17);
+      if (arr[j] < arr[minIdx]) {
+        trace_line(18);
+        minIdx = j;
+        trace_var("minIdx", minIdx);
+      }
+    }
+    trace_line(21);
+    int temp = arr[i];
+    trace_var_init("temp", temp);
+    trace_array_highlight("arr", i);
+    trace_line(22);
+    arr[i] = arr[minIdx];
+    trace_array("arr", i, arr[i]);
+    trace_line(23);
+    arr[minIdx] = temp;
+    trace_array("arr", minIdx, arr[minIdx]);
+  }
+
+  trace_line(26);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Insertion Sort",
+        stdin: "5 12 4 7 2 9",
+        code: `#include <stdio.h>
+
+int main() {
+  int n;
+  scanf("%d", &n);
+
+  int arr[20];
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+  }
+
+  // Insertion Sort
+  for (int i = 1; i < n; i++) {
+    int key = arr[i];
+    int j = i - 1;
+    while (j >= 0 && arr[j] > key) {
+      arr[j + 1] = arr[j];
+      j--;
+    }
+    arr[j + 1] = key;
+  }
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int main() {
+  int n;
+  trace_line(5);
+  scanf("%d", &n);
+  trace_var_init("n", n);
+
+  int arr[20];
+  trace_line(7);
+  trace_array_init_bars("arr", n);
+  trace_line(8);
+  for (int i = 0; i < n; i++) {
+    trace_line(8);
+    trace_var_init("i", i);
+    trace_line(9);
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+  }
+
+  // Insertion Sort
+  trace_line(13);
+  for (int i = 1; i < n; i++) {
+    trace_line(13);
+    trace_var_init("i", i);
+    trace_line(14);
+    int key = arr[i];
+    trace_var_init("key", key);
+    trace_array_highlight("arr", i);
+    trace_line(15);
+    int j = i - 1;
+    trace_var_init("j", j);
+    trace_line(16);
+    while (j >= 0 && arr[j] > key) {
+      trace_line(16);
+      trace_var("j", j);
+      trace_array_highlight("arr", j);
+      trace_line(17);
+      arr[j + 1] = arr[j];
+      trace_array("arr", j + 1, arr[j + 1]);
+      trace_line(18);
+      j--;
+      trace_var("j", j);
+    }
+    trace_line(20);
+    arr[j + 1] = key;
+    trace_array("arr", j + 1, arr[j + 1]);
+  }
+
+  trace_line(23);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Merge Sort",
+        stdin: "6 5 2 8 1 9 3",
+        code: `#include <stdio.h>
+
+int arr[20];
+int n;
+
+void merge(int l, int m, int r) {
+  int temp[20];
+  int i = l, j = m + 1, k = l;
+
+  while (i <= m && j <= r) {
+    if (arr[i] <= arr[j]) {
+      temp[k++] = arr[i++];
+    } else {
+      temp[k++] = arr[j++];
+    }
+  }
+  while (i <= m) temp[k++] = arr[i++];
+  while (j <= r) temp[k++] = arr[j++];
+
+  for (int x = l; x <= r; x++) {
+    arr[x] = temp[x];
+  }
+}
+
+void mergeSort(int l, int r) {
+  if (l >= r) return;
+  int m = (l + r) / 2;
+  mergeSort(l, m);
+  mergeSort(m + 1, r);
+  merge(l, m, r);
+}
+
+int main() {
+  scanf("%d", &n);
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+  }
+
+  mergeSort(0, n - 1);
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int arr[20];
+int n;
+
+void merge(int l, int m, int r) {
+  trace_var_init("l", l);
+  trace_var_init("m", m);
+  trace_var_init("r", r);
+  int temp[20];
+  int i = l, j = m + 1, k = l;
+  trace_line(8);
+  trace_var_init("i", i);
+  trace_var_init("j", j);
+  trace_var_init("k", k);
+
+  trace_line(10);
+  while (i <= m && j <= r) {
+    trace_line(10);
+    trace_array_highlight("arr", i);
+    trace_array_highlight("arr", j);
+    trace_line(11);
+    if (arr[i] <= arr[j]) {
+      trace_line(12);
+      temp[k++] = arr[i++];
+      trace_var("i", i);
+      trace_var("k", k);
+    } else {
+      trace_line(14);
+      temp[k++] = arr[j++];
+      trace_var("j", j);
+      trace_var("k", k);
+    }
+  }
+  trace_line(17);
+  while (i <= m) {
+    trace_line(17);
+    temp[k++] = arr[i++];
+    trace_var("i", i);
+    trace_var("k", k);
+  }
+  trace_line(18);
+  while (j <= r) {
+    trace_line(18);
+    temp[k++] = arr[j++];
+    trace_var("j", j);
+    trace_var("k", k);
+  }
+
+  trace_line(20);
+  for (int x = l; x <= r; x++) {
+    trace_line(20);
+    trace_var_init("x", x);
+    trace_line(21);
+    arr[x] = temp[x];
+    trace_array("arr", x, arr[x]);
+  }
+}
+
+void mergeSort(int l, int r) {
+  trace_var_init("l", l);
+  trace_var_init("r", r);
+  trace_line(26);
+  if (l >= r) return;
+  trace_line(27);
+  int m = (l + r) / 2;
+  trace_var_init("m", m);
+  trace_line(28);
+  mergeSort(l, m);
+  trace_line(29);
+  mergeSort(m + 1, r);
+  trace_line(30);
+  merge(l, m, r);
+}
+
+int main() {
+  trace_line(34);
+  scanf("%d", &n);
+  trace_var_init("n", n);
+  trace_array_init_bars("arr", n);
+  trace_line(35);
+  for (int i = 0; i < n; i++) {
+    trace_line(35);
+    trace_var_init("i", i);
+    trace_line(36);
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+  }
+
+  trace_line(39);
+  mergeSort(0, n - 1);
+
+  trace_line(41);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Quick Sort",
+        stdin: "6 7 2 9 1 6 3",
+        code: `#include <stdio.h>
+
+int arr[20];
+int n;
+
+void swap(int i, int j) {
+  int temp = arr[i];
+  arr[i] = arr[j];
+  arr[j] = temp;
+}
+
+int partition(int low, int high) {
+  int pivot = arr[high];
+  int i = low - 1;
+  for (int j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      i++;
+      swap(i, j);
+    }
+  }
+  swap(i + 1, high);
+  return i + 1;
+}
+
+void quickSort(int low, int high) {
+  if (low < high) {
+    int pi = partition(low, high);
+    quickSort(low, pi - 1);
+    quickSort(pi + 1, high);
+  }
+}
+
+int main() {
+  scanf("%d", &n);
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+  }
+
+  quickSort(0, n - 1);
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int arr[20];
+int n;
+
+void swap(int i, int j) {
+  trace_var_init("i", i);
+  trace_var_init("j", j);
+  trace_line(7);
+  int temp = arr[i];
+  trace_var_init("temp", temp);
+  trace_line(8);
+  arr[i] = arr[j];
+  trace_array("arr", i, arr[i]);
+  trace_line(9);
+  arr[j] = temp;
+  trace_array("arr", j, arr[j]);
+}
+
+int partition(int low, int high) {
+  trace_var_init("low", low);
+  trace_var_init("high", high);
+  trace_line(13);
+  int pivot = arr[high];
+  trace_var_init("pivot", pivot);
+  trace_array_highlight("arr", high);
+  trace_line(14);
+  int i = low - 1;
+  trace_var_init("i", i);
+  trace_line(15);
+  for (int j = low; j < high; j++) {
+    trace_line(15);
+    trace_var_init("j", j);
+    trace_array_highlight("arr", j);
+    trace_line(16);
+    if (arr[j] <= pivot) {
+      trace_line(17);
+      i++;
+      trace_var("i", i);
+      trace_line(18);
+      swap(i, j);
+    }
+  }
+  trace_line(21);
+  swap(i + 1, high);
+  trace_line(22);
+  return i + 1;
+}
+
+void quickSort(int low, int high) {
+  trace_var_init("low", low);
+  trace_var_init("high", high);
+  trace_line(26);
+  if (low < high) {
+    trace_line(27);
+    int pi = partition(low, high);
+    trace_var_init("pi", pi);
+    trace_line(28);
+    quickSort(low, pi - 1);
+    trace_line(29);
+    quickSort(pi + 1, high);
+  }
+}
+
+int main() {
+  trace_line(34);
+  scanf("%d", &n);
+  trace_var_init("n", n);
+  trace_array_init_bars("arr", n);
+  trace_line(35);
+  for (int i = 0; i < n; i++) {
+    trace_line(35);
+    trace_var_init("i", i);
+    trace_line(36);
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+  }
+
+  trace_line(39);
+  quickSort(0, n - 1);
+
+  trace_line(41);
+  return 0;
+}
+`,
+      },
+    ],
+  },
+  {
+    name: "Search Algorithms",
+    samples: [
       {
         name: "Linear Search",
         stdin: "5 3 7 1 9 4 9",
@@ -1860,6 +2313,124 @@ int main() {
   }
 
   trace_line(30);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Binary Search",
+        stdin: "7 1 3 5 7 9 11 13 7",
+        code: `#include <stdio.h>
+
+int main() {
+  int n;
+  scanf("%d", &n);
+
+  int arr[20];
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &arr[i]);
+  }
+
+  int target;
+  scanf("%d", &target);
+
+  // Binary Search (array must be sorted)
+  int low = 0, high = n - 1;
+  int found = -1;
+
+  while (low <= high) {
+    int mid = (low + high) / 2;
+    if (arr[mid] == target) {
+      found = mid;
+      break;
+    } else if (arr[mid] < target) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (found >= 0) {
+    printf("Found %d at index %d\\n", target, found);
+  } else {
+    printf("%d not found\\n", target);
+  }
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int main() {
+  int n;
+  trace_line(5);
+  scanf("%d", &n);
+  trace_var_init("n", n);
+
+  int arr[20];
+  trace_line(7);
+  trace_array_init("arr", n);
+  trace_line(8);
+  for (int i = 0; i < n; i++) {
+    trace_line(8);
+    trace_var_init("i", i);
+    trace_line(9);
+    scanf("%d", &arr[i]);
+    trace_array("arr", i, arr[i]);
+  }
+
+  int target;
+  trace_line(13);
+  scanf("%d", &target);
+  trace_var_init("target", target);
+
+  // Binary Search (array must be sorted)
+  int low = 0, high = n - 1;
+  trace_line(16);
+  trace_var_init("low", low);
+  trace_var_init("high", high);
+  int found = -1;
+  trace_line(17);
+  trace_var_init("found", found);
+
+  trace_line(19);
+  while (low <= high) {
+    trace_line(19);
+    trace_var("low", low);
+    trace_var("high", high);
+    trace_line(20);
+    int mid = (low + high) / 2;
+    trace_var_init("mid", mid);
+    trace_array_highlight("arr", mid);
+    trace_line(21);
+    if (arr[mid] == target) {
+      trace_line(22);
+      found = mid;
+      trace_var("found", found);
+      trace_line(23);
+      break;
+    } else if (arr[mid] < target) {
+      trace_line(25);
+      low = mid + 1;
+      trace_var("low", low);
+    } else {
+      trace_line(27);
+      high = mid - 1;
+      trace_var("high", high);
+    }
+  }
+
+  trace_line(31);
+  if (found >= 0) {
+    trace_line(32);
+    printf("Found %d at index %d\\n", target, found);
+  } else {
+    trace_line(34);
+    printf("%d not found\\n", target);
+  }
+
+  trace_line(37);
   return 0;
 }
 `,
