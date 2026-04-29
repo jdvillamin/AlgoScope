@@ -296,6 +296,15 @@ variables can mark different cells simultaneously (e.g., i and j in a sort,
 or low/mid/high in binary search). The marker moves when the variable
 value changes.
 
+CRITICAL — ALWAYS attach loop iterators to the arrays they index:
+Whenever a for-loop or while-loop uses a named variable (i, j, k, low,
+high, mid, left, right, minIdx, maxIdx, etc.) to index into an array,
+you MUST call trace_array_cell to bind that variable to the array.
+This applies to ALL array algorithms — searching, sorting, filling,
+traversal, manipulation — not just sorting or binary search. If a
+variable is used as arr[variable], it must be attached via
+trace_array_cell.
+
 When to use:
 Call trace_array_cell every time a variable that indexes into the array
 changes value. Place it right after any trace_var or trace_var_init call
@@ -305,6 +314,20 @@ When NOT to use:
 Do NOT use for temporary expressions or one-time accesses. Only use for
 named iterator/index variables that the user would want to track across
 multiple steps.
+
+Example (simple loop filling an array):
+
+int arr[5];
+trace_array_init("arr", 5);
+int i = 0;
+trace_var_init("i", i);
+trace_array_cell("arr", "i", i);
+for (i = 0; i < 5; i++) {
+    trace_var("i", i);
+    trace_array_cell("arr", "i", i);
+    arr[i] = i * i;
+    trace_array("arr", i, arr[i]);
+}
 
 Example (binary search):
 
@@ -400,6 +423,12 @@ Same concept as trace_array_cell but for 2D arrays. Persistently highlights
 the cell at (r, c) with a label showing the variable name. Call it after
 each trace_var or trace_var_init for loop iterators that index into the
 matrix.
+
+CRITICAL: Whenever nested loops iterate over a 2D array using named row
+and column variables (r, c, i, j, etc.), you MUST call trace_array2d_cell
+inside the inner loop after both iterators have been traced. This applies
+to ALL 2D array algorithms — matrix fill, matrix multiply, dynamic
+programming tables, etc.
 
 Example:
 

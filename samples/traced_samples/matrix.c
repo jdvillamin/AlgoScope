@@ -23,6 +23,7 @@ int main() {
     for (c = 0; c < 5; c++) {
       trace_line(__LINE__ - 1);
       trace_var("c", c);
+      trace_array2d_cell("mat", "r,c", r, c);
 
       mat[r][c] = (r + 1) * (c + 1);
       trace_line(__LINE__ - 1);
