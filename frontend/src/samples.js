@@ -25,11 +25,13 @@ int main() {
   int i = 0;
   trace_line(3);
   trace_var_init("i", i);
+  trace_array_cell("arr", "i", i);
 
   trace_line(5);
   for (i = 0; i < 5; i++) {
     trace_line(5);
     trace_var("i", i);
+    trace_array_cell("arr", "i", i);
     trace_array_highlight("arr", i);
     arr[i] = i * i;
     trace_line(6);
@@ -80,6 +82,7 @@ int main() {
     for (c = 0; c < 5; c++) {
       trace_line(7);
       trace_var("c", c);
+      trace_array2d_cell("mat", "r,c", r, c);
       trace_array2d_highlight("mat", r, c);
       mat[r][c] = (r + 1) * (c + 1);
       trace_line(8);
@@ -2010,7 +2013,9 @@ void merge(int l, int m, int r) {
   int i = l, j = m + 1, k = l;
   trace_line(8);
   trace_var_init("i", i);
+  trace_array_cell("arr", "i", i);
   trace_var_init("j", j);
+  trace_array_cell("arr", "j", j);
   trace_var_init("k", k);
 
   trace_line(10);
@@ -2023,11 +2028,13 @@ void merge(int l, int m, int r) {
       trace_line(12);
       temp[k++] = arr[i++];
       trace_var("i", i);
+      trace_array_cell("arr", "i", i);
       trace_var("k", k);
     } else {
       trace_line(14);
       temp[k++] = arr[j++];
       trace_var("j", j);
+      trace_array_cell("arr", "j", j);
       trace_var("k", k);
     }
   }
@@ -2036,6 +2043,7 @@ void merge(int l, int m, int r) {
     trace_line(17);
     temp[k++] = arr[i++];
     trace_var("i", i);
+    trace_array_cell("arr", "i", i);
     trace_var("k", k);
   }
   trace_line(18);
@@ -2043,6 +2051,7 @@ void merge(int l, int m, int r) {
     trace_line(18);
     temp[k++] = arr[j++];
     trace_var("j", j);
+    trace_array_cell("arr", "j", j);
     trace_var("k", k);
   }
 
@@ -2050,6 +2059,7 @@ void merge(int l, int m, int r) {
   for (int x = l; x <= r; x++) {
     trace_line(20);
     trace_var_init("x", x);
+    trace_array_cell("arr", "x", x);
     trace_line(21);
     arr[x] = temp[x];
     trace_array("arr", x, arr[x]);
@@ -2162,7 +2172,9 @@ void swap(int i, int j) {
 
 int partition(int low, int high) {
   trace_var_init("low", low);
+  trace_array_cell("arr", "low", low);
   trace_var_init("high", high);
+  trace_array_cell("arr", "high", high);
   trace_line(13);
   int pivot = arr[high];
   trace_var_init("pivot", pivot);
@@ -2174,12 +2186,14 @@ int partition(int low, int high) {
   for (int j = low; j < high; j++) {
     trace_line(15);
     trace_var_init("j", j);
+    trace_array_cell("arr", "j", j);
     trace_array_highlight("arr", j);
     trace_line(16);
     if (arr[j] <= pivot) {
       trace_line(17);
       i++;
       trace_var("i", i);
+      trace_array_cell("arr", "i", i);
       trace_line(18);
       swap(i, j);
     }
@@ -2192,7 +2206,9 @@ int partition(int low, int high) {
 
 void quickSort(int low, int high) {
   trace_var_init("low", low);
+  trace_array_cell("arr", "low", low);
   trace_var_init("high", high);
+  trace_array_cell("arr", "high", high);
   trace_line(26);
   if (low < high) {
     trace_line(27);
