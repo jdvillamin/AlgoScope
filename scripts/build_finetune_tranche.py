@@ -156,7 +156,7 @@ def jsonl_example(pair: dict) -> dict:
     }
 
 
-def build(limit: int, sample_target: int, out_dir: Path) -> None:
+def build(limit: int, sample_target: int, out_dir: Path, prefix: str = "first_100") -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     selected = []
     rejected = []
@@ -183,9 +183,9 @@ def build(limit: int, sample_target: int, out_dir: Path) -> None:
             else:
                 rejected.append({**pair, "errors": errors})
 
-    jsonl_path = out_dir / "first_100.jsonl"
-    manifest_path = out_dir / "first_100_manifest.csv"
-    report_path = out_dir / "first_100_validation_report.json"
+    jsonl_path = out_dir / f"{prefix}.jsonl"
+    manifest_path = out_dir / f"{prefix}_manifest.csv"
+    report_path = out_dir / f"{prefix}_validation_report.json"
 
     with jsonl_path.open("w", encoding="utf-8") as f:
         for pair in selected[:limit]:
@@ -210,6 +210,9 @@ def build(limit: int, sample_target: int, out_dir: Path) -> None:
         "written": len(selected[:limit]),
         "sample_count": len([p for p in selected[:limit] if p["source"] == "sample"]),
         "codenet_count": len([p for p in selected[:limit] if p["source"] == "codenet"]),
+        "jsonl": str(jsonl_path.relative_to(ROOT)),
+        "manifest": str(manifest_path.relative_to(ROOT)),
+        "validation_report": str(report_path.relative_to(ROOT)),
         "rejected_checked": [
             {
                 "id": r["id"],
@@ -230,8 +233,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--sample-target", type=int, default=50)
     parser.add_argument("--out-dir", type=Path, default=ROOT / "datasets" / "fine_tuning_jsonl")
+    parser.add_argument("--prefix", default="first_100")
     args = parser.parse_args()
-    build(args.limit, args.sample_target, args.out_dir)
+    build(args.limit, args.sample_target, args.out_dir, args.prefix)
 
 
 if __name__ == "__main__":
