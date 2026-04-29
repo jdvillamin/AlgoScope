@@ -1,1 +1,0 @@
-k;main(n){printf("%d",(-scanf("%d%d",&n,&k)+n)/~-k+1);}

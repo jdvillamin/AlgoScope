@@ -1,1 +1,0 @@
-d[150][120];b,i,j,s,t,u,m,n,*p;main(a){for(;scanf("%d%d",&n,&m)*n;printf("%d\n",s)){for(memset(d,9,7e4);t=m--;d[a][b]=d[b][a]=i/100)scanf("%d,%d,%d",&a,&b,&i);for(s=i=1-n;i++;s+=d[n][t=u])for(d[j=u=n][t]=0;j--;*p&&d[n][u]>*p?u=j:0)p=d[n]+j,*p=fmin(*p,d[t][j]);}}

@@ -1,1 +1,0 @@
-main(a,n){for(;scanf("%d",&n),n;printf("%d\n",a))for(a=0;n;a+=n/=5);}

@@ -1,1 +1,0 @@
-t[]={10,50,100,500,5e9};e[4];i,z;main(n){for(;scanf("%d%d%d%d%d",&n,e,e+1,e+2,e+3),n;){for(i&&puts(""),i=4;i--;n-=e[i]*t[i]);for(;++i-4;z>0&&printf("%d %d\n",t[i],z))z=e[i]+n%t[i+1]/t[i];}}

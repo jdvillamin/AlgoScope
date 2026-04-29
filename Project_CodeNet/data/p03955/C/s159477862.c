@@ -1,2 +1,0 @@
-#define u for(j=0;j<n;++j)
-a[5][1<<18],b[2],x,y,j,n;main(i){scanf("%d",&n);for(;++i<5;)u{scanf("%d",&a[i][j]);--a[i][j];}u{if(a[2][j]%3)++b[1-j%2];if(a[2][j]/3-a[3][j]/3||a[3][j]/3-a[4][j]/3||a[4][j]/3-a[2][j]/3||a[3][j]%3-1||a[3][j]/3-j&1){b[0]=1;break;}x=y=a[3][j]/3+1;for(;x;x-=x&-x)b[j&1]-=a[j&1][x]%2;b[j&1]+=j/2;for(;y<2e5;y+=y&-y)++a[j&1][y];}puts(b[0]&1|b[1]&1?"No":"Yes");}

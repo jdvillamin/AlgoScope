@@ -1,1 +1,0 @@
-b[99];main(i,j){for(i=0;(j=~getchar())?b[i++]=j:putchar(~b[--i]);b[i-1]==10&&i--);}

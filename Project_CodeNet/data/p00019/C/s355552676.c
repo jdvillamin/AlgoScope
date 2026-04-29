@@ -1,1 +1,0 @@
-n;main(){n=!printf("%.f\n",tgamma(getchar()-48));}

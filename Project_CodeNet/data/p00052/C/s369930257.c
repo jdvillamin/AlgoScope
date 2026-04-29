@@ -1,1 +1,0 @@
-main(x,r){for(;scanf("%d",&x),x;printf("%d\n",r))for(r=0;x/=5;r+=x);return 0;}

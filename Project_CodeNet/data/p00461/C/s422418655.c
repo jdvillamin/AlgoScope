@@ -1,1 +1,0 @@
-main(n,s,c,t){for(;scanf("%d%*d ",&n)*n;printf("%d\n",s))for(s=c=0;t=getchar()%5;s+=c&c/2>=n)c=c&1^t&1?c+1:t&1;}

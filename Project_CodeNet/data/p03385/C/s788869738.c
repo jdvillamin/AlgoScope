@@ -1,1 +1,0 @@
-main(){puts(getchar()*getchar()*getchar()-941094?"No":"Yes");}

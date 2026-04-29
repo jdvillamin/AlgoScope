@@ -1,1 +1,0 @@
-a[];main(){gets(a);div(puts(15&*a&*a>>16|15&a[1]?"Open":"Close"));}
