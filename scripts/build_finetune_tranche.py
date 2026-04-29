@@ -7,6 +7,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_FINE_TUNING_DIR = ROOT / "datasets" / "fine_tuning"
+DEFAULT_CODENET_FILTERED_DIR = ROOT / "datasets" / "codenet_filtered"
+DEFAULT_CODENET_INSTRUMENTED_DIR = ROOT / "datasets" / "codenet_instrumented"
 PROMPT_HEADER = ROOT / "backend" / "ml" / "prompt_header.py"
 TRACER = ROOT / "tracer" / "tracer.c"
 TRACER_INCLUDE = ROOT / "tracer"
@@ -46,6 +49,13 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def original_lines_preserved(raw: str, instrumented: str) -> bool:
     inst_lines = instrumented.splitlines()
     pos = 0
@@ -63,8 +73,9 @@ def has_meaningful_traces(instrumented: str, category: str) -> tuple[bool, str]:
         return False, "missing tracer include"
     if not any(marker in instrumented for marker in DATA_TRACE_MARKERS):
         return False, "missing non-line tracer calls"
-    if category in CATEGORY_MARKERS:
-        missing = [m for m in CATEGORY_MARKERS[category] if m not in instrumented]
+    category_key = category.rsplit("/", 1)[-1]
+    if category_key in CATEGORY_MARKERS:
+        missing = [m for m in CATEGORY_MARKERS[category_key] if m not in instrumented]
         if missing:
             return False, f"missing category markers: {', '.join(missing)}"
     return True, ""
@@ -91,13 +102,13 @@ def compile_instrumented(path: Path) -> tuple[bool, str]:
     return False, result.stderr.strip().splitlines()[0] if result.stderr else "compile failed"
 
 
-def sample_pairs() -> list[dict]:
+def sample_pairs(fine_tuning_dir: Path = DEFAULT_FINE_TUNING_DIR) -> list[dict]:
     pairs = []
-    for raw in sorted((ROOT / "datasets" / "fine_tuning").glob("*/*_raw.c")):
+    for raw in sorted(fine_tuning_dir.rglob("*_raw.c")):
         inst = raw.with_name(raw.name.replace("_raw.c", "_instrumented.c"))
         if not inst.exists():
             continue
-        category = raw.parent.name
+        category = raw.parent.relative_to(fine_tuning_dir).as_posix()
         pairs.append(
             {
                 "source": "sample",
@@ -110,11 +121,14 @@ def sample_pairs() -> list[dict]:
     return pairs
 
 
-def codenet_pairs() -> list[dict]:
+def codenet_pairs(
+    filtered_dir: Path = DEFAULT_CODENET_FILTERED_DIR,
+    instrumented_dir: Path = DEFAULT_CODENET_INSTRUMENTED_DIR,
+) -> list[dict]:
     pairs = []
-    for raw in sorted((ROOT / "datasets" / "codenet_filtered").glob("*/*.c")):
-        category = raw.parent.name
-        inst = ROOT / "datasets" / "codenet_instrumented" / category / raw.name
+    for raw in sorted(filtered_dir.rglob("*.c")):
+        category = raw.parent.relative_to(filtered_dir).as_posix()
+        inst = instrumented_dir / raw.relative_to(filtered_dir)
         if not inst.exists():
             continue
         pairs.append(
@@ -156,12 +170,23 @@ def jsonl_example(pair: dict) -> dict:
     }
 
 
-def build(limit: int, sample_target: int, out_dir: Path, prefix: str = "first_100") -> None:
+def build(
+    limit: int,
+    sample_target: int,
+    out_dir: Path,
+    prefix: str = "first_100",
+    fine_tuning_dir: Path = DEFAULT_FINE_TUNING_DIR,
+    codenet_filtered_dir: Path = DEFAULT_CODENET_FILTERED_DIR,
+    codenet_instrumented_dir: Path = DEFAULT_CODENET_INSTRUMENTED_DIR,
+) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     selected = []
     rejected = []
 
-    for pool, target in ((sample_pairs(), sample_target), (codenet_pairs(), limit - sample_target)):
+    samples = sample_pairs(fine_tuning_dir)
+    codenet = codenet_pairs(codenet_filtered_dir, codenet_instrumented_dir)
+
+    for pool, target in ((samples, sample_target), (codenet, limit - sample_target)):
         for pair in pool:
             if len([p for p in selected if p["source"] == pair["source"]]) >= target:
                 break
@@ -172,7 +197,7 @@ def build(limit: int, sample_target: int, out_dir: Path, prefix: str = "first_10
                 rejected.append({**pair, "errors": errors})
 
     if len(selected) < limit:
-        for pair in codenet_pairs():
+        for pair in codenet:
             if len(selected) >= limit:
                 break
             if any(pair["id"] == p["id"] for p in selected):
@@ -210,14 +235,14 @@ def build(limit: int, sample_target: int, out_dir: Path, prefix: str = "first_10
         "written": len(selected[:limit]),
         "sample_count": len([p for p in selected[:limit] if p["source"] == "sample"]),
         "codenet_count": len([p for p in selected[:limit] if p["source"] == "codenet"]),
-        "jsonl": str(jsonl_path.relative_to(ROOT)),
-        "manifest": str(manifest_path.relative_to(ROOT)),
-        "validation_report": str(report_path.relative_to(ROOT)),
+        "jsonl": display_path(jsonl_path),
+        "manifest": display_path(manifest_path),
+        "validation_report": display_path(report_path),
         "rejected_checked": [
             {
                 "id": r["id"],
-                "raw": str(r["raw"].relative_to(ROOT)),
-                "instrumented": str(r["instrumented"].relative_to(ROOT)),
+                "raw": display_path(r["raw"]),
+                "instrumented": display_path(r["instrumented"]),
                 "errors": r["errors"],
             }
             for r in rejected[:200]
@@ -234,8 +259,19 @@ def main() -> None:
     parser.add_argument("--sample-target", type=int, default=50)
     parser.add_argument("--out-dir", type=Path, default=ROOT / "datasets" / "fine_tuning_jsonl")
     parser.add_argument("--prefix", default="first_100")
+    parser.add_argument("--fine-tuning-dir", type=Path, default=DEFAULT_FINE_TUNING_DIR)
+    parser.add_argument("--codenet-filtered-dir", type=Path, default=DEFAULT_CODENET_FILTERED_DIR)
+    parser.add_argument("--codenet-instrumented-dir", type=Path, default=DEFAULT_CODENET_INSTRUMENTED_DIR)
     args = parser.parse_args()
-    build(args.limit, args.sample_target, args.out_dir, args.prefix)
+    build(
+        args.limit,
+        args.sample_target,
+        args.out_dir,
+        args.prefix,
+        args.fine_tuning_dir,
+        args.codenet_filtered_dir,
+        args.codenet_instrumented_dir,
+    )
 
 
 if __name__ == "__main__":
