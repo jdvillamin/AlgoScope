@@ -1168,19 +1168,16 @@ int main() {
         name: "Binary Tree",
         code: `#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 typedef struct Node {
-  char id[10];
-  char value[10];
+  int data;
   struct Node* left;
   struct Node* right;
 } Node;
 
-Node* createNode(const char* id, const char* value) {
+Node* createNode(int data) {
   Node* n = (Node*)malloc(sizeof(Node));
-  strcpy(n->id, id);
-  strcpy(n->value, value);
+  n->data = data;
   n->left = NULL;
   n->right = NULL;
   return n;
@@ -1189,19 +1186,18 @@ Node* createNode(const char* id, const char* value) {
 void inorder(Node* node) {
   if (node == NULL) return;
   inorder(node->left);
-  printf("%s ", node->value);
+  printf("%d ", node->data);
   inorder(node->right);
 }
 
 int main() {
-  // Build a binary search tree
-  Node* n50 = createNode("n50", "50");
-  Node* n30 = createNode("n30", "30");
-  Node* n70 = createNode("n70", "70");
-  Node* n20 = createNode("n20", "20");
-  Node* n40 = createNode("n40", "40");
-  Node* n60 = createNode("n60", "60");
-  Node* n80 = createNode("n80", "80");
+  Node* n50 = createNode(50);
+  Node* n30 = createNode(30);
+  Node* n70 = createNode(70);
+  Node* n20 = createNode(20);
+  Node* n40 = createNode(40);
+  Node* n60 = createNode(60);
+  Node* n80 = createNode(80);
 
   n50->left = n30;
   n50->right = n70;
@@ -1218,94 +1214,425 @@ int main() {
 `,
         instrumentedCode: `#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "tracer.h"
 
 typedef struct Node {
-  char id[10];
-  char value[10];
+  int data;
   struct Node* left;
   struct Node* right;
 } Node;
 
-Node* createNode(const char* id, const char* value) {
-  trace_line(13);
+Node* createNode(int data) {
+  trace_line(11);
   Node* n = (Node*)malloc(sizeof(Node));
-  trace_line(14);
-  strcpy(n->id, id);
-  trace_line(15);
-  strcpy(n->value, value);
-  trace_line(16);
+  trace_line(12);
+  n->data = data;
+  trace_line(13);
   n->left = NULL;
-  trace_line(17);
+  trace_line(14);
   n->right = NULL;
-  trace_line(18);
+  trace_btree_node("T", n, n->data);
+  trace_line(15);
   return n;
 }
 
 void inorder(Node* node) {
-  trace_line(22);
+  trace_line(19);
   if (node == NULL) return;
-  trace_line(23);
+  trace_line(20);
   inorder(node->left);
-  trace_btree_highlight("T", node->id);
-  trace_line(24);
-  printf("%s ", node->value);
-  trace_line(25);
+  trace_btree_highlight("T", node);
+  trace_line(21);
+  printf("%d ", node->data);
+  trace_line(22);
   inorder(node->right);
 }
 
 int main() {
   trace_btree_init("T");
 
-  // Build a binary search tree
+  trace_line(26);
+  Node* n50 = createNode(50);
+  trace_line(27);
+  Node* n30 = createNode(30);
+  trace_line(28);
+  Node* n70 = createNode(70);
+  trace_line(29);
+  Node* n20 = createNode(20);
   trace_line(30);
-  Node* n50 = createNode("n50", "50");
-  trace_btree_node("T", n50->id, n50->value);
+  Node* n40 = createNode(40);
   trace_line(31);
-  Node* n30 = createNode("n30", "30");
-  trace_btree_node("T", n30->id, n30->value);
+  Node* n60 = createNode(60);
   trace_line(32);
-  Node* n70 = createNode("n70", "70");
-  trace_btree_node("T", n70->id, n70->value);
-  trace_line(33);
-  Node* n20 = createNode("n20", "20");
-  trace_btree_node("T", n20->id, n20->value);
+  Node* n80 = createNode(80);
+
   trace_line(34);
-  Node* n40 = createNode("n40", "40");
-  trace_btree_node("T", n40->id, n40->value);
+  n50->left = n30;
+  trace_btree_left("T", n50, n50->left);
   trace_line(35);
-  Node* n60 = createNode("n60", "60");
-  trace_btree_node("T", n60->id, n60->value);
+  n50->right = n70;
+  trace_btree_right("T", n50, n50->right);
   trace_line(36);
-  Node* n80 = createNode("n80", "80");
-  trace_btree_node("T", n80->id, n80->value);
+  n30->left = n20;
+  trace_btree_left("T", n30, n30->left);
+  trace_line(37);
+  n30->right = n40;
+  trace_btree_right("T", n30, n30->right);
+  trace_line(38);
+  n70->left = n60;
+  trace_btree_left("T", n70, n70->left);
+  trace_line(39);
+  n70->right = n80;
+  trace_btree_right("T", n70, n70->right);
+
+  trace_line(41);
+  inorder(n50);
+  trace_line(42);
+  printf("\\n");
+
+  trace_line(44);
+  return 0;
+}
+`,
+      },
+      {
+        name: "BST Insert",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  struct Node* left;
+  struct Node* right;
+} Node;
+
+Node* createNode(int data) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->left = NULL;
+  n->right = NULL;
+  return n;
+}
+
+Node* insert(Node* root, int data) {
+  if (root == NULL) {
+    return createNode(data);
+  }
+  if (data < root->data) {
+    root->left = insert(root->left, data);
+  } else {
+    root->right = insert(root->right, data);
+  }
+  return root;
+}
+
+void inorder(Node* node) {
+  if (node == NULL) return;
+  inorder(node->left);
+  printf("%d ", node->data);
+  inorder(node->right);
+}
+
+int main() {
+  int values[7] = {50, 30, 70, 20, 40, 60, 80};
+
+  Node* root = NULL;
+  for (int i = 0; i < 7; i++) {
+    root = insert(root, values[i]);
+  }
+
+  inorder(root);
+  printf("\\n");
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  struct Node* left;
+  struct Node* right;
+} Node;
+
+Node* createNode(int data) {
+  trace_line(11);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(12);
+  n->data = data;
+  trace_line(13);
+  n->left = NULL;
+  trace_line(14);
+  n->right = NULL;
+  trace_btree_node("T", n, n->data);
+  trace_line(15);
+  return n;
+}
+
+Node* insert(Node* root, int data) {
+  trace_line(19);
+  if (root == NULL) {
+    trace_line(20);
+    return createNode(data);
+  }
+  trace_btree_highlight("T", root);
+  trace_line(22);
+  if (data < root->data) {
+    trace_line(23);
+    root->left = insert(root->left, data);
+    trace_btree_left("T", root, root->left);
+  } else {
+    trace_line(25);
+    root->right = insert(root->right, data);
+    trace_btree_right("T", root, root->right);
+  }
+  trace_line(27);
+  return root;
+}
+
+void inorder(Node* node) {
+  trace_line(31);
+  if (node == NULL) return;
+  trace_line(32);
+  inorder(node->left);
+  trace_btree_highlight("T", node);
+  trace_line(33);
+  printf("%d ", node->data);
+  trace_line(34);
+  inorder(node->right);
+}
+
+int main() {
+  trace_btree_init("T");
 
   trace_line(38);
-  n50->left = n30;
-  trace_btree_left("T", n50->id, n50->left->id);
-  trace_line(39);
-  n50->right = n70;
-  trace_btree_right("T", n50->id, n50->right->id);
+  int values[7] = {50, 30, 70, 20, 40, 60, 80};
+
   trace_line(40);
-  n30->left = n20;
-  trace_btree_left("T", n30->id, n30->left->id);
+  Node* root = NULL;
   trace_line(41);
-  n30->right = n40;
-  trace_btree_right("T", n30->id, n30->right->id);
-  trace_line(42);
-  n70->left = n60;
-  trace_btree_left("T", n70->id, n70->left->id);
-  trace_line(43);
-  n70->right = n80;
-  trace_btree_right("T", n70->id, n70->right->id);
+  for (int i = 0; i < 7; i++) {
+    trace_line(41);
+    trace_line(42);
+    root = insert(root, values[i]);
+  }
 
   trace_line(45);
-  inorder(n50);
+  inorder(root);
   trace_line(46);
   printf("\\n");
 
   trace_line(48);
+  return 0;
+}
+`,
+      },
+      {
+        name: "BST Delete",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  struct Node* left;
+  struct Node* right;
+} Node;
+
+Node* createNode(int data) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->left = NULL;
+  n->right = NULL;
+  return n;
+}
+
+Node* insert(Node* root, int data) {
+  if (root == NULL) {
+    return createNode(data);
+  }
+  if (data < root->data) {
+    root->left = insert(root->left, data);
+  } else {
+    root->right = insert(root->right, data);
+  }
+  return root;
+}
+
+Node* findMin(Node* node) {
+  while (node->left != NULL) {
+    node = node->left;
+  }
+  return node;
+}
+
+Node* deleteNode(Node* root, int data) {
+  if (root == NULL) return NULL;
+
+  if (data < root->data) {
+    root->left = deleteNode(root->left, data);
+  } else if (data > root->data) {
+    root->right = deleteNode(root->right, data);
+  } else {
+    if (root->left == NULL) {
+      Node* temp = root->right;
+      free(root);
+      return temp;
+    } else if (root->right == NULL) {
+      Node* temp = root->left;
+      free(root);
+      return temp;
+    }
+    Node* succ = findMin(root->right);
+    root->data = succ->data;
+    root->right = deleteNode(root->right, succ->data);
+  }
+  return root;
+}
+
+int main() {
+  int values[7] = {50, 30, 70, 20, 40, 60, 80};
+
+  Node* root = NULL;
+  for (int i = 0; i < 7; i++) {
+    root = insert(root, values[i]);
+  }
+
+  root = deleteNode(root, 20);
+  root = deleteNode(root, 30);
+  root = deleteNode(root, 50);
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  struct Node* left;
+  struct Node* right;
+} Node;
+
+Node* createNode(int data) {
+  trace_line(11);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(12);
+  n->data = data;
+  trace_line(13);
+  n->left = NULL;
+  trace_line(14);
+  n->right = NULL;
+  trace_btree_node("T", n, n->data);
+  trace_line(15);
+  return n;
+}
+
+Node* insert(Node* root, int data) {
+  trace_line(19);
+  if (root == NULL) {
+    trace_line(20);
+    return createNode(data);
+  }
+  trace_btree_highlight("T", root);
+  trace_line(22);
+  if (data < root->data) {
+    trace_line(23);
+    root->left = insert(root->left, data);
+    trace_btree_left("T", root, root->left);
+  } else {
+    trace_line(25);
+    root->right = insert(root->right, data);
+    trace_btree_right("T", root, root->right);
+  }
+  trace_line(27);
+  return root;
+}
+
+Node* findMin(Node* node) {
+  trace_btree_highlight("T", node);
+  trace_line(31);
+  while (node->left != NULL) {
+    trace_line(31);
+    trace_line(32);
+    node = node->left;
+    trace_btree_highlight("T", node);
+  }
+  trace_line(34);
+  return node;
+}
+
+Node* deleteNode(Node* root, int data) {
+  trace_line(38);
+  if (root == NULL) return NULL;
+
+  trace_btree_highlight("T", root);
+  trace_line(40);
+  if (data < root->data) {
+    trace_line(41);
+    root->left = deleteNode(root->left, data);
+    trace_btree_left("T", root, root->left);
+  } else if (data > root->data) {
+    trace_line(43);
+    root->right = deleteNode(root->right, data);
+    trace_btree_right("T", root, root->right);
+  } else {
+    trace_line(45);
+    if (root->left == NULL) {
+      trace_line(46);
+      Node* temp = root->right;
+      trace_btree_delete("T", root);
+      trace_line(47);
+      free(root);
+      trace_line(48);
+      return temp;
+    } else if (root->right == NULL) {
+      trace_line(50);
+      Node* temp = root->left;
+      trace_btree_delete("T", root);
+      trace_line(51);
+      free(root);
+      trace_line(52);
+      return temp;
+    }
+    trace_line(54);
+    Node* succ = findMin(root->right);
+    trace_line(55);
+    root->data = succ->data;
+    trace_btree_update("T", root, root->data);
+    trace_line(56);
+    root->right = deleteNode(root->right, succ->data);
+    trace_btree_right("T", root, root->right);
+  }
+  trace_line(58);
+  return root;
+}
+
+int main() {
+  trace_btree_init("T");
+
+  trace_line(62);
+  int values[7] = {50, 30, 70, 20, 40, 60, 80};
+
+  trace_line(64);
+  Node* root = NULL;
+  trace_line(65);
+  for (int i = 0; i < 7; i++) {
+    trace_line(65);
+    trace_line(66);
+    root = insert(root, values[i]);
+  }
+
+  trace_line(69);
+  root = deleteNode(root, 20);
+  trace_line(70);
+  root = deleteNode(root, 30);
+  trace_line(71);
+  root = deleteNode(root, 50);
+
+  trace_line(73);
   return 0;
 }
 `,

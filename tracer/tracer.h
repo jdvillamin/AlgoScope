@@ -126,11 +126,16 @@ void trace_tree_node(char* tree, char* id, char* value);
 void trace_tree_edge(char* tree, char* parent, char* child);
 void trace_tree_highlight(char* tree, char* id);
 
+/* Binary tree: node identity is the node POINTER (formatted internally as a
+   stable id), kept separate from the displayed integer data. A NULL child in
+   trace_btree_left/right means "no child" (unlinks that side). */
 void trace_btree_init(char* name);
-void trace_btree_node(char* tree, char* id, char* value);
-void trace_btree_left(char* tree, char* parent, char* child);
-void trace_btree_right(char* tree, char* parent, char* child);
-void trace_btree_highlight(char* tree, char* id);
+void trace_btree_node(char* tree, void* node, long long data);
+void trace_btree_left(char* tree, void* parent, void* child);
+void trace_btree_right(char* tree, void* parent, void* child);
+void trace_btree_update(char* tree, void* node, long long data);
+void trace_btree_delete(char* tree, void* node);
+void trace_btree_highlight(char* tree, void* node);
 
 void trace_graph_init(char* name);
 void trace_graph_node(char* graph, char* id);

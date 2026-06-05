@@ -15,6 +15,18 @@ Node* createNode(int data) {
   return n;
 }
 
+Node* insert(Node* root, int data) {
+  if (root == NULL) {
+    return createNode(data);
+  }
+  if (data < root->data) {
+    root->left = insert(root->left, data);
+  } else {
+    root->right = insert(root->right, data);
+  }
+  return root;
+}
+
 void inorder(Node* node) {
   if (node == NULL) return;
   inorder(node->left);
@@ -23,22 +35,14 @@ void inorder(Node* node) {
 }
 
 int main() {
-  Node* n50 = createNode(50);
-  Node* n30 = createNode(30);
-  Node* n70 = createNode(70);
-  Node* n20 = createNode(20);
-  Node* n40 = createNode(40);
-  Node* n60 = createNode(60);
-  Node* n80 = createNode(80);
+  int values[7] = {50, 30, 70, 20, 40, 60, 80};
 
-  n50->left = n30;
-  n50->right = n70;
-  n30->left = n20;
-  n30->right = n40;
-  n70->left = n60;
-  n70->right = n80;
+  Node* root = NULL;
+  for (int i = 0; i < 7; i++) {
+    root = insert(root, values[i]);
+  }
 
-  inorder(n50);
+  inorder(root);
   printf("\n");
 
   return 0;

@@ -312,9 +312,27 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
     if (step.type === "btree_edge" && newObjects[step.tree]) {
       const node = newObjects[step.tree].nodes[step.parent];
       if (node) {
-        if (step.side === "L") node.left = step.child;
-        else if (step.side === "R") node.right = step.child;
+        // An empty child id means the pointer was NULL → unlink that side.
+        const child = step.child ? step.child : null;
+        if (step.side === "L") node.left = child;
+        else if (step.side === "R") node.right = child;
       }
+    }
+
+    if (step.type === "btree_update" && newObjects[step.tree]) {
+      const node = newObjects[step.tree].nodes[step.id];
+      if (node) node.value = step.v;
+    }
+
+    if (step.type === "btree_delete" && newObjects[step.tree]) {
+      const t = newObjects[step.tree];
+      delete t.nodes[step.id];
+      // Drop any edge that still pointed at the removed node.
+      Object.values(t.nodes).forEach((n) => {
+        if (n.left === step.id) n.left = null;
+        if (n.right === step.id) n.right = null;
+      });
+      if (t.currentHighlight === step.id) t.currentHighlight = null;
     }
 
     if (step.type === "btree_highlight" && newObjects[step.tree]) {

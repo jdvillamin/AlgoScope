@@ -849,106 +849,141 @@ BINARY TREE TRACES
 ==================================================
 
 Use this family when each node has exactly two named child pointers (left and
-right). The visualizer reserves a left slot and a right slot per node, so a
-node with ONLY a right child is drawn to the right and a node with ONLY a left
-child is drawn to the left. This is why left and right have dedicated calls —
-do NOT collapse them into a single edge call.
+right) — binary search trees, heaps-as-nodes, expression trees, etc. The
+visualizer reserves a left slot and a right slot per node, so a node with ONLY a
+right child is drawn to the right and ONLY a left child to the left. This is why
+left and right have dedicated calls — do NOT collapse them into one.
+
+IDENTITY vs DATA (important): a node is identified by its POINTER, and the
+displayed value (its integer data) is separate. Pass the node pointer directly —
+the tracer derives a stable id from it. This means:
+  - Do NOT invent string ids and do NOT add an id field to the user's struct.
+    A plain `struct Node { int data; struct Node *left, *right; };` is enough.
+  - Because identity is the pointer, a node can be RELABELED (its data changes
+    but it stays the same node) and DELETED — exactly what BST deletion of a
+    two-child node needs.
 
 Signatures:
 
 trace_btree_init(char* name)
-trace_btree_node(char* tree, char* id, char* value)
-trace_btree_left(char* tree, char* parent_id, char* child_id)
-trace_btree_right(char* tree, char* parent_id, char* child_id)
-trace_btree_highlight(char* tree, char* id)
+trace_btree_node(char* tree, void* node, long long data)
+trace_btree_left(char* tree, void* parent, void* child)
+trace_btree_right(char* tree, void* parent, void* child)
+trace_btree_update(char* tree, void* node, long long data)
+trace_btree_delete(char* tree, void* node)
+trace_btree_highlight(char* tree, void* node)
 
 Rules:
 
 1. Call trace_btree_init ONCE before any node or edge traces.
 
-2. Call trace_btree_node after the node's id and value strings are set.
-   id must be a unique string identifier for the node (e.g., "n1", "root").
-   value is the display string shown inside the node.
-   Both id and value must be char* (string), not integers. If the node value is
-   an int, format it into a string first (e.g. sprintf or a value[] field).
+2. Call trace_btree_node when the node is created, after its data field is set.
+   Pass the node POINTER and its integer data. Put this inside the node-creation
+   function (createNode/newNode) so it fires the moment the node exists:
 
-3. Call trace_btree_left when a node's LEFT child pointer is assigned, and
-   trace_btree_right when its RIGHT child pointer is assigned. Pass the parent
-   id, then the child id. Emit it right after the assignment, e.g.:
+   Node* createNode(int data) {
+       Node* n = malloc(sizeof(Node));
+       n->data = data;
+       n->left = NULL;
+       n->right = NULL;
+       trace_btree_node("T", n, n->data);
+       return n;
+   }
+
+3. Call trace_btree_left / trace_btree_right right AFTER a child pointer is
+   assigned, passing the parent pointer then the child pointer:
 
    root->left = child;
-   trace_btree_left("T", root->id, root->left->id);
+   trace_btree_left("T", root, root->left);
 
-   root->right = child;
-   trace_btree_right("T", root->id, root->right->id);
+   A NULL child is allowed and UNLINKS that side — the same call handles both
+   linking and unlinking. After any `node->left = ...` / `node->right = ...`,
+   emit the matching trace with the new pointer (which may be NULL).
 
-   The child node must already be registered with trace_btree_node before the
-   edge connecting it to its parent.
+4. RELABEL — call trace_btree_update when a node's data changes but the node
+   itself stays (same pointer/position). The classic case is BST deletion of a
+   two-child node, which copies the in-order successor's value into the node:
 
-4. MANDATORY: Call trace_btree_highlight every time a traversal visits a node.
-   This applies to ALL traversal patterns — preorder, inorder, postorder, or
-   level-order. Every visited node MUST be highlighted.
+   root->data = succ->data;
+   trace_btree_update("T", root, root->data);
 
-5. Ordering requirement:
-   trace_btree_init → trace_btree_node (register node) → trace_btree_left /
-   trace_btree_right (connect to parent)
+5. DELETE — call trace_btree_delete just BEFORE free(node):
 
-Traversal highlight patterns:
+   trace_btree_delete("T", node);
+   free(node);
+
+   The visualizer removes the node and any edge pointing to it. When the parent
+   relinks to the replacement subtree, the trace_btree_left/right you emit after
+   `parent->left = deleteNode(...)` reconnects it (or unlinks it if NULL).
+
+6. MANDATORY: Call trace_btree_highlight every time a traversal or search visits
+   a node — inorder/preorder/postorder traversal AND the search path of
+   insert/delete/lookup. Pass the node pointer.
+
+Traversal highlight patterns (highlight by pointer):
 
 Inorder — highlight after the left subtree, before processing the value:
 
 void inorder(Node* node) {
     if (node == NULL) return;
     inorder(node->left);
-    trace_btree_highlight("T", node->id);
-    printf("%s ", node->value);
+    trace_btree_highlight("T", node);
+    printf("%d ", node->data);
     inorder(node->right);
 }
 
-Preorder — highlight at the start, before recursing into children:
+Preorder highlights at the start (before recursing); postorder after both
+children. Same idea, by pointer.
 
-void preorder(Node* node) {
-    if (node == NULL) return;
-    trace_btree_highlight("T", node->id);
-    printf("%s ", node->value);
-    preorder(node->left);
-    preorder(node->right);
+Example (recursive BST insert — register on create, link after the assignment):
+
+Node* insert(Node* root, int data) {
+    if (root == NULL) return createNode(data);   // trace_btree_node fires inside
+    trace_btree_highlight("T", root);
+    if (data < root->data) {
+        root->left = insert(root->left, data);
+        trace_btree_left("T", root, root->left);
+    } else {
+        root->right = insert(root->right, data);
+        trace_btree_right("T", root, root->right);
+    }
+    return root;
 }
 
-Postorder — highlight after both children:
+Re-emitting an edge that already exists is harmless, so emitting the edge after
+the assignment even on the recursive path is fine.
 
-void postorder(Node* node) {
-    if (node == NULL) return;
-    postorder(node->left);
-    postorder(node->right);
-    trace_btree_highlight("T", node->id);
-    printf("%s ", node->value);
+Example (BST delete — all three cases; note update for the two-child case):
+
+Node* deleteNode(Node* root, int data) {
+    if (root == NULL) return NULL;
+    trace_btree_highlight("T", root);
+    if (data < root->data) {
+        root->left = deleteNode(root->left, data);
+        trace_btree_left("T", root, root->left);      // relink (NULL ⇒ unlink)
+    } else if (data > root->data) {
+        root->right = deleteNode(root->right, data);
+        trace_btree_right("T", root, root->right);
+    } else {
+        if (root->left == NULL) {
+            Node* temp = root->right;
+            trace_btree_delete("T", root);            // delete before free
+            free(root);
+            return temp;
+        } else if (root->right == NULL) {
+            Node* temp = root->left;
+            trace_btree_delete("T", root);
+            free(root);
+            return temp;
+        }
+        Node* succ = findMin(root->right);
+        root->data = succ->data;
+        trace_btree_update("T", root, root->data);    // RELABEL with successor
+        root->right = deleteNode(root->right, succ->data);
+        trace_btree_right("T", root, root->right);
+    }
+    return root;
 }
-
-Example (construction):
-
-trace_btree_init("T");
-
-Node* root = createNode("n1", "50");
-trace_btree_node("T", root->id, root->value);
-
-Node* l = createNode("n2", "30");
-trace_btree_node("T", l->id, l->value);
-root->left = l;
-trace_btree_left("T", root->id, root->left->id);
-
-Node* r = createNode("n3", "70");
-trace_btree_node("T", r->id, r->value);
-root->right = r;
-trace_btree_right("T", root->id, root->right->id);
-
-CRITICAL for recursive BST insertion (root->left = insert(root->left, x)):
-Emit the edge AFTER the assignment returns, using the child's id. Re-emitting
-an edge that already exists is harmless, so it is fine to place the trace right
-after the assignment even on the recursive path:
-
-root->left = insert(root->left, value);
-trace_btree_left("T", root->id, root->left->id);
 
 ==================================================
 GRAPH TRACES

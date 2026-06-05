@@ -251,32 +251,63 @@ void trace_tree_highlight(char* tree, char* id) {
 }
 
 /* ── Binary Tree ────────────────────────────────────────────────── */
+/* Identity is the node POINTER, formatted as a stable hex id and kept separate
+   from the displayed integer data. This lets a node be relabeled (data changes,
+   identity/position stay) and deleted without the user's struct needing an id
+   field. A NULL child unlinks that side. */
 
 void trace_btree_init(char* name) {
   printf("{\"type\":\"btree_init\",\"name\":\"%s\"}\n", name);
 }
 
-void trace_btree_node(char* tree, char* id, char* value) {
-  printf(
-      "{\"type\":\"btree_node\",\"tree\":\"%s\",\"id\":\"%s\",\"v\":\"%s\"}\n",
-      tree, id, value);
+void trace_btree_node(char* tree, void* node, long long data) {
+  if (node == NULL) return;
+  char id[32];
+  snprintf(id, sizeof(id), "%p", node);
+  printf("{\"type\":\"btree_node\",\"tree\":\"%s\",\"id\":\"%s\",\"v\":%lld}\n",
+         tree, id, data);
 }
 
-void trace_btree_left(char* tree, char* parent, char* child) {
-  printf(
-      "{\"type\":\"btree_edge\",\"tree\":\"%s\",\"parent\":\"%s\",\"child\":\"%"
-      "s\",\"side\":\"L\"}\n",
-      tree, parent, child);
+static void _btree_edge(char* tree, void* parent, void* child, char side) {
+  if (parent == NULL) return;
+  char pid[32], cid[32];
+  snprintf(pid, sizeof(pid), "%p", parent);
+  if (child == NULL)
+    cid[0] = '\0';
+  else
+    snprintf(cid, sizeof(cid), "%p", child);
+  printf("{\"type\":\"btree_edge\",\"tree\":\"%s\",\"parent\":\"%s\",\"child\":"
+         "\"%s\",\"side\":\"%c\"}\n",
+         tree, pid, cid, side);
 }
 
-void trace_btree_right(char* tree, char* parent, char* child) {
-  printf(
-      "{\"type\":\"btree_edge\",\"tree\":\"%s\",\"parent\":\"%s\",\"child\":\"%"
-      "s\",\"side\":\"R\"}\n",
-      tree, parent, child);
+void trace_btree_left(char* tree, void* parent, void* child) {
+  _btree_edge(tree, parent, child, 'L');
 }
 
-void trace_btree_highlight(char* tree, char* id) {
+void trace_btree_right(char* tree, void* parent, void* child) {
+  _btree_edge(tree, parent, child, 'R');
+}
+
+void trace_btree_update(char* tree, void* node, long long data) {
+  if (node == NULL) return;
+  char id[32];
+  snprintf(id, sizeof(id), "%p", node);
+  printf("{\"type\":\"btree_update\",\"tree\":\"%s\",\"id\":\"%s\",\"v\":%lld}\n",
+         tree, id, data);
+}
+
+void trace_btree_delete(char* tree, void* node) {
+  if (node == NULL) return;
+  char id[32];
+  snprintf(id, sizeof(id), "%p", node);
+  printf("{\"type\":\"btree_delete\",\"tree\":\"%s\",\"id\":\"%s\"}\n", tree, id);
+}
+
+void trace_btree_highlight(char* tree, void* node) {
+  if (node == NULL) return;
+  char id[32];
+  snprintf(id, sizeof(id), "%p", node);
   printf("{\"type\":\"btree_highlight\",\"tree\":\"%s\",\"id\":\"%s\"}\n", tree,
          id);
 }
