@@ -732,7 +732,27 @@ trace_hash_remove("H", key, index);
 free(node);
 
 ==================================================
-TREE TRACES
+CHOOSING A TREE TYPE (READ FIRST)
+==================================================
+
+Two distinct tree visualizations exist. Pick ONE based on the node struct:
+
+- BINARY TREE → use the trace_btree_* family (see BINARY TREE TRACES below).
+  Choose this when each node has exactly two named child pointers, typically
+  `left` and `right` (or `l`/`r`). Binary search trees, heaps stored as nodes,
+  expression trees, AVL/red-black trees all fall here. The left/right
+  distinction is meaningful and MUST be preserved.
+
+- N-ARY TREE → use the trace_tree_* family (see N-ARY TREE TRACES below).
+  Choose this when each node holds an array or list of children
+  (e.g. `children[MAX]` with `childCount`, or a child linked list) and there is
+  no inherent left/right ordering.
+
+Never mix the two families on the same tree. A node with `left`/`right` is a
+binary tree — do NOT instrument it with trace_tree_edge.
+
+==================================================
+N-ARY TREE TRACES
 ==================================================
 
 Signatures:
@@ -823,6 +843,112 @@ strcpy(child->id, "n1");
 strcpy(child->value, "B");
 trace_tree_node("T", child->id, child->value);
 trace_tree_edge("T", root->id, child->id);
+
+==================================================
+BINARY TREE TRACES
+==================================================
+
+Use this family when each node has exactly two named child pointers (left and
+right). The visualizer reserves a left slot and a right slot per node, so a
+node with ONLY a right child is drawn to the right and a node with ONLY a left
+child is drawn to the left. This is why left and right have dedicated calls —
+do NOT collapse them into a single edge call.
+
+Signatures:
+
+trace_btree_init(char* name)
+trace_btree_node(char* tree, char* id, char* value)
+trace_btree_left(char* tree, char* parent_id, char* child_id)
+trace_btree_right(char* tree, char* parent_id, char* child_id)
+trace_btree_highlight(char* tree, char* id)
+
+Rules:
+
+1. Call trace_btree_init ONCE before any node or edge traces.
+
+2. Call trace_btree_node after the node's id and value strings are set.
+   id must be a unique string identifier for the node (e.g., "n1", "root").
+   value is the display string shown inside the node.
+   Both id and value must be char* (string), not integers. If the node value is
+   an int, format it into a string first (e.g. sprintf or a value[] field).
+
+3. Call trace_btree_left when a node's LEFT child pointer is assigned, and
+   trace_btree_right when its RIGHT child pointer is assigned. Pass the parent
+   id, then the child id. Emit it right after the assignment, e.g.:
+
+   root->left = child;
+   trace_btree_left("T", root->id, root->left->id);
+
+   root->right = child;
+   trace_btree_right("T", root->id, root->right->id);
+
+   The child node must already be registered with trace_btree_node before the
+   edge connecting it to its parent.
+
+4. MANDATORY: Call trace_btree_highlight every time a traversal visits a node.
+   This applies to ALL traversal patterns — preorder, inorder, postorder, or
+   level-order. Every visited node MUST be highlighted.
+
+5. Ordering requirement:
+   trace_btree_init → trace_btree_node (register node) → trace_btree_left /
+   trace_btree_right (connect to parent)
+
+Traversal highlight patterns:
+
+Inorder — highlight after the left subtree, before processing the value:
+
+void inorder(Node* node) {
+    if (node == NULL) return;
+    inorder(node->left);
+    trace_btree_highlight("T", node->id);
+    printf("%s ", node->value);
+    inorder(node->right);
+}
+
+Preorder — highlight at the start, before recursing into children:
+
+void preorder(Node* node) {
+    if (node == NULL) return;
+    trace_btree_highlight("T", node->id);
+    printf("%s ", node->value);
+    preorder(node->left);
+    preorder(node->right);
+}
+
+Postorder — highlight after both children:
+
+void postorder(Node* node) {
+    if (node == NULL) return;
+    postorder(node->left);
+    postorder(node->right);
+    trace_btree_highlight("T", node->id);
+    printf("%s ", node->value);
+}
+
+Example (construction):
+
+trace_btree_init("T");
+
+Node* root = createNode("n1", "50");
+trace_btree_node("T", root->id, root->value);
+
+Node* l = createNode("n2", "30");
+trace_btree_node("T", l->id, l->value);
+root->left = l;
+trace_btree_left("T", root->id, root->left->id);
+
+Node* r = createNode("n3", "70");
+trace_btree_node("T", r->id, r->value);
+root->right = r;
+trace_btree_right("T", root->id, root->right->id);
+
+CRITICAL for recursive BST insertion (root->left = insert(root->left, x)):
+Emit the edge AFTER the assignment returns, using the child's id. Re-emitting
+an edge that already exists is harmless, so it is fine to place the trace right
+after the assignment even on the recursive path:
+
+root->left = insert(root->left, value);
+trace_btree_left("T", root->id, root->left->id);
 
 ==================================================
 GRAPH TRACES

@@ -289,6 +289,38 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       newObjects[step.tree].currentHighlight = step.id;
     }
 
+    // ================= BINARY TREE =================
+    if (step.type === "btree_init") {
+      newObjects[step.name] = {
+        id: step.name,
+        type: "btree",
+        nodes: {},
+        currentHighlight: null,
+      };
+    }
+
+    if (step.type === "btree_node" && newObjects[step.tree]) {
+      const existing = newObjects[step.tree].nodes[step.id];
+      newObjects[step.tree].nodes[step.id] = {
+        id: step.id,
+        value: step.v,
+        left: existing?.left ?? null,
+        right: existing?.right ?? null,
+      };
+    }
+
+    if (step.type === "btree_edge" && newObjects[step.tree]) {
+      const node = newObjects[step.tree].nodes[step.parent];
+      if (node) {
+        if (step.side === "L") node.left = step.child;
+        else if (step.side === "R") node.right = step.child;
+      }
+    }
+
+    if (step.type === "btree_highlight" && newObjects[step.tree]) {
+      newObjects[step.tree].currentHighlight = step.id;
+    }
+
     // ================= GRAPH =================
     if (step.type === "graph_init") {
       newObjects[step.name] = {
@@ -336,6 +368,7 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       step.type === "queue_init" ||
       step.type === "hash_init" ||
       step.type === "tree_init" ||
+      step.type === "btree_init" ||
       step.type === "graph_init"
     ) {
       if (!orderedIds.includes(step.name)) {

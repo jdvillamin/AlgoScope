@@ -250,6 +250,37 @@ void trace_tree_highlight(char* tree, char* id) {
          id);
 }
 
+/* ── Binary Tree ────────────────────────────────────────────────── */
+
+void trace_btree_init(char* name) {
+  printf("{\"type\":\"btree_init\",\"name\":\"%s\"}\n", name);
+}
+
+void trace_btree_node(char* tree, char* id, char* value) {
+  printf(
+      "{\"type\":\"btree_node\",\"tree\":\"%s\",\"id\":\"%s\",\"v\":\"%s\"}\n",
+      tree, id, value);
+}
+
+void trace_btree_left(char* tree, char* parent, char* child) {
+  printf(
+      "{\"type\":\"btree_edge\",\"tree\":\"%s\",\"parent\":\"%s\",\"child\":\"%"
+      "s\",\"side\":\"L\"}\n",
+      tree, parent, child);
+}
+
+void trace_btree_right(char* tree, char* parent, char* child) {
+  printf(
+      "{\"type\":\"btree_edge\",\"tree\":\"%s\",\"parent\":\"%s\",\"child\":\"%"
+      "s\",\"side\":\"R\"}\n",
+      tree, parent, child);
+}
+
+void trace_btree_highlight(char* tree, char* id) {
+  printf("{\"type\":\"btree_highlight\",\"tree\":\"%s\",\"id\":\"%s\"}\n", tree,
+         id);
+}
+
 /* ── Graph ──────────────────────────────────────────────────────── */
 
 void trace_graph_init(char* name) {

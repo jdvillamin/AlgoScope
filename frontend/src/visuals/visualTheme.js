@@ -8,6 +8,7 @@ export const VISUAL_THEME = {
   list:    { border: "#1f4e2c", label: "#5ca976", flash: "#63d188" },
   dlist:   { border: "#1e4a40", label: "#50a294", flash: "#50c7b0" },
   tree:    { border: "#52203b", label: "#b36b93", flash: "#e586b8" },
+  btree:   { border: "#3a2a5c", label: "#8b7ac0", flash: "#b29bff" },
   graph:   { border: "#5a2429", label: "#c16672", flash: "#eb7785" },
 };
 

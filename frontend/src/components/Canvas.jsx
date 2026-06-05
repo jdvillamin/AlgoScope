@@ -12,6 +12,7 @@ import StackView from "./visuals/StackView";
 import QueueView from "./visuals/QueueView";
 import HashMapView from "./visuals/HashMapView";
 import TreeView from "./visuals/TreeView";
+import BinaryTreeView from "./visuals/BinaryTreeView";
 import GraphView from "./visuals/GraphView";
 
 function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
@@ -554,6 +555,15 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
             if (obj.type === "tree")
               return (
                 <TreeView
+                  key={obj.id}
+                  obj={obj}
+                  onMouseDown={handleObjectMouseDown}
+                />
+              );
+
+            if (obj.type === "btree")
+              return (
+                <BinaryTreeView
                   key={obj.id}
                   obj={obj}
                   onMouseDown={handleObjectMouseDown}
