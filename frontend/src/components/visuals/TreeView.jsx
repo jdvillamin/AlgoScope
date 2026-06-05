@@ -23,16 +23,24 @@ function TreeView({ obj, onMouseDown }) {
   const edges = obj.edges;
 
   const childrenMap = {};
+  const childIds = new Set();
   edges.forEach(({ parent, child }) => {
     if (!childrenMap[parent]) childrenMap[parent] = [];
     childrenMap[parent].push(child);
+    childIds.add(child);
   });
 
-  const rootId = Object.keys(nodes)[0];
+  // Roots = nodes that are not yet anyone's child. We lay out a FOREST so that
+  // nodes created before their edges (the construction phase) are still drawn
+  // as a row, instead of only the first root being visible.
+  const roots = Object.keys(nodes).filter((id) => !childIds.has(id));
   const positioned = {};
+  const placed = new Set();
   let currentX = 0;
 
   function layout(nodeId, depth) {
+    if (placed.has(nodeId)) return;
+    placed.add(nodeId);
     const children = childrenMap[nodeId] || [];
     if (children.length === 0) {
       positioned[nodeId] = { x: currentX * HORIZONTAL_SPACING, y: depth * LEVEL_HEIGHT };
@@ -48,7 +56,16 @@ function TreeView({ obj, onMouseDown }) {
     }
   }
 
-  if (rootId) layout(rootId, 0);
+  roots.forEach((id) => layout(id, 0));
+
+  // Safety net: place any node not reached from a root (e.g. a malformed
+  // cycle) so a created node is never invisible.
+  Object.keys(nodes).forEach((id) => {
+    if (!positioned[id]) {
+      positioned[id] = { x: currentX * HORIZONTAL_SPACING, y: 0 };
+      currentX++;
+    }
+  });
 
   // Tight bbox of all node centers so the root div has a real measurable size.
   const nodeXs = Object.values(positioned).map((p) => p.x);

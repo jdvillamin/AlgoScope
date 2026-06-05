@@ -21,15 +21,17 @@ function BinaryTreeView({ obj, onMouseDown }) {
   const changed = useChangedKeys(nodeEntries);
   const theme = themeFor("btree");
 
-  // Root = the node that is no other node's left/right child.
+  // Roots = nodes that are no other node's left/right child. We lay out a
+  // FOREST, not just one root: during construction the nodes are created before
+  // any edges, so every node is parentless and must still be drawn. Each
+  // parentless node lays out at depth 0 (a row); as edges are added, children
+  // drop under their parents and the tree assembles.
   const childIds = new Set();
   Object.values(nodes).forEach((n) => {
     if (n.left) childIds.add(n.left);
     if (n.right) childIds.add(n.right);
   });
-  const rootId =
-    Object.keys(nodes).find((id) => !childIds.has(id)) ??
-    Object.keys(nodes)[0];
+  const roots = Object.keys(nodes).filter((id) => !childIds.has(id));
 
   // In-order x assignment: each node gets the next horizontal slot between its
   // left and right subtrees. This is what makes a left-only child render to the
@@ -52,7 +54,16 @@ function BinaryTreeView({ obj, onMouseDown }) {
     layout(node.right, depth + 1);
   }
 
-  if (rootId) layout(rootId, 0);
+  roots.forEach((rootId) => layout(rootId, 0));
+
+  // Safety net: place any node not reached from a root (e.g. a malformed
+  // cycle) so a created node is never invisible.
+  Object.keys(nodes).forEach((id) => {
+    if (!positioned[id]) {
+      positioned[id] = { x: counter * HORIZONTAL_SPACING, y: 0 };
+      counter++;
+    }
+  });
 
   // Edges derived from each node's left/right pointers.
   const edges = [];
