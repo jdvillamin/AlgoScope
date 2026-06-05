@@ -679,86 +679,93 @@ function App() {
     [updateActiveFile]
   );
 
-  const runCode = async () => {
-    const isInstrumentedTab = activeTab === "instrumented";
-    const codeToRun = isInstrumentedTab ? instrumentedCode : code;
+  // Compile & run the instrumented code (independent of the active tab).
+  const runInstrumented = async () => {
+    try {
+      setIsProcessing(true);
+      setRunPhase("Preparing instrumented code...");
+      setError("");
+      clearActiveFileTrace();
+      setCurrentStep(0);
 
-    if (!codeToRun.trim()) {
+      await new Promise((r) => setTimeout(r, 120));
+
+      setRunPhase("Compiling instrumented code...");
+      await new Promise((r) => setTimeout(r, 120));
+
+      const resPromise = API.post("/run", {
+        code: instrumentedCode,
+        skip_instrumentation: true,
+        stdin: stdin,
+      });
+
+      setRunPhase("Executing program...");
+      const res = await resPromise;
+
+      console.log("Backend response:", res.data);
+
+      if (res.data.error) {
+        setRunPhase("Compilation or execution failed.");
+        setError(res.data.error);
+        setIsProcessing(false);
+        return;
+      }
+
+      setRunPhase("Rendering trace...");
+      await new Promise((r) => setTimeout(r, 180));
+
+      handleTrace(res.data.trace || []);
+
+      setRunPhase("Execution complete.");
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 250);
+    } catch (err) {
+      console.error(err);
+      if (err.response?.data?.violations) {
+        setRunPhase("Blocked by security validator.");
+        setError(err.response.data.violations.map((v) => `Line ${v.line}: ${v.message}`).join("\n"));
+      } else {
+        setRunPhase("Connection error.");
+        setError("Unable to reach the server. Please check your connection and try again.");
+      }
+      setIsProcessing(false);
+    }
+  };
+
+  // "Run instrumented code" button — runs whatever is in the instrumented
+  // buffer. An empty buffer (e.g. a brand-new file) is a no-op.
+  const handleRunInstrumented = () => {
+    if (isProcessing) return;
+    if (!instrumentedCode.trim()) return;
+
+    const numbers = stdin.match(/-?\d+/g) || [];
+    for (const n of numbers) {
+      if (Math.abs(parseInt(n, 10)) > 20) {
+        setError(`Input number ${n} exceeds the limit of 20.`);
+        return;
+      }
+    }
+
+    runInstrumented();
+  };
+
+  // "Instrument" button — sends the raw code to the backend to be instrumented.
+  const handleInstrument = () => {
+    if (isProcessing) return;
+    if (!code.trim()) {
       alert("Please enter C code first.");
       return;
     }
-
-    if (!isInstrumentedTab && securityViolations.length > 0) {
-      setError("Code contains blocked constructs. Fix the highlighted issues before running.");
+    if (securityViolations.length > 0) {
+      setError("Code contains blocked constructs. Fix the highlighted issues before instrumenting.");
       return;
     }
-
-    if (isInstrumentedTab) {
-      const numbers = stdin.match(/-?\d+/g) || [];
-      for (const n of numbers) {
-        if (Math.abs(parseInt(n, 10)) > 20) {
-          setError(`Input number ${n} exceeds the limit of 20.`);
-          return;
-        }
-      }
-
-      try {
-        setIsProcessing(true);
-        setRunPhase("Preparing instrumented code...");
-        setError("");
-        clearActiveFileTrace();
-        setCurrentStep(0);
-
-        await new Promise((r) => setTimeout(r, 120));
-
-        setRunPhase("Compiling instrumented code...");
-        await new Promise((r) => setTimeout(r, 120));
-
-        const resPromise = API.post("/run", {
-          code: instrumentedCode,
-          skip_instrumentation: true,
-          stdin: stdin,
-        });
-
-        setRunPhase("Executing program...");
-        const res = await resPromise;
-
-        console.log("Backend response:", res.data);
-
-        if (res.data.error) {
-          setRunPhase("Compilation or execution failed.");
-          setError(res.data.error);
-          setIsProcessing(false);
-          return;
-        }
-
-        setRunPhase("Rendering trace...");
-        await new Promise((r) => setTimeout(r, 180));
-
-        handleTrace(res.data.trace || []);
-
-        setRunPhase("Execution complete.");
-        setTimeout(() => {
-          setIsProcessing(false);
-        }, 250);
-      } catch (err) {
-        console.error(err);
-        if (err.response?.data?.violations) {
-          setRunPhase("Blocked by security validator.");
-          setError(err.response.data.violations.map((v) => `Line ${v.line}: ${v.message}`).join("\n"));
-        } else {
-          setRunPhase("Connection error.");
-          setError("Unable to reach the server. Please check your connection and try again.");
-        }
-        setIsProcessing(false);
-      }
-    } else {
-      if (instrumentedCode.trim()) {
-        setOverwritePromptOpen(true);
-        return;
-      }
-      doInstrument();
+    if (instrumentedCode.trim()) {
+      setOverwritePromptOpen(true);
+      return;
     }
+    doInstrument();
   };
 
   const doInstrument = async () => {
@@ -1030,7 +1037,8 @@ function App() {
                   currentLine={currentLine}
                   isRunning={isRunning}
                   isProcessing={isProcessing}
-                  onRun={runCode}
+                  onInstrument={handleInstrument}
+                  onRunInstrumented={handleRunInstrumented}
                   onReset={resetExecution}
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
@@ -1338,7 +1346,8 @@ function App() {
             currentLine={currentLine}
             isRunning={isRunning}
             isProcessing={isProcessing}
-            onRun={runCode}
+            onInstrument={handleInstrument}
+            onRunInstrumented={handleRunInstrumented}
             onReset={resetExecution}
             activeTab={activeTab}
             setActiveTab={setActiveTab}

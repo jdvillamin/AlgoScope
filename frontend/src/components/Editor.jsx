@@ -9,7 +9,8 @@ function Editor({
   currentLine,
   isRunning,
   isProcessing,
-  onRun,
+  onInstrument,
+  onRunInstrumented,
   onReset,
   activeTab,
   setActiveTab,
@@ -118,7 +119,11 @@ function Editor({
     monaco.editor.setModelMarkers(model, "security", markers);
   }, [securityViolations, isInstrumentedTab]);
 
-  const hasViolations = !isInstrumentedTab && securityViolations.length > 0;
+  // Raw code is what gets instrumented, so the instrument action is gated on
+  // violations regardless of which tab is showing.
+  const rawHasViolations = securityViolations.length > 0;
+  const hasInstrumented = (instrumentedCode || "").trim().length > 0;
+  const showActionLabels = !isMobile && editorWidth >= 540;
 
   const iconBtn = (active = true) => ({
     width: isMobile ? "28px" : "32px",
@@ -229,24 +234,54 @@ function Editor({
             </button>
           )}
 
+          {/* Instrument the raw code (adds tracing). Violet accent. */}
           <button
-            data-tutorial="run-btn"
-            onClick={!isProcessing && !hasViolations ? onRun : undefined}
+            data-tutorial="instrument-btn"
+            onClick={!isProcessing && !rawHasViolations ? onInstrument : undefined}
             style={{
               ...iconBtn(),
               width: "auto",
-              padding: "0 12px",
-              gap: "6px",
+              padding: "0 10px",
+              gap: "5px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: hasViolations ? "#f87171" : isProcessing ? "#506888" : "#4b8cf7",
-              border: `1px solid ${hasViolations ? "#5c1e1e" : isProcessing ? "#1a2535" : "#1e3a6e"}`,
-              background: hasViolations ? "#1a0f0f" : isProcessing ? "#0f1928" : "#0f1e3a",
-              cursor: isProcessing || hasViolations ? "not-allowed" : "pointer",
+              color: rawHasViolations ? "#f87171" : isProcessing ? "#506888" : "#b29bff",
+              border: `1px solid ${rawHasViolations ? "#5c1e1e" : isProcessing ? "#1a2535" : "#3a2a5c"}`,
+              background: rawHasViolations ? "#1a0f0f" : isProcessing ? "#0f1928" : "#161226",
+              cursor: isProcessing || rawHasViolations ? "not-allowed" : "pointer",
             }}
-            title={hasViolations ? "Fix security violations before running" : isProcessing ? "Processing..." : isInstrumentedTab ? "Compile & run" : "Instrument"}
+            title={rawHasViolations ? "Fix security violations before instrumenting" : isProcessing ? "Processing..." : "Instrument raw code (adds tracing)"}
           >
-            {isProcessing ? "⋯" : hasViolations ? "!" : "▶"}{(isMobile || editorWidth >= 480) && <>&nbsp;{isProcessing ? "Running" : hasViolations ? "Blocked" : isInstrumentedTab ? "Run" : "Instrument"}</>}
+            {rawHasViolations ? "!" : "✦"}{showActionLabels && <>&nbsp;Instrument</>}
+          </button>
+
+          {/* Compile & run the instrumented code. Blue accent. Disabled when
+              there is no instrumented code to run. */}
+          <button
+            data-tutorial="run-btn"
+            onClick={!isProcessing && hasInstrumented ? onRunInstrumented : undefined}
+            style={{
+              ...iconBtn(),
+              width: "auto",
+              padding: "0 10px",
+              gap: "5px",
+              fontSize: "12.5px",
+              fontWeight: 600,
+              color: isProcessing ? "#506888" : hasInstrumented ? "#4b8cf7" : "#3d5270",
+              border: `1px solid ${isProcessing ? "#1a2535" : hasInstrumented ? "#1e3a6e" : "#162234"}`,
+              background: isProcessing ? "#0f1928" : hasInstrumented ? "#0f1e3a" : "#0c1420",
+              cursor: isProcessing || !hasInstrumented ? "not-allowed" : "pointer",
+              opacity: hasInstrumented || isProcessing ? 1 : 0.55,
+            }}
+            title={
+              !hasInstrumented
+                ? "No instrumented code yet — click Instrument first"
+                : isProcessing
+                ? "Processing..."
+                : "Compile & run instrumented code"
+            }
+          >
+            {isProcessing ? "⋯" : "▶"}{showActionLabels && <>&nbsp;Run</>}
           </button>
 
           <button

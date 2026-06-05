@@ -28,9 +28,9 @@ const STEPS = [
     position: "left",
   },
   {
-    target: "[data-tutorial='run-btn']",
+    target: "[data-tutorial='instrument-btn']",
     title: "Instrument & Run",
-    body: "Click here to instrument your code. This adds tracing calls so the visualizer can track data structures. Then run the instrumented code to generate a trace.",
+    body: "Click Instrument to add tracing calls to your code so the visualizer can track data structures. Then click Run to compile and run the instrumented code and generate a trace. Both buttons stay available from either tab.",
     position: "left",
   },
   {
