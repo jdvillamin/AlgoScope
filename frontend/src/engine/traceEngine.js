@@ -295,6 +295,7 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
         id: step.name,
         type: "btree",
         nodes: {},
+        pointers: {},
         currentHighlight: null,
       };
     }
@@ -333,10 +334,19 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
         if (n.right === step.id) n.right = null;
       });
       if (t.currentHighlight === step.id) t.currentHighlight = null;
+      // Detach any pointer label that referenced the removed node so a reused
+      // address can't make a stale label reattach to a different node.
+      Object.keys(t.pointers || {}).forEach((name) => {
+        if (t.pointers[name] === step.id) t.pointers[name] = "";
+      });
     }
 
     if (step.type === "btree_highlight" && newObjects[step.tree]) {
       newObjects[step.tree].currentHighlight = step.id;
+    }
+
+    if (step.type === "btree_pointer" && newObjects[step.tree]) {
+      newObjects[step.tree].pointers[step.name] = step.target;
     }
 
     // ================= GRAPH =================

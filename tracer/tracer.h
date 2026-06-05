@@ -136,6 +136,10 @@ void trace_btree_right(char* tree, void* parent, void* child);
 void trace_btree_update(char* tree, void* node, long long data);
 void trace_btree_delete(char* tree, void* node);
 void trace_btree_highlight(char* tree, void* node);
+/* Attach a named label (e.g. "x", "y", "T2") to a node so students can see
+   which pointer variable references it — useful for rotation pivots and search
+   cursors. Passing NULL as target detaches the label. */
+void trace_btree_pointer(char* tree, char* name, void* target);
 
 void trace_graph_init(char* name);
 void trace_graph_node(char* graph, char* id);

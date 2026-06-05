@@ -872,6 +872,7 @@ trace_btree_right(char* tree, void* parent, void* child)
 trace_btree_update(char* tree, void* node, long long data)
 trace_btree_delete(char* tree, void* node)
 trace_btree_highlight(char* tree, void* node)
+trace_btree_pointer(char* tree, char* name, void* target)
 
 Rules:
 
@@ -919,6 +920,43 @@ Rules:
 6. MANDATORY: Call trace_btree_highlight every time a traversal or search visits
    a node — inorder/preorder/postorder traversal AND the search path of
    insert/delete/lookup. Pass the node pointer.
+
+7. POINTER LABELS — call trace_btree_pointer to attach a named label to the node
+   a local pointer variable references. Each name renders as its own colored tag
+   on the node, so students can see which node is "x", "y", "T2", "curr", etc.
+   This is especially useful for the pivot nodes of AVL/red-black ROTATIONS and
+   for search cursors. Pass the variable name as a string and the node pointer:
+
+       Node* x = y->left;
+       trace_btree_pointer("T", "x", x);     // label node x references
+
+   Re-emit the same name whenever the variable is reassigned (the label moves to
+   the new node). Pass NULL as target to detach the label — do this for local
+   pivot pointers (x, y, T2) right before the rotation function returns so the
+   labels do not linger on later steps:
+
+       trace_btree_pointer("T", "x", NULL);  // detach
+
+   Do NOT use trace_var_init / trace_var for node pointer variables in a binary
+   tree — use trace_btree_pointer instead.
+
+Example (right rotation with pointer labels on the pivots):
+
+   Node* rightRotate(Node* y) {
+       Node* x = y->left;
+       Node* T2 = x->right;
+       trace_btree_pointer("T", "y", y);
+       trace_btree_pointer("T", "x", x);
+       trace_btree_pointer("T", "T2", T2);
+       x->right = y;
+       trace_btree_right("T", x, x->right);
+       y->left = T2;
+       trace_btree_left("T", y, y->left);
+       trace_btree_pointer("T", "y", NULL);   // detach pivots after rotating
+       trace_btree_pointer("T", "x", NULL);
+       trace_btree_pointer("T", "T2", NULL);
+       return x;
+   }
 
 Traversal highlight patterns (highlight by pointer):
 

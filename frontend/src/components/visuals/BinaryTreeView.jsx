@@ -2,6 +2,29 @@ import React, { useMemo } from "react";
 import { useChangedKeys } from "../../visuals/useFlash";
 import { themeFor } from "../../visuals/visualTheme";
 
+// Distinct colors so each pointer label (x, y, T2, curr, …) reads as its own
+// thing — letting students follow rotation pivots at a glance.
+const POINTER_COLORS = [
+  "#f0a429",
+  "#4fc9d9",
+  "#e586b8",
+  "#63d188",
+  "#b29bff",
+  "#f5944a",
+  "#7ab8ff",
+  "#eb7785",
+];
+
+// Hash the name to a palette slot so a given pointer keeps the same color across
+// every step (stable, not order-dependent).
+function colorForPointer(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return POINTER_COLORS[h % POINTER_COLORS.length];
+}
+
 function BinaryTreeView({ obj, onMouseDown }) {
   const NODE_SIZE = 48;
   const LEVEL_HEIGHT = 110;
@@ -71,6 +94,16 @@ function BinaryTreeView({ obj, onMouseDown }) {
     if (n.left && positioned[n.left]) edges.push({ parent: n.id, child: n.left });
     if (n.right && positioned[n.right])
       edges.push({ parent: n.id, child: n.right });
+  });
+
+  // Named pointer labels attached to nodes, grouped by the node they target.
+  // Stale labels (target missing/null/deleted) are dropped.
+  const pointersByTarget = {};
+  Object.entries(obj.pointers || {}).forEach(([name, target]) => {
+    if (!target || target === "NULL") return;
+    if (!positioned[target]) return;
+    if (!pointersByTarget[target]) pointersByTarget[target] = [];
+    pointersByTarget[target].push(name);
   });
 
   // Tight bbox of all node centers so the root div has a real measurable size.
@@ -146,6 +179,37 @@ function BinaryTreeView({ obj, onMouseDown }) {
             {nodes[id].value}
           </div>
         );
+      })}
+
+      {Object.entries(pointersByTarget).flatMap(([target, names]) => {
+        const pos = positioned[target];
+        if (!pos) return [];
+        return names.map((name, stackIndex) => {
+          const color = colorForPointer(name);
+          return (
+            <div
+              key={`${target}-${name}`}
+              style={{
+                position: "absolute",
+                left: pos.x + NODE_SIZE - 4,
+                top: pos.y - 12 + stackIndex * 20,
+                padding: "1px 6px",
+                borderRadius: "6px",
+                background: `${color}22`,
+                border: `1px solid ${color}`,
+                color,
+                fontSize: "11px",
+                fontWeight: 700,
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                whiteSpace: "nowrap",
+                pointerEvents: "none",
+                zIndex: 5,
+              }}
+            >
+              {name}
+            </div>
+          );
+        });
       })}
     </div>
   );

@@ -44,6 +44,9 @@ Node* rightRotate(Node* y) {
   Node* x = y->left;
   trace_line(36);
   Node* T2 = x->right;
+  trace_btree_pointer("T", "y", y);
+  trace_btree_pointer("T", "x", x);
+  trace_btree_pointer("T", "T2", T2);
   trace_btree_highlight("T", y);
   trace_btree_highlight("T", x);
   trace_line(37);
@@ -57,6 +60,9 @@ Node* rightRotate(Node* y) {
   trace_line(40);
   x->height = max(height(x->left), height(x->right)) + 1;
   trace_line(41);
+  trace_btree_pointer("T", "y", NULL);
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "T2", NULL);
   return x;
 }
 
@@ -65,6 +71,9 @@ Node* leftRotate(Node* x) {
   Node* y = x->right;
   trace_line(46);
   Node* T2 = y->left;
+  trace_btree_pointer("T", "x", x);
+  trace_btree_pointer("T", "y", y);
+  trace_btree_pointer("T", "T2", T2);
   trace_btree_highlight("T", x);
   trace_btree_highlight("T", y);
   trace_line(47);
@@ -78,6 +87,9 @@ Node* leftRotate(Node* x) {
   trace_line(50);
   y->height = max(height(y->left), height(y->right)) + 1;
   trace_line(51);
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "y", NULL);
+  trace_btree_pointer("T", "T2", NULL);
   return y;
 }
 

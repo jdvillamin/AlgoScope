@@ -312,6 +312,18 @@ void trace_btree_highlight(char* tree, void* node) {
          id);
 }
 
+void trace_btree_pointer(char* tree, char* name, void* target) {
+  char tid[32];
+  if (target == NULL)
+    tid[0] = '\0';
+  else
+    snprintf(tid, sizeof(tid), "%p", target);
+  printf(
+      "{\"type\":\"btree_pointer\",\"tree\":\"%s\",\"name\":\"%s\",\"target\":\"%"
+      "s\"}\n",
+      tree, name, tid);
+}
+
 /* ── Graph ──────────────────────────────────────────────────────── */
 
 void trace_graph_init(char* name) {
