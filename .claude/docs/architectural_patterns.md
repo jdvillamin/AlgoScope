@@ -58,11 +58,23 @@ Each trace function emits a single-line JSON object to stdout via `printf`. All 
 
 `frontend/vite.config.js` proxies `/api/*` → `http://localhost:5000`. The Axios instance in `frontend/src/api/backend.js` uses `/api/run` as the path, so no hardcoded backend URLs appear in component code.
 
-## 10. Dark Theme Color Palette
+## 10. Theming (light / dark via CSS variables)
 
-Used consistently across all inline styles in `Visuals/` and `Canvas.jsx`:
-- Backgrounds: `#0f141d`, `#141821`, `#1c2230`
-- Accent/highlight: `#fbc531` (gold), `#2d8cff` (blue)
-- Text: `#ffffff`, `#8aa2ff`
+The app shell is themed through `--c-*` CSS variables defined in `frontend/src/index.css`:
+`:root` holds the dark palette (the original literals, so dark mode is unchanged) and
+`:root[data-theme="light"]` overrides them. `App.jsx` owns a `theme` state ("dark" | "light"),
+persists it to `localStorage["algoscope:theme"]`, and sets `document.documentElement`'s
+`data-theme` attribute; `main.jsx` applies it before first paint to avoid a flash. A toggle
+button lives in the `FilePanel` header (next to Help).
 
-New visual components should use these values directly (no CSS variables are defined).
+Guidelines:
+- **Chrome (shell) inline styles** should reference tokens: `color: "var(--c-text)"`,
+  `background: "var(--c-bg-panel)"`, `border: "1px solid var(--c-border)"`, etc. See the token
+  list in `index.css` (`--c-bg-*`, `--c-border-*`, `--c-text-*`, `--c-accent`, `--c-gold`,
+  `--c-bg-warn`, `--c-stage`).
+- **Monaco** can't read CSS variables (canvas-rendered): it has `algoscope-dark` /
+  `algoscope-light` themes defined with literal hex in `Editor.jsx`, selected by the `theme` prop.
+- **Data-structure visuals** (`components/visuals/*`) deliberately keep their own dark card
+  styling in both themes — high-contrast tiles on the canvas stage. SVG presentation attributes
+  (`stroke=`, `fill=`) can't use `var()`, so leave those as literals. Only the canvas *stage*
+  background re-themes (`var(--c-stage)`).

@@ -119,6 +119,20 @@ function App() {
   const [activeFileId, setActiveFileId] = useState(() => persisted?.activeFileId ?? "1");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Light / dark theme. The --c-* CSS tokens (index.css) react to the
+  // data-theme attribute on <html>; Monaco gets the theme as a prop.
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("algoscope:theme") || "dark",
+  );
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("algoscope:theme", theme);
+  }, [theme]);
+  const toggleTheme = useCallback(
+    () => setTheme((t) => (t === "light" ? "dark" : "light")),
+    [],
+  );
+
   // On auth change: fetch codes from DB when logged in, reset on logout
   useEffect(() => {
     if (authLoading) return;
@@ -899,7 +913,7 @@ function App() {
           height: "100vh",
           width: "100vw",
           overflow: "hidden",
-          background: "#080d15",
+          background: "var(--c-bg0)",
         }}
       >
         <UnsavedPrompt
@@ -953,8 +967,8 @@ function App() {
               height: "40px",
               borderRadius: "10px",
               background: "rgba(14, 21, 32, 0.9)",
-              border: "1px solid #1e2d42",
-              color: "#8fa3c8",
+              border: "1px solid var(--c-border)",
+              color: "var(--c-text-muted)",
               fontSize: "18px",
               cursor: "pointer",
               display: "flex",
@@ -979,7 +993,7 @@ function App() {
             height: `${currentSheetHeight}px`,
             display: "flex",
             flexDirection: "column",
-            background: "#0e1520",
+            background: "var(--c-bg-panel)",
             borderRadius: "14px 14px 0 0",
             boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
             transition: sheetDragHeight !== null ? "none" : "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1028,7 +1042,7 @@ function App() {
           {/* Editor content — visible when expanded */}
           {isSheetExpanded && (
             <>
-              <div style={{ flex: 3, minHeight: 0, borderTop: "1px solid #1a2535" }}>
+              <div style={{ flex: 3, minHeight: 0, borderTop: "1px solid var(--c-border-subtle)" }}>
                 <Editor
                   code={code}
                   setCode={setCode}
@@ -1049,6 +1063,7 @@ function App() {
                   onDeInstrument={deInstrument}
                   securityViolations={securityViolations}
                   isMobile
+                  theme={theme}
                 />
               </div>
               {/* Console */}
@@ -1057,8 +1072,8 @@ function App() {
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
-                  borderTop: "1px solid #1a2535",
-                  background: "#0a1018",
+                  borderTop: "1px solid var(--c-border-subtle)",
+                  background: "var(--c-bg-side)",
                   position: "relative",
                   overflow: "hidden",
                   minHeight: "50px",
@@ -1067,21 +1082,21 @@ function App() {
                 <div
                   style={{
                     padding: "4px 10px",
-                    borderBottom: "1px solid #1a2535",
+                    borderBottom: "1px solid var(--c-border-subtle)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
-                  <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.8px", color: "#647e9c", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.8px", color: "var(--c-text-dim)", textTransform: "uppercase" }}>
                     Console
                   </span>
-                  <span style={{ fontSize: "9px", fontWeight: 500, color: isProcessing ? "#f0a429" : "#506888" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 500, color: isProcessing ? "var(--c-gold)" : "var(--c-text-dimmer)" }}>
                     {runPhase}
                   </span>
                 </div>
                 {isProcessing && (
-                  <div style={{ position: "absolute", top: 26, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #f0a429, transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
+                  <div style={{ position: "absolute", top: 26, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, var(--c-gold), transparent)", backgroundSize: "200% 100%", animation: "consoleShimmer 1.2s linear infinite" }} />
                 )}
                 <div
                   style={{
@@ -1090,22 +1105,22 @@ function App() {
                     overflowY: "auto",
                     fontSize: "10px",
                     fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                    color: error ? "#f87171" : "#647e9c",
+                    color: error ? "#f87171" : "var(--c-text-dim)",
                     whiteSpace: "pre-wrap",
                     lineHeight: 1.4,
                   }}
                 >
                   {isProcessing ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c8d8f0" }}>
-                      <div style={{ width: "12px", height: "12px", border: "2px solid #1e2d42", borderTop: "2px solid #f0a429", borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
-                      <span style={{ color: "#f0a429", fontWeight: 600, fontSize: "11px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--c-text-bright)" }}>
+                      <div style={{ width: "12px", height: "12px", border: "2px solid var(--c-border)", borderTop: "2px solid var(--c-gold)", borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+                      <span style={{ color: "var(--c-gold)", fontWeight: 600, fontSize: "11px" }}>
                         {runPhase}
                       </span>
                     </div>
                   ) : error ? (
                     error
                   ) : securityViolations.length > 0 ? (
-                    <div style={{ color: "#f0a429" }}>
+                    <div style={{ color: "var(--c-gold)" }}>
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>Security violations ({securityViolations.length})</div>
                       {securityViolations.map((v, i) => (
                         <div key={i} style={{ color: "#d4956a", fontSize: "10px", marginBottom: "2px" }}>
@@ -1115,10 +1130,10 @@ function App() {
                     </div>
                   ) : trace.length > 0 ? (
                     <>
-                      <div style={{ color: "#506888", marginBottom: stdout ? "6px" : 0 }}>
+                      <div style={{ color: "var(--c-text-dimmer)", marginBottom: stdout ? "6px" : 0 }}>
                         {`Trace: ${trace.length} · Step: ${currentStep} · Line: ${currentLine ?? "—"}`}
                       </div>
-                      {stdout && <div style={{ color: "#c8d8f0" }}>{stdout}</div>}
+                      {stdout && <div style={{ color: "var(--c-text-bright)" }}>{stdout}</div>}
                     </>
                   ) : (
                     "Waiting for execution..."
@@ -1174,6 +1189,8 @@ function App() {
                 onLoadHistoryRun={(run) => { handleLoadHistoryRun(run); setMobileSidebarOpen(false); }}
                 onLogout={handleLogout}
                 isSaving={isSaving}
+                theme={theme}
+                onToggleTheme={toggleTheme}
               />
             </div>
           </>
@@ -1205,7 +1222,7 @@ function App() {
         height: "100vh",
         width: "100vw",
         overflow: "hidden",
-        background: "#080d15",
+        background: "var(--c-bg0)",
       }}
     >
       {/* FAR LEFT: File Panel */}
@@ -1225,6 +1242,8 @@ function App() {
         onLoadHistoryRun={handleLoadHistoryRun}
         onLogout={handleLogout}
         isSaving={isSaving}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <UnsavedPrompt
         open={promptOpen}
@@ -1277,9 +1296,9 @@ function App() {
                 alignItems: "center",
                 gap: "6px",
                 padding: "0 12px",
-                background: "#121c2c",
-                color: "#c8d8f0",
-                border: "1px solid #1e2d42",
+                background: "var(--c-bg-raised)",
+                color: "var(--c-text-bright)",
+                border: "1px solid var(--c-border)",
                 borderRadius: "6px",
                 fontSize: "12px",
                 fontWeight: 600,
@@ -1297,8 +1316,8 @@ function App() {
           data-tutorial="controls"
           style={{
             height: "100px",
-            borderTop: "1px solid #1a2535",
-            background: "#0e1520",
+            borderTop: "1px solid var(--c-border-subtle)",
+            background: "var(--c-bg-panel)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1320,7 +1339,7 @@ function App() {
           style={{
             width: "6px",
             cursor: "col-resize",
-            background: isResizing ? "#2a3f5c" : "#1a2535",
+            background: isResizing ? "#2a3f5c" : "var(--c-border-subtle)",
             transition: isResizing ? "none" : "background 0.15s",
             flexShrink: 0,
             zIndex: 5,
@@ -1359,6 +1378,7 @@ function App() {
             securityViolations={securityViolations}
             onHide={() => setEditorHidden(true)}
             editorWidth={editorWidth}
+            theme={theme}
           />
         </div>
 
@@ -1368,8 +1388,8 @@ function App() {
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            borderTop: "1px solid #1a2535",
-            background: "#0e1520",
+            borderTop: "1px solid var(--c-border-subtle)",
+            background: "var(--c-bg-panel)",
             position: "relative",
             overflow: "hidden",
           }}
@@ -1378,7 +1398,7 @@ function App() {
           <div
             style={{
               padding: "9px 16px",
-              borderBottom: "1px solid #1a2535",
+              borderBottom: "1px solid var(--c-border-subtle)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -1389,7 +1409,7 @@ function App() {
                 fontSize: "11px",
                 fontWeight: 600,
                 letterSpacing: "0.8px",
-                color: "#647e9c",
+                color: "var(--c-text-dim)",
                 textTransform: "uppercase",
               }}
             >
@@ -1399,7 +1419,7 @@ function App() {
               style={{
                 fontSize: "12px",
                 fontWeight: 500,
-                color: isProcessing ? "#f0a429" : "#506888",
+                color: isProcessing ? "var(--c-gold)" : "var(--c-text-dimmer)",
               }}
             >
               {runPhase}
@@ -1415,7 +1435,7 @@ function App() {
                 right: 0,
                 height: "2px",
                 background:
-                  "linear-gradient(90deg, transparent, #f0a429, transparent)",
+                  "linear-gradient(90deg, transparent, var(--c-gold), transparent)",
                 backgroundSize: "200% 100%",
                 animation: "consoleShimmer 1.2s linear infinite",
               }}
@@ -1430,7 +1450,7 @@ function App() {
               fontSize: "12.5px",
               fontFamily:
                 "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-              color: error ? "#f87171" : "#647e9c",
+              color: error ? "#f87171" : "var(--c-text-dim)",
               whiteSpace: "pre-wrap",
               lineHeight: 1.6,
               transition: "opacity 0.2s ease",
@@ -1443,15 +1463,15 @@ function App() {
                   display: "flex",
                   alignItems: "flex-start",
                   gap: "12px",
-                  color: "#c8d8f0",
+                  color: "var(--c-text-bright)",
                 }}
               >
                 <div
                   style={{
                     width: "13px",
                     height: "13px",
-                    border: "2px solid #1e2d42",
-                    borderTop: "2px solid #f0a429",
+                    border: "2px solid var(--c-border)",
+                    borderTop: "2px solid var(--c-gold)",
                     borderRadius: "50%",
                     animation: "spin 0.8s linear infinite",
                     marginTop: "3px",
@@ -1462,7 +1482,7 @@ function App() {
                   <div
                     style={{
                       fontWeight: 600,
-                      color: "#f0a429",
+                      color: "var(--c-gold)",
                       fontFamily: "inherit",
                     }}
                   >
@@ -1471,7 +1491,7 @@ function App() {
                   <div
                     style={{
                       marginTop: "5px",
-                      color: "#7b96bf",
+                      color: "var(--c-text-muted2)",
                       fontFamily: "inherit",
                     }}
                   >
@@ -1482,7 +1502,7 @@ function App() {
             ) : error ? (
               error
             ) : securityViolations.length > 0 ? (
-              <div style={{ color: "#f0a429" }}>
+              <div style={{ color: "var(--c-gold)" }}>
                 <div style={{ fontWeight: 600, marginBottom: "6px", fontSize: "12px" }}>
                   Security violations ({securityViolations.length})
                 </div>
@@ -1494,15 +1514,15 @@ function App() {
               </div>
             ) : trace.length > 0 ? (
               <>
-                <div style={{ color: "#506888", marginBottom: stdout ? "10px" : 0 }}>
+                <div style={{ color: "var(--c-text-dimmer)", marginBottom: stdout ? "10px" : 0 }}>
                   {`Trace events: ${trace.length}  ·  Step: ${currentStep}  ·  Line: ${currentLine ?? "—"}`}
                 </div>
                 {stdout && (
                   <>
-                    <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "#3d5270", textTransform: "uppercase", marginBottom: "6px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.8px", color: "var(--c-text-faint)", textTransform: "uppercase", marginBottom: "6px" }}>
                       Standard Output
                     </div>
-                    <div style={{ color: "#c8d8f0" }}>{stdout}</div>
+                    <div style={{ color: "var(--c-text-bright)" }}>{stdout}</div>
                   </>
                 )}
               </>

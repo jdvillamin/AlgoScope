@@ -23,6 +23,7 @@ function Editor({
   onHide,
   editorWidth = 560,
   isMobile = false,
+  theme = "dark",
 }) {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -37,6 +38,8 @@ function Editor({
     editorRef.current = editor;
     monacoRef.current = monaco;
 
+    // Monaco renders to canvas and can't read CSS variables, so both themes
+    // are defined with literal hex (kept in sync with the --c-* tokens).
     monaco.editor.defineTheme("algoscope-dark", {
       base: "vs-dark",
       inherit: true,
@@ -57,10 +60,41 @@ function Editor({
         "scrollbarSlider.activeBackground": "#243347",
       },
     });
-    monaco.editor.setTheme("algoscope-dark");
+    monaco.editor.defineTheme("algoscope-light", {
+      base: "vs",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#ffffff",
+        "editor.foreground": "#1b2c46",
+        "editor.lineHighlightBackground": "#eef2f8",
+        "editor.lineHighlightBorder": "#eef2f8",
+        "editorLineNumber.foreground": "#a3b0c4",
+        "editorLineNumber.activeForeground": "#4e5e78",
+        "editorCursor.foreground": "#2f6fde",
+        "editorGutter.background": "#ffffff",
+        "editorIndentGuide.background1": "#e3e8ef",
+        "editorIndentGuide.activeBackground1": "#cdd6e3",
+        "scrollbarSlider.background": "#c0cbd980",
+        "scrollbarSlider.hoverBackground": "#a9b6c8a0",
+        "scrollbarSlider.activeBackground": "#a9b6c8",
+      },
+    });
+    monaco.editor.setTheme(
+      theme === "light" ? "algoscope-light" : "algoscope-dark",
+    );
 
     decorationsRef.current = editor.createDecorationsCollection([]);
   };
+
+  // Swap the Monaco theme when the app theme toggles after mount.
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    if (!monaco) return;
+    monaco.editor.setTheme(
+      theme === "light" ? "algoscope-light" : "algoscope-dark",
+    );
+  }, [theme]);
 
   // Current-line highlight decoration
   useEffect(() => {
@@ -129,9 +163,9 @@ function Editor({
     width: isMobile ? "28px" : "32px",
     height: isMobile ? "28px" : "32px",
     borderRadius: isMobile ? "6px" : "8px",
-    background: active ? "#19243a" : "transparent",
-    border: `1px solid ${active ? "#243347" : "transparent"}`,
-    color: isProcessing ? "#506888" : "#8fa3c8",
+    background: active ? "var(--c-bg-accent)" : "transparent",
+    border: `1px solid ${active ? "var(--c-border-strong)" : "transparent"}`,
+    color: isProcessing ? "var(--c-text-dimmer)" : "var(--c-text-muted)",
     cursor: isProcessing ? "not-allowed" : "pointer",
     display: "flex",
     alignItems: "center",
@@ -146,8 +180,8 @@ function Editor({
     padding: isMobile ? "4px 1px" : "6px 2px",
     background: "none",
     border: "none",
-    borderBottom: selected ? "2px solid #4b8cf7" : "2px solid transparent",
-    color: selected ? "#c8d8f0" : "#647e9c",
+    borderBottom: selected ? "2px solid var(--c-accent)" : "2px solid transparent",
+    color: selected ? "var(--c-text-bright)" : "var(--c-text-dim)",
     cursor: "pointer",
     fontSize: isMobile ? "11px" : "13px",
     fontWeight: selected ? 600 : 500,
@@ -169,15 +203,15 @@ function Editor({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#0e1520",
-        color: "#dce7f8",
+        background: "var(--c-bg-panel)",
+        color: "var(--c-text)",
       }}
     >
       {/* Header */}
       <div
         style={{
           padding: isMobile ? "0 8px" : "0 16px",
-          borderBottom: "1px solid #1a2535",
+          borderBottom: "1px solid var(--c-border-subtle)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "stretch",
@@ -211,9 +245,9 @@ function Editor({
             onClick={() => setLockToLine((v) => !v)}
             style={{
               ...iconBtn(lockToLine),
-              color: lockToLine ? "#f0a429" : "#647e9c",
-              border: `1px solid ${lockToLine ? "#3d2e10" : "#1a2535"}`,
-              background: lockToLine ? "#1a1810" : "transparent",
+              color: lockToLine ? "var(--c-gold)" : "var(--c-text-dim)",
+              border: `1px solid ${lockToLine ? "var(--c-border-warn)" : "var(--c-border-subtle)"}`,
+              background: lockToLine ? "var(--c-bg-warn)" : "transparent",
               cursor: "pointer",
             }}
             title={lockToLine ? "Auto-scroll to current line (on)" : "Auto-scroll to current line (off)"}
@@ -245,9 +279,9 @@ function Editor({
               gap: "5px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: rawHasViolations ? "#f87171" : isProcessing ? "#506888" : "#b29bff",
-              border: `1px solid ${rawHasViolations ? "#5c1e1e" : isProcessing ? "#1a2535" : "#3a2a5c"}`,
-              background: rawHasViolations ? "#1a0f0f" : isProcessing ? "#0f1928" : "#161226",
+              color: rawHasViolations ? "#f87171" : isProcessing ? "var(--c-text-dimmer)" : "#b29bff",
+              border: `1px solid ${rawHasViolations ? "#5c1e1e" : isProcessing ? "var(--c-border-subtle)" : "#3a2a5c"}`,
+              background: rawHasViolations ? "#1a0f0f" : isProcessing ? "var(--c-bg-btn)" : "#161226",
               cursor: isProcessing || rawHasViolations ? "not-allowed" : "pointer",
             }}
             title={rawHasViolations ? "Fix security violations before instrumenting" : isProcessing ? "Processing..." : "Instrument raw code (adds tracing)"}
@@ -267,9 +301,9 @@ function Editor({
               gap: "5px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: isProcessing ? "#506888" : hasInstrumented ? "#4b8cf7" : "#3d5270",
-              border: `1px solid ${isProcessing ? "#1a2535" : hasInstrumented ? "#1e3a6e" : "#162234"}`,
-              background: isProcessing ? "#0f1928" : hasInstrumented ? "#0f1e3a" : "#0c1420",
+              color: isProcessing ? "var(--c-text-dimmer)" : hasInstrumented ? "var(--c-accent)" : "var(--c-text-faint)",
+              border: `1px solid ${isProcessing ? "var(--c-border-subtle)" : hasInstrumented ? "var(--c-border-accent)" : "var(--c-border-subtle)"}`,
+              background: isProcessing ? "var(--c-bg-btn)" : hasInstrumented ? "var(--c-bg-accent)" : "var(--c-bg-btn-off)",
               cursor: isProcessing || !hasInstrumented ? "not-allowed" : "pointer",
               opacity: hasInstrumented || isProcessing ? 1 : 0.55,
             }}
@@ -305,7 +339,7 @@ function Editor({
       </div>
 
       {/* Editor body */}
-      <div style={{ flex: 1, minHeight: 0, position: "relative", background: "#080d15" }}>
+      <div style={{ flex: 1, minHeight: 0, position: "relative", background: "var(--c-bg0)" }}>
         <MonacoEditor
           height="100%"
           language="c"
@@ -356,14 +390,14 @@ function Editor({
       {/* Stdin */}
       <div
         style={{
-          borderTop: "1px solid #1a2535",
-          background: "#0e1520",
+          borderTop: "1px solid var(--c-border-subtle)",
+          background: "var(--c-bg-panel)",
         }}
       >
         <div
           style={{
             padding: isMobile ? "5px 12px" : "7px 16px",
-            borderBottom: "1px solid #1a2535",
+            borderBottom: "1px solid var(--c-border-subtle)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -374,7 +408,7 @@ function Editor({
               fontSize: isMobile ? "9px" : "11px",
               fontWeight: 600,
               letterSpacing: "0.8px",
-              color: "#647e9c",
+              color: "var(--c-text-dim)",
               textTransform: "uppercase",
             }}
           >
@@ -383,7 +417,7 @@ function Editor({
           <span
             style={{
               fontSize: isMobile ? "9px" : "11px",
-              color: "#506888",
+              color: "var(--c-text-dimmer)",
             }}
           >
             {isMobile ? "Max: 20" : "Numbers must not exceed 20"}
@@ -401,14 +435,14 @@ function Editor({
             resize: "none",
             border: "none",
             outline: "none",
-            background: "#080d15",
-            color: "#cdd9f0",
+            background: "var(--c-bg0)",
+            color: "var(--c-text)",
             padding: isMobile ? "6px 12px" : "10px 16px",
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
             fontSize: isMobile ? "11px" : "13px",
             lineHeight: isMobile ? "16px" : "20px",
             boxSizing: "border-box",
-            caretColor: "#4b8cf7",
+            caretColor: "var(--c-accent)",
             opacity: isProcessing ? 0.6 : 1,
             transition: "opacity 0.2s ease",
           }}

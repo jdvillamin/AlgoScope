@@ -49,9 +49,9 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
     width: "32px",
     height: "32px",
     borderRadius: "8px",
-    background: "#131d2e",
-    border: "1px solid #1e2d42",
-    color: "#7b96bf",
+    background: "var(--c-bg-raised)",
+    border: "1px solid var(--c-border)",
+    color: "var(--c-text-muted2)",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -380,8 +380,8 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
         style={{
           height: "44px",
           padding: "0 16px",
-          background: "#0e1520",
-          borderBottom: "1px solid #1a2535",
+          background: "var(--c-bg-panel)",
+          borderBottom: "1px solid var(--c-border-subtle)",
           display: "flex",
           gap: "6px",
           alignItems: "center",
@@ -390,7 +390,7 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
           minWidth: 0,
         }}
       >
-        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase", marginRight: "8px" }}>
+        <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "var(--c-text-head)", textTransform: "uppercase", marginRight: "8px" }}>
           AlgoScope
         </span>
         <button
@@ -415,7 +415,7 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
           ↺
         </button>
 
-        <div style={{ width: 1, height: 20, background: "#1a2535", margin: "0 4px" }} />
+        <div style={{ width: 1, height: 20, background: "var(--c-border-subtle)", margin: "0 4px" }} />
 
         <button
           style={{
@@ -463,8 +463,7 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
           flex: 1,
           overflow: "hidden",
           position: "relative",
-          background:
-            "radial-gradient(ellipse at 25% 25%, #050912 0%, #02040a 65%)",
+          background: "var(--c-stage)",
           touchAction: "none",
         }}
       >

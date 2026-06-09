@@ -7,7 +7,9 @@ import { TUTORIAL_EVENT } from "./Tutorial";
 const requestTutorial = () =>
   window.dispatchEvent(new CustomEvent(TUTORIAL_EVENT));
 
-function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadHistoryRun, onLogout, isSaving, isMobile }) {
+function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadHistoryRun, onLogout, isSaving, isMobile, theme = "dark", onToggleTheme }) {
+  const themeToggleTitle = `Switch to ${theme === "dark" ? "light" : "dark"} mode`;
+  const themeToggleIcon = theme === "dark" ? "☀" : "🌙";
   const [expandedCategories, setExpandedCategories] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -19,9 +21,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
     flex: 1,
     padding: "6px 8px",
     borderRadius: "6px",
-    border: "1px solid #1e2d42",
-    background: "#0f1928",
-    color: "#8fa3c8",
+    border: "1px solid var(--c-border)",
+    background: "var(--c-bg-btn)",
+    color: "var(--c-text-muted)",
     fontSize: "11.5px",
     fontWeight: 600,
     cursor: "pointer",
@@ -36,9 +38,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
     width: "32px",
     height: "32px",
     borderRadius: "8px",
-    border: "1px solid #1e2d42",
-    background: "#0f1928",
-    color: "#8fa3c8",
+    border: "1px solid var(--c-border)",
+    background: "var(--c-bg-btn)",
+    color: "var(--c-text-muted)",
     fontSize: "14px",
     cursor: "pointer",
     display: "flex",
@@ -59,8 +61,8 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         width: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
         minWidth: isMobile ? "100%" : (effectiveCollapsed ? "44px" : "220px"),
         height: "100%",
-        background: "#0a1018",
-        borderRight: isMobile ? "none" : "1px solid #1a2535",
+        background: "var(--c-bg-side)",
+        borderRight: isMobile ? "none" : "1px solid var(--c-border-subtle)",
         display: "flex",
         flexDirection: "column",
         transition: isMobile ? "none" : "width 0.2s ease, min-width 0.2s ease",
@@ -71,7 +73,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         style={{
           height: "44px",
           padding: isMobile ? "0 16px" : (effectiveCollapsed ? "0 6px" : "0 12px"),
-          borderBottom: "1px solid #1a2535",
+          borderBottom: "1px solid var(--c-border-subtle)",
           display: "flex",
           alignItems: "center",
           justifyContent: effectiveCollapsed && !isMobile ? "center" : "space-between",
@@ -81,7 +83,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         }}
       >
         {isMobile ? (
-          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "#a9c2e8", textTransform: "uppercase" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "var(--c-text-head)", textTransform: "uppercase" }}>
             Files
           </span>
         ) : (
@@ -91,9 +93,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               width: "32px",
               height: "32px",
               borderRadius: "8px",
-              border: "1px solid #1e2d42",
-              background: "#0f1928",
-              color: "#8fa3c8",
+              border: "1px solid var(--c-border)",
+              background: "var(--c-bg-btn)",
+              color: "var(--c-text-muted)",
               fontSize: "14px",
               cursor: "pointer",
               display: "flex",
@@ -108,13 +110,22 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
           </button>
         )}
         {(!effectiveCollapsed || isMobile) && (
-          <button
-            onClick={requestTutorial}
-            style={{ ...collapsedBtn, fontSize: "15px", fontWeight: 700 }}
-            title="Help & tutorial"
-          >
-            ?
-          </button>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={onToggleTheme}
+              style={{ ...collapsedBtn, fontSize: "14px" }}
+              title={themeToggleTitle}
+            >
+              {themeToggleIcon}
+            </button>
+            <button
+              onClick={requestTutorial}
+              style={{ ...collapsedBtn, fontSize: "15px", fontWeight: 700 }}
+              title="Help & tutorial"
+            >
+              ?
+            </button>
+          </div>
         )}
       </div>
 
@@ -148,9 +159,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
             disabled={!activeFileUnsaved || isSaving}
             style={{
               ...collapsedBtn,
-              border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
-              background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
-              color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
+              border: `1px solid ${activeFileUnsaved ? "var(--c-border-accent)" : "var(--c-border-subtle)"}`,
+              background: activeFileUnsaved ? "var(--c-bg-accent)" : "var(--c-bg-btn-off)",
+              color: activeFileUnsaved ? "var(--c-accent)" : "var(--c-text-off)",
               cursor: activeFileUnsaved && !isSaving ? "pointer" : "default",
               fontSize: "13px",
             }}
@@ -159,7 +170,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
             {isSaving ? "⋯" : "✓"}
           </button>
 
-          <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
+          <div style={{ width: "100%", height: "1px", background: "var(--c-border-subtle)", margin: "2px 0" }} />
 
           <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Show files">
             <span style={{ fontSize: "12px", lineHeight: 1 }}>📄</span>
@@ -168,8 +179,11 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
             <span style={{ fontSize: "12px", lineHeight: 1 }}>📂</span>
           </button>
 
-          <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
+          <div style={{ width: "100%", height: "1px", background: "var(--c-border-subtle)", margin: "2px 0" }} />
 
+          <button onClick={onToggleTheme} style={{ ...collapsedBtn, fontSize: "14px" }} title={themeToggleTitle}>
+            {themeToggleIcon}
+          </button>
           <button onClick={requestTutorial} style={{ ...collapsedBtn, fontSize: "15px", fontWeight: 700 }} title="Help & tutorial">
             ?
           </button>
@@ -182,9 +196,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               width: "100%",
               padding: "8px 12px",
               borderRadius: "8px",
-              border: "1px solid #1e2d42",
-              background: "#0f1928",
-              color: "#8fa3c8",
+              border: "1px solid var(--c-border)",
+              background: "var(--c-bg-btn)",
+              color: "var(--c-text-muted)",
               fontSize: "12.5px",
               fontWeight: 600,
               cursor: "pointer",
@@ -223,9 +237,9 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               marginTop: "6px",
               padding: "7px 10px",
               borderRadius: "6px",
-              border: `1px solid ${activeFileUnsaved ? "#1e3a6e" : "#1a2535"}`,
-              background: activeFileUnsaved ? "#0f1e3a" : "#0b121d",
-              color: activeFileUnsaved ? "#4b8cf7" : "#2a3a52",
+              border: `1px solid ${activeFileUnsaved ? "var(--c-border-accent)" : "var(--c-border-subtle)"}`,
+              background: activeFileUnsaved ? "var(--c-bg-accent)" : "var(--c-bg-btn-off)",
+              color: activeFileUnsaved ? "var(--c-accent)" : "var(--c-text-off)",
               fontSize: "12px",
               fontWeight: 600,
               cursor: activeFileUnsaved ? "pointer" : "default",
@@ -265,7 +279,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               fontSize: "10px",
               fontWeight: 700,
               letterSpacing: "1px",
-              color: "#3d5270",
+              color: "var(--c-text-faint)",
               textTransform: "uppercase",
             }}
           >
@@ -286,8 +300,8 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: "6px",
-                  background: isActive ? "#131d2e" : "transparent",
-                  borderLeft: isActive ? "2px solid #4b8cf7" : "2px solid transparent",
+                  background: isActive ? "var(--c-bg-raised)" : "transparent",
+                  borderLeft: isActive ? "2px solid var(--c-accent)" : "2px solid transparent",
                   transition: "background 0.1s",
                 }}
               >
@@ -311,10 +325,10 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                     onClick={(e) => e.stopPropagation()}
                     style={{
                       fontSize: "12.5px",
-                      color: "#c8d8f0",
+                      color: "var(--c-text-bright)",
                       fontWeight: 600,
-                      background: "#0f1928",
-                      border: "1px solid #1e3a6e",
+                      background: "var(--c-bg-btn)",
+                      border: "1px solid var(--c-border-accent)",
                       borderRadius: "4px",
                       outline: "none",
                       padding: "1px 4px",
@@ -331,7 +345,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                     }}
                     style={{
                       fontSize: "12.5px",
-                      color: isActive ? "#c8d8f0" : "#647e9c",
+                      color: isActive ? "var(--c-text-bright)" : "var(--c-text-dim)",
                       fontWeight: isActive ? 600 : 400,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -348,7 +362,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                           width: "6px",
                           height: "6px",
                           borderRadius: "50%",
-                          background: "#f0a429",
+                          background: "var(--c-gold)",
                           flexShrink: 0,
                         }}
                         title="Unsaved changes"
@@ -373,7 +387,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                     }}
                     style={{
                       fontSize: "14px",
-                      color: "#3d5270",
+                      color: "var(--c-text-faint)",
                       cursor: "pointer",
                       lineHeight: 1,
                       padding: "0 2px",
@@ -395,7 +409,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         <RunHistory onLoadRun={onLoadHistoryRun} />
 
         {/* Divider */}
-        <div style={{ height: "1px", background: "#1a2535", margin: "4px 14px" }} />
+        <div style={{ height: "1px", background: "var(--c-border-subtle)", margin: "4px 14px" }} />
 
         {/* Samples */}
         <div data-tutorial="samples" style={{ padding: "8px 0" }}>
@@ -405,7 +419,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               fontSize: "10px",
               fontWeight: 700,
               letterSpacing: "1px",
-              color: "#3d5270",
+              color: "var(--c-text-faint)",
               textTransform: "uppercase",
             }}
           >
@@ -427,7 +441,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                     gap: "6px",
                     fontSize: "12px",
                     fontWeight: 600,
-                    color: "#506888",
+                    color: "var(--c-text-dimmer)",
                   }}
                 >
                   <span
@@ -453,11 +467,11 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
                         borderRadius: "6px",
                         cursor: "pointer",
                         fontSize: "12px",
-                        color: "#647e9c",
+                        color: "var(--c-text-dim)",
                         transition: "background 0.1s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#0f1928";
+                        e.currentTarget.style.background = "var(--c-bg-btn)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = "transparent";

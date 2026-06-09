@@ -55,7 +55,7 @@ function RunHistory({ onLoadRun }) {
           fontSize: "10px",
           fontWeight: 700,
           letterSpacing: "1px",
-          color: "#3d5270",
+          color: "var(--c-text-faint)",
           textTransform: "uppercase",
           cursor: "pointer",
           display: "flex",
@@ -83,7 +83,7 @@ function RunHistory({ onLoadRun }) {
               style={{
                 padding: "6px 14px",
                 fontSize: "11.5px",
-                color: "#3d5270",
+                color: "var(--c-text-faint)",
                 fontStyle: "italic",
               }}
             >
@@ -104,11 +104,11 @@ function RunHistory({ onLoadRun }) {
                     alignItems: "center",
                     gap: "8px",
                     fontSize: "12px",
-                    color: "#647e9c",
+                    color: "var(--c-text-dim)",
                     transition: "background 0.1s",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#0f1928";
+                    e.currentTarget.style.background = "var(--c-bg-btn)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
@@ -119,7 +119,7 @@ function RunHistory({ onLoadRun }) {
                       width: "6px",
                       height: "6px",
                       borderRadius: "50%",
-                      background: STATUS_COLORS[run.status] || "#506888",
+                      background: STATUS_COLORS[run.status] || "var(--c-text-dimmer)",
                       flexShrink: 0,
                     }}
                     title={run.status}
@@ -138,7 +138,7 @@ function RunHistory({ onLoadRun }) {
                   <span
                     style={{
                       fontSize: "10px",
-                      color: "#3d5270",
+                      color: "var(--c-text-faint)",
                       flexShrink: 0,
                       whiteSpace: "nowrap",
                     }}
@@ -163,7 +163,7 @@ function RunHistory({ onLoadRun }) {
                     style={{
                       background: "none",
                       border: "none",
-                      color: page <= 1 ? "#2a3a52" : "#4b8cf7",
+                      color: page <= 1 ? "var(--c-text-off)" : "var(--c-accent)",
                       cursor: page <= 1 ? "default" : "pointer",
                       fontFamily: "inherit",
                       fontSize: "11px",
@@ -171,7 +171,7 @@ function RunHistory({ onLoadRun }) {
                   >
                     Prev
                   </button>
-                  <span style={{ color: "#3d5270" }}>
+                  <span style={{ color: "var(--c-text-faint)" }}>
                     {page}/{totalPages}
                   </span>
                   <button
@@ -180,7 +180,7 @@ function RunHistory({ onLoadRun }) {
                     style={{
                       background: "none",
                       border: "none",
-                      color: page >= totalPages ? "#2a3a52" : "#4b8cf7",
+                      color: page >= totalPages ? "var(--c-text-off)" : "var(--c-accent)",
                       cursor: page >= totalPages ? "default" : "pointer",
                       fontFamily: "inherit",
                       fontSize: "11px",

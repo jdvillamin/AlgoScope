@@ -158,8 +158,8 @@ function Tutorial() {
     const base = {
       position: "fixed",
       zIndex: 10002,
-      background: "#0e1a2e",
-      border: "1px solid #1e3a6e",
+      background: "var(--c-bg-panel)",
+      border: "1px solid var(--c-border-accent)",
       borderRadius: "12px",
       padding: "20px 24px",
       maxWidth: "340px",
@@ -296,7 +296,7 @@ function Tutorial() {
             style={{
               fontSize: "15px",
               fontWeight: 700,
-              color: "#c8d8f0",
+              color: "var(--c-text-bright)",
               lineHeight: 1.3,
             }}
           >
@@ -307,7 +307,7 @@ function Tutorial() {
             style={{
               background: "none",
               border: "none",
-              color: "#506888",
+              color: "var(--c-text-dimmer)",
               fontSize: "18px",
               cursor: "pointer",
               padding: "0 0 0 8px",
@@ -322,7 +322,7 @@ function Tutorial() {
         <div
           style={{
             fontSize: "13px",
-            color: "#8fa3c8",
+            color: "var(--c-text-muted)",
             lineHeight: 1.6,
             marginBottom: "16px",
           }}
@@ -340,7 +340,7 @@ function Tutorial() {
           <span
             style={{
               fontSize: "12px",
-              color: "#3d5270",
+              color: "var(--c-text-faint)",
               fontWeight: 600,
             }}
           >
@@ -354,9 +354,9 @@ function Tutorial() {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "6px",
-                  border: "1px solid #1e2d42",
-                  background: "#0f1928",
-                  color: "#8fa3c8",
+                  border: "1px solid var(--c-border)",
+                  background: "var(--c-bg-btn)",
+                  color: "var(--c-text-muted)",
                   fontSize: "12.5px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -371,9 +371,9 @@ function Tutorial() {
               style={{
                 padding: "6px 14px",
                 borderRadius: "6px",
-                border: "1px solid #1e3a6e",
-                background: "#0f1e3a",
-                color: "#4b8cf7",
+                border: "1px solid var(--c-border-accent)",
+                background: "var(--c-bg-accent)",
+                color: "var(--c-accent)",
                 fontSize: "12.5px",
                 fontWeight: 600,
                 cursor: "pointer",

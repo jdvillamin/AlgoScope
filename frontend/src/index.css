@@ -4,6 +4,78 @@
   padding: 0;
 }
 
+/* ── Theme tokens ─────────────────────────────────────────────────────────
+   :root holds the dark palette (the original literals, so dark mode is
+   pixel-identical). :root[data-theme="light"] overrides them. Inline styles
+   across the app reference these via var(--c-*). The data-structure cards on
+   the canvas keep their own dark styling in both themes (high-contrast tiles),
+   so only the app shell and canvas stage re-theme. */
+:root {
+  --c-bg0: #080d15;
+  --c-bg-side: #0a1018;
+  --c-bg-panel: #0e1520;
+  --c-bg-raised: #131d2e;
+  --c-bg-btn: #0f1928;
+  --c-bg-btn-off: #0b121d;
+  --c-bg-accent: #0f1e3a;
+  --c-bg-accent2: #0f2040;
+
+  --c-border-subtle: #1a2535;
+  --c-border: #1e2d42;
+  --c-border-strong: #243347;
+  --c-border-accent: #1e3a6e;
+
+  --c-text: #dce7f8;
+  --c-text-bright: #c8d8f0;
+  --c-text-head: #a9c2e8;
+  --c-text-muted: #8fa3c8;
+  --c-text-muted2: #7b96bf;
+  --c-text-dim: #647e9c;
+  --c-text-dimmer: #506888;
+  --c-text-faint: #3d5270;
+  --c-text-off: #2a3a52;
+
+  --c-accent: #4b8cf7;
+  --c-gold: #f0a429;
+  --c-bg-warn: #1a1810;
+  --c-border-warn: #3d2e10;
+
+  --c-stage: radial-gradient(ellipse at 25% 25%, #050912 0%, #02040a 65%);
+}
+
+:root[data-theme="light"] {
+  --c-bg0: #eef1f6;
+  --c-bg-side: #e7ebf2;
+  --c-bg-panel: #ffffff;
+  --c-bg-raised: #f4f6fa;
+  --c-bg-btn: #eef2f8;
+  --c-bg-btn-off: #e8ecf2;
+  --c-bg-accent: #dde8fc;
+  --c-bg-accent2: #d0e0fb;
+
+  --c-border-subtle: #e3e8ef;
+  --c-border: #d2dae6;
+  --c-border-strong: #c0cbd9;
+  --c-border-accent: #a9c5f3;
+
+  --c-text: #16233b;
+  --c-text-bright: #0e1b30;
+  --c-text-head: #2b3c57;
+  --c-text-muted: #4e5e78;
+  --c-text-muted2: #5a6b86;
+  --c-text-dim: #5f6f86;
+  --c-text-dimmer: #7a89a1;
+  --c-text-faint: #98a4ba;
+  --c-text-off: #aab4c6;
+
+  --c-accent: #2f6fde;
+  --c-gold: #b5760a;
+  --c-bg-warn: #fbf2dc;
+  --c-border-warn: #e6d09a;
+
+  --c-stage: radial-gradient(ellipse at 25% 25%, #eef2f8 0%, #dfe6f0 65%);
+}
+
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
@@ -11,13 +83,17 @@
   font-weight: 400;
 
   color-scheme: dark;
-  color: #dce7f8;
-  background-color: #080d15;
+  color: var(--c-text);
+  background-color: var(--c-bg0);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 body {
@@ -39,7 +115,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 2px solid #4b8cf7;
+  outline: 2px solid var(--c-accent);
   outline-offset: 2px;
 }
 

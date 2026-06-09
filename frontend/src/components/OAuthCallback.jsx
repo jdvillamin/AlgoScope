@@ -50,7 +50,7 @@ function OAuthCallback() {
           alignItems: "center",
           justifyContent: "center",
           height: "100vh",
-          background: "#080d15",
+          background: "var(--c-bg0)",
           gap: "16px",
         }}
       >
@@ -58,7 +58,7 @@ function OAuthCallback() {
         <a
           href="/"
           style={{
-            color: "#4b8cf7",
+            color: "var(--c-accent)",
             fontSize: "13px",
             textDecoration: "none",
           }}
@@ -76,8 +76,8 @@ function OAuthCallback() {
         alignItems: "center",
         justifyContent: "center",
         height: "100vh",
-        background: "#080d15",
-        color: "#647e9c",
+        background: "var(--c-bg0)",
+        color: "var(--c-text-dim)",
         fontSize: "14px",
       }}
     >

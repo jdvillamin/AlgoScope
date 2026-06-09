@@ -8,9 +8,9 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
-    border: "1px solid #1e2d42",
-    background: "#0f1928",
-    color: "#8fa3c8",
+    border: "1px solid var(--c-border)",
+    background: "var(--c-bg-btn)",
+    color: "var(--c-text-muted)",
     transition: "all 0.12s",
   };
 
@@ -33,12 +33,12 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
         style={{
           width: "calc(100vw - 32px)",
           maxWidth: "440px",
-          background: "#0e1520",
-          border: "1px solid #1e2d42",
+          background: "var(--c-bg-panel)",
+          border: "1px solid var(--c-border)",
           borderRadius: "12px",
           padding: "22px 24px 18px",
           boxShadow: "0 20px 60px rgba(0, 0, 0, 0.6)",
-          color: "#c8d8f0",
+          color: "var(--c-text-bright)",
           fontFamily: "inherit",
         }}
       >
@@ -47,7 +47,7 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
             fontSize: "14px",
             fontWeight: 700,
             marginBottom: "8px",
-            color: "#dce7f8",
+            color: "var(--c-text)",
           }}
         >
           Unsaved changes
@@ -56,11 +56,11 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
           style={{
             fontSize: "12.5px",
             lineHeight: 1.5,
-            color: "#8fa3c8",
+            color: "var(--c-text-muted)",
             marginBottom: "18px",
           }}
         >
-          <span style={{ color: "#c8d8f0", fontWeight: 600 }}>
+          <span style={{ color: "var(--c-text-bright)", fontWeight: 600 }}>
             {fileName || "This file"}
           </span>{" "}
           has unsaved changes. Save them before continuing, or discard to lose
@@ -80,9 +80,9 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
             onClick={onDiscard}
             style={{
               ...btnBase,
-              borderColor: "#3d2e10",
-              background: "#1a1810",
-              color: "#f0a429",
+              borderColor: "var(--c-border-warn)",
+              background: "var(--c-bg-warn)",
+              color: "var(--c-gold)",
             }}
             type="button"
           >
@@ -92,9 +92,9 @@ function UnsavedPrompt({ open, fileName, onSave, onDiscard, onCancel }) {
             onClick={onSave}
             style={{
               ...btnBase,
-              borderColor: "#1e3a6e",
-              background: "#0f1e3a",
-              color: "#4b8cf7",
+              borderColor: "var(--c-border-accent)",
+              background: "var(--c-bg-accent)",
+              color: "var(--c-accent)",
             }}
             type="button"
           >

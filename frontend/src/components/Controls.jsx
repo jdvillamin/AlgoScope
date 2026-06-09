@@ -66,9 +66,9 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
     width: "36px",
     height: "36px",
     borderRadius: "10px",
-    background: "#131d2e",
-    border: "1px solid #1e2d42",
-    color: disabled ? "#243347" : "#7b96bf",
+    background: "var(--c-bg-raised)",
+    border: "1px solid var(--c-border)",
+    color: disabled ? "var(--c-border-strong)" : "var(--c-text-muted2)",
     cursor: disabled ? "default" : "pointer",
     display: "flex",
     alignItems: "center",
@@ -81,9 +81,9 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
     width: "44px",
     height: "44px",
     borderRadius: "12px",
-    background: disabled ? "#0f1928" : "#0f1e3a",
-    border: `1px solid ${disabled ? "#1a2535" : "#1e3a6e"}`,
-    color: disabled ? "#243347" : "#4b8cf7",
+    background: disabled ? "var(--c-bg-btn)" : "var(--c-bg-accent)",
+    border: `1px solid ${disabled ? "var(--c-border-subtle)" : "var(--c-border-accent)"}`,
+    color: disabled ? "var(--c-border-strong)" : "var(--c-accent)",
     cursor: disabled ? "default" : "pointer",
     display: "flex",
     alignItems: "center",
@@ -138,8 +138,8 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
           position: "relative",
           height: "6px",
           borderRadius: "3px",
-          background: "#131d2e",
-          border: "1px solid #1a2535",
+          background: "var(--c-bg-raised)",
+          border: "1px solid var(--c-border-subtle)",
           cursor: disabled ? "default" : "pointer",
           overflow: "hidden",
         }}
@@ -160,8 +160,8 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
             inset: 0,
             width: `${fillPct}%`,
             background: disabled
-              ? "#1a2535"
-              : "linear-gradient(90deg, #3d6fc4 0%, #4b8cf7 100%)",
+              ? "var(--c-border-subtle)"
+              : "linear-gradient(90deg, #3d6fc4 0%, var(--c-accent) 100%)",
             boxShadow: disabled ? "none" : "0 0 8px rgba(75,140,247,0.45)",
             transition: "width 0.12s linear",
           }}
@@ -210,9 +210,9 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
           fontSize: "12px",
           fontWeight: 600,
           fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-          color: disabled ? "#243347" : speed === 1 ? "#647e9c" : "#f0a429",
-          border: `1px solid ${speed === 1 ? "#1e2d42" : "#3d2e10"}`,
-          background: speed === 1 ? "#131d2e" : "#1a1810",
+          color: disabled ? "var(--c-border-strong)" : speed === 1 ? "var(--c-text-dim)" : "var(--c-gold)",
+          border: `1px solid ${speed === 1 ? "var(--c-border)" : "var(--c-border-warn)"}`,
+          background: speed === 1 ? "var(--c-bg-raised)" : "var(--c-bg-warn)",
         }}
         title="Cycle playback speed"
       >

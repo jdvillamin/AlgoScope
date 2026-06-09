@@ -15,7 +15,7 @@ function Avatar({ name, size = 28 }) {
         width: size,
         height: size,
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #4b8cf7, #7b5cf7)",
+        background: "linear-gradient(135deg, var(--c-accent), #7b5cf7)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -80,11 +80,11 @@ function Modal({ title, onClose, children }) {
         style={{
           width: "380px",
           maxWidth: "92vw",
-          background: "#0e1520",
-          border: "1px solid #1e2d42",
+          background: "var(--c-bg-panel)",
+          border: "1px solid var(--c-border)",
           borderRadius: "12px",
           boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-          color: "#c8d8f0",
+          color: "var(--c-text-bright)",
           fontFamily: "inherit",
         }}
       >
@@ -94,7 +94,7 @@ function Modal({ title, onClose, children }) {
             justifyContent: "space-between",
             alignItems: "center",
             padding: "14px 18px",
-            borderBottom: "1px solid #1a2535",
+            borderBottom: "1px solid var(--c-border-subtle)",
           }}
         >
           <span style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.5px" }}>{title}</span>
@@ -103,7 +103,7 @@ function Modal({ title, onClose, children }) {
             style={{
               background: "transparent",
               border: "none",
-              color: "#647e9c",
+              color: "var(--c-text-dim)",
               cursor: "pointer",
               padding: 4,
               display: "flex",
@@ -122,9 +122,9 @@ const inputStyle = {
   width: "100%",
   padding: "8px 10px",
   borderRadius: "6px",
-  border: "1px solid #1e2d42",
-  background: "#0a1018",
-  color: "#c8d8f0",
+  border: "1px solid var(--c-border)",
+  background: "var(--c-bg-side)",
+  color: "var(--c-text-bright)",
   fontSize: "13px",
   fontFamily: "inherit",
   outline: "none",
@@ -137,16 +137,16 @@ const labelStyle = {
   fontWeight: 600,
   letterSpacing: "0.6px",
   textTransform: "uppercase",
-  color: "#647e9c",
+  color: "var(--c-text-dim)",
   marginBottom: "6px",
 };
 
 const primaryBtn = {
   padding: "9px 14px",
   borderRadius: "8px",
-  border: "1px solid #2a4a7e",
-  background: "#1a2d4d",
-  color: "#c8d8f0",
+  border: "1px solid var(--c-border-accent)",
+  background: "var(--c-bg-accent)",
+  color: "var(--c-text-bright)",
   fontSize: "12.5px",
   fontWeight: 600,
   cursor: "pointer",
@@ -237,13 +237,13 @@ function AuthModal({ onClose }) {
         <button onClick={submit} disabled={submitting} style={{ ...primaryBtn, opacity: submitting ? 0.6 : 1 }}>
           {submitting ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
         </button>
-        <div style={{ textAlign: "center", fontSize: "12px", color: "#647e9c" }}>
+        <div style={{ textAlign: "center", fontSize: "12px", color: "var(--c-text-dim)" }}>
           {mode === "login" ? (
             <>
               No account?{" "}
               <button
                 onClick={() => { setMode("register"); setErrors([]); }}
-                style={{ background: "none", border: "none", color: "#4b8cf7", cursor: "pointer", fontSize: "12px", fontFamily: "inherit", padding: 0 }}
+                style={{ background: "none", border: "none", color: "var(--c-accent)", cursor: "pointer", fontSize: "12px", fontFamily: "inherit", padding: 0 }}
               >
                 Create one
               </button>
@@ -253,7 +253,7 @@ function AuthModal({ onClose }) {
               Already have an account?{" "}
               <button
                 onClick={() => { setMode("login"); setErrors([]); }}
-                style={{ background: "none", border: "none", color: "#4b8cf7", cursor: "pointer", fontSize: "12px", fontFamily: "inherit", padding: 0 }}
+                style={{ background: "none", border: "none", color: "var(--c-accent)", cursor: "pointer", fontSize: "12px", fontFamily: "inherit", padding: 0 }}
               >
                 Sign in
               </button>
@@ -262,9 +262,9 @@ function AuthModal({ onClose }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "2px 0" }}>
-          <div style={{ flex: 1, height: "1px", background: "#1e2d42" }} />
-          <span style={{ fontSize: "11px", color: "#3d5270", fontWeight: 600 }}>OR</span>
-          <div style={{ flex: 1, height: "1px", background: "#1e2d42" }} />
+          <div style={{ flex: 1, height: "1px", background: "var(--c-border)" }} />
+          <span style={{ fontSize: "11px", color: "var(--c-text-faint)", fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: "1px", background: "var(--c-border)" }} />
         </div>
 
         <a
@@ -336,7 +336,7 @@ function UserMenu({ collapsed, onLogout }) {
     gap: "10px",
     padding: "9px 12px",
     fontSize: "12.5px",
-    color: "#c8d8f0",
+    color: "var(--c-text-bright)",
     cursor: "pointer",
     borderRadius: "6px",
     background: "transparent",
@@ -349,7 +349,7 @@ function UserMenu({ collapsed, onLogout }) {
   return (
     <div
       style={{
-        borderTop: "1px solid #1a2535",
+        borderTop: "1px solid var(--c-border-subtle)",
         padding: collapsed ? "8px 6px" : "10px 10px",
         position: "relative",
         marginTop: "auto",
@@ -367,13 +367,13 @@ function UserMenu({ collapsed, onLogout }) {
             padding: collapsed ? "4px" : "8px 10px",
             borderRadius: "8px",
             border: "1px solid transparent",
-            background: popupOpen ? "#131d2e" : "transparent",
+            background: popupOpen ? "var(--c-bg-raised)" : "transparent",
             cursor: "pointer",
             fontFamily: "inherit",
             justifyContent: collapsed ? "center" : "flex-start",
           }}
           onMouseEnter={(e) => {
-            if (!popupOpen) e.currentTarget.style.background = "#0f1928";
+            if (!popupOpen) e.currentTarget.style.background = "var(--c-bg-btn)";
           }}
           onMouseLeave={(e) => {
             if (!popupOpen) e.currentTarget.style.background = "transparent";
@@ -387,7 +387,7 @@ function UserMenu({ collapsed, onLogout }) {
                 style={{
                   fontSize: "12.5px",
                   fontWeight: 600,
-                  color: "#c8d8f0",
+                  color: "var(--c-text-bright)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -398,7 +398,7 @@ function UserMenu({ collapsed, onLogout }) {
               <div
                 style={{
                   fontSize: "10.5px",
-                  color: "#506888",
+                  color: "var(--c-text-dimmer)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -419,9 +419,9 @@ function UserMenu({ collapsed, onLogout }) {
             width: "100%",
             padding: collapsed ? "6px" : "8px 10px",
             borderRadius: "8px",
-            border: "1px solid #1e2d42",
-            background: "#0f1928",
-            color: "#8fa3c8",
+            border: "1px solid var(--c-border)",
+            background: "var(--c-bg-btn)",
+            color: "var(--c-text-muted)",
             fontSize: "12.5px",
             fontWeight: 600,
             cursor: "pointer",
@@ -444,8 +444,8 @@ function UserMenu({ collapsed, onLogout }) {
             left: collapsed ? "calc(100% + 6px)" : "10px",
             right: collapsed ? "auto" : "10px",
             width: collapsed ? "220px" : "auto",
-            background: "#0e1520",
-            border: "1px solid #1e2d42",
+            background: "var(--c-bg-panel)",
+            border: "1px solid var(--c-border)",
             borderRadius: "10px",
             boxShadow: "0 12px 32px rgba(0,0,0,0.55)",
             padding: "6px",
@@ -458,7 +458,7 @@ function UserMenu({ collapsed, onLogout }) {
               alignItems: "center",
               gap: "10px",
               padding: "10px 10px 12px",
-              borderBottom: "1px solid #1a2535",
+              borderBottom: "1px solid var(--c-border-subtle)",
               marginBottom: "4px",
             }}
           >
@@ -468,7 +468,7 @@ function UserMenu({ collapsed, onLogout }) {
                 style={{
                   fontSize: "12.5px",
                   fontWeight: 700,
-                  color: "#c8d8f0",
+                  color: "var(--c-text-bright)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -479,7 +479,7 @@ function UserMenu({ collapsed, onLogout }) {
               <div
                 style={{
                   fontSize: "11px",
-                  color: "#647e9c",
+                  color: "var(--c-text-dim)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",

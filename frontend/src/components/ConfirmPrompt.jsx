@@ -8,9 +8,9 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
-    border: "1px solid #1e2d42",
-    background: "#0f1928",
-    color: "#8fa3c8",
+    border: "1px solid var(--c-border)",
+    background: "var(--c-bg-btn)",
+    color: "var(--c-text-muted)",
     transition: "all 0.12s",
   };
 
@@ -33,12 +33,12 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
         style={{
           width: "calc(100vw - 32px)",
           maxWidth: "440px",
-          background: "#0e1520",
-          border: "1px solid #1e2d42",
+          background: "var(--c-bg-panel)",
+          border: "1px solid var(--c-border)",
           borderRadius: "12px",
           padding: "22px 24px 18px",
           boxShadow: "0 20px 60px rgba(0, 0, 0, 0.6)",
-          color: "#c8d8f0",
+          color: "var(--c-text-bright)",
           fontFamily: "inherit",
         }}
       >
@@ -47,7 +47,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
             fontSize: "14px",
             fontWeight: 700,
             marginBottom: "8px",
-            color: "#dce7f8",
+            color: "var(--c-text)",
           }}
         >
           {title}
@@ -56,7 +56,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
           style={{
             fontSize: "12.5px",
             lineHeight: 1.5,
-            color: "#8fa3c8",
+            color: "var(--c-text-muted)",
             marginBottom: "18px",
           }}
         >
@@ -76,9 +76,9 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
             onClick={onConfirm}
             style={{
               ...btnBase,
-              borderColor: "#1e3a6e",
-              background: "#0f1e3a",
-              color: "#4b8cf7",
+              borderColor: "var(--c-border-accent)",
+              background: "var(--c-bg-accent)",
+              color: "var(--c-accent)",
             }}
             type="button"
           >
