@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import ConfirmPrompt from "./ConfirmPrompt";
 
 const STORAGE_KEY = "algoscope:tutorial-done";
+
+// Any part of the app can request the tutorial by dispatching this event
+// (see the Help button in FilePanel). The Tutorial then asks the user to
+// confirm before restarting the tour.
+export const TUTORIAL_EVENT = "algoscope:open-tutorial";
 
 const STEPS = [
   {
@@ -63,12 +69,20 @@ function Tutorial() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [resizeTick, setResizeTick] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const tooltipRef = useRef(null);
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY)) return;
     const timer = setTimeout(() => setVisible(true), 600);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Help button (or any other trigger) → ask whether to (re)start the tour.
+  useEffect(() => {
+    const handler = () => setConfirmOpen(true);
+    window.addEventListener(TUTORIAL_EVENT, handler);
+    return () => window.removeEventListener(TUTORIAL_EVENT, handler);
   }, []);
 
   useEffect(() => {
@@ -99,6 +113,14 @@ function Tutorial() {
     localStorage.setItem(STORAGE_KEY, "1");
   }, []);
 
+  // Reset the tutorial and replay it from the first step.
+  const startTour = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setConfirmOpen(false);
+    setStep(0);
+    setVisible(true);
+  }, []);
+
   const next = useCallback(() => {
     if (step >= STEPS.length - 1) {
       dismiss();
@@ -111,7 +133,21 @@ function Tutorial() {
     setStep((s) => Math.max(0, s - 1));
   }, []);
 
-  if (!visible) return null;
+  // When the tour itself isn't on screen we still render the confirmation
+  // dialog so the Help button can ask before (re)starting. ConfirmPrompt
+  // renders nothing while closed.
+  if (!visible) {
+    return (
+      <ConfirmPrompt
+        open={confirmOpen}
+        title="Start the tutorial?"
+        message="Take a quick interactive tour of AlgoScope's main features. You can exit or skip at any time."
+        confirmLabel="Start tour"
+        onConfirm={startTour}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    );
+  }
 
   const current = STEPS[step];
   const isFirst = step === 0;

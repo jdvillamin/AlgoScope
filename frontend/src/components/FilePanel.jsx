@@ -2,6 +2,10 @@ import { useState, useRef } from "react";
 import SAMPLE_CATEGORIES from "../samples";
 import UserMenu from "./UserMenu";
 import RunHistory from "./RunHistory";
+import { TUTORIAL_EVENT } from "./Tutorial";
+
+const requestTutorial = () =>
+  window.dispatchEvent(new CustomEvent(TUTORIAL_EVENT));
 
 function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFile, onSwitchFile, onDeleteFile, onLoadSample, onRenameFile, onImportFile, onExportFile, onSaveFile, onLoadHistoryRun, onLogout, isSaving, isMobile }) {
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -70,7 +74,8 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
           borderBottom: "1px solid #1a2535",
           display: "flex",
           alignItems: "center",
-          justifyContent: isMobile ? "flex-start" : (effectiveCollapsed ? "center" : "flex-start"),
+          justifyContent: effectiveCollapsed && !isMobile ? "center" : "space-between",
+          gap: "8px",
           boxSizing: "border-box",
           flexShrink: 0,
         }}
@@ -100,6 +105,15 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
             title={effectiveCollapsed ? "Expand panel" : "Collapse panel"}
           >
             {effectiveCollapsed ? "☰" : "◀"}
+          </button>
+        )}
+        {(!effectiveCollapsed || isMobile) && (
+          <button
+            onClick={requestTutorial}
+            style={{ ...collapsedBtn, fontSize: "15px", fontWeight: 700 }}
+            title="Help & tutorial"
+          >
+            ?
           </button>
         )}
       </div>
@@ -152,6 +166,12 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
           </button>
           <button onClick={() => setCollapsed(false)} style={collapsedBtn} title="Sample files">
             <span style={{ fontSize: "12px", lineHeight: 1 }}>📂</span>
+          </button>
+
+          <div style={{ width: "100%", height: "1px", background: "#1a2535", margin: "2px 0" }} />
+
+          <button onClick={requestTutorial} style={{ ...collapsedBtn, fontSize: "15px", fontWeight: 700 }} title="Help & tutorial">
+            ?
           </button>
         </div>
       ) : (
