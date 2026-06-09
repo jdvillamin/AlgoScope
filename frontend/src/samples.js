@@ -4586,6 +4586,186 @@ int main() {
     ],
   },
   {
+    name: "Recursion",
+    samples: [
+      {
+        name: "Fibonacci",
+        code: `#include <stdio.h>
+
+int fib(int n) {
+  if (n < 2) {
+    return n;
+  }
+  int result = fib(n - 1) + fib(n - 2);
+  return result;
+}
+
+int main() {
+  int n = 5;
+  int answer = fib(n);
+  printf("fib(%d) = %d\\n", n, answer);
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+int fib(int n) {
+  trace_rec_enter("calls", "fib");
+  trace_rec_param("calls", "n", n);
+  trace_line(4);
+  if (n < 2) {
+    trace_line(5);
+    trace_rec_return("calls", n);
+    return n;
+  }
+  trace_line(7);
+  int result = fib(n - 1) + fib(n - 2);
+  trace_line(8);
+  trace_rec_return("calls", result);
+  return result;
+}
+
+int main() {
+  trace_rec_init("calls");
+
+  trace_line(12);
+  int n = 5;
+  trace_var_init("n", n);
+  trace_line(13);
+  int answer = fib(n);
+  trace_var_init("answer", answer);
+  trace_line(14);
+  printf("fib(%d) = %d\\n", n, answer);
+  trace_line(15);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Quicksort",
+        code: `#include <stdio.h>
+
+void swap(int* a, int* b) {
+  int t = *a;
+  *a = *b;
+  *b = t;
+}
+
+int partition(int arr[], int low, int high) {
+  int pivot = arr[high];
+  int i = low - 1;
+  for (int j = low; j < high; j++) {
+    if (arr[j] < pivot) {
+      i++;
+      swap(&arr[i], &arr[j]);
+    }
+  }
+  swap(&arr[i + 1], &arr[high]);
+  return i + 1;
+}
+
+void quicksort(int arr[], int low, int high) {
+  if (low < high) {
+    int p = partition(arr, low, high);
+    quicksort(arr, low, p - 1);
+    quicksort(arr, p + 1, high);
+  }
+}
+
+int main() {
+  int arr[6] = {5, 2, 8, 1, 9, 3};
+  int n = 6;
+  quicksort(arr, 0, n - 1);
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include "tracer.h"
+
+void swap(int* a, int* b) {
+  trace_line(4);
+  int t = *a;
+  trace_line(5);
+  *a = *b;
+  trace_line(6);
+  *b = t;
+}
+
+int partition(int arr[], int low, int high) {
+  trace_line(10);
+  int pivot = arr[high];
+  trace_var_init("pivot", pivot);
+  trace_array_highlight("arr", high);
+  trace_line(11);
+  int i = low - 1;
+  trace_var_init("i", i);
+  trace_line(12);
+  for (int j = low; j < high; j++) {
+    trace_line(12);
+    trace_var_init("j", j);
+    trace_line(13);
+    if (arr[j] < pivot) {
+      trace_line(14);
+      i++;
+      trace_var("i", i);
+      trace_line(15);
+      swap(&arr[i], &arr[j]);
+      trace_array("arr", i, arr[i]);
+      trace_array("arr", j, arr[j]);
+    }
+  }
+  trace_line(18);
+  swap(&arr[i + 1], &arr[high]);
+  trace_array("arr", i + 1, arr[i + 1]);
+  trace_array("arr", high, arr[high]);
+  trace_line(19);
+  return i + 1;
+}
+
+void quicksort(int arr[], int low, int high) {
+  trace_rec_enter("calls", "quicksort");
+  trace_rec_param("calls", "low", low);
+  trace_rec_param("calls", "high", high);
+  trace_line(23);
+  if (low < high) {
+    trace_line(24);
+    int p = partition(arr, low, high);
+    trace_var_init("p", p);
+    trace_array_highlight("arr", p);
+    trace_line(25);
+    quicksort(arr, low, p - 1);
+    trace_line(26);
+    quicksort(arr, p + 1, high);
+  }
+  trace_rec_exit("calls");
+}
+
+int main() {
+  trace_rec_init("calls");
+  trace_array_init("arr", 6);
+
+  trace_line(31);
+  int arr[6] = {5, 2, 8, 1, 9, 3};
+  trace_array("arr", 0, arr[0]);
+  trace_array("arr", 1, arr[1]);
+  trace_array("arr", 2, arr[2]);
+  trace_array("arr", 3, arr[3]);
+  trace_array("arr", 4, arr[4]);
+  trace_array("arr", 5, arr[5]);
+  trace_line(32);
+  int n = 6;
+  trace_var_init("n", n);
+  trace_line(33);
+  quicksort(arr, 0, n - 1);
+  trace_line(34);
+  return 0;
+}
+`,
+      },
+    ],
+  },
+  {
     name: "Sorting Algorithms",
     samples: [
       {

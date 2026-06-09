@@ -87,6 +87,20 @@ void _trace_hash_remove_ll(char* name, long long key, int index);
 #define trace_hash_remove(name, key, index) \
     _trace_hash_remove_ll(name, (long long)(key), index)
 
+#define trace_rec_param(name, p, value) _Generic((value), \
+    char: _trace_rec_param_char, \
+    signed char: _trace_rec_param_char, \
+    unsigned char: _trace_rec_param_char, \
+    default: _trace_rec_param_ll \
+)(name, p, value)
+
+#define trace_rec_return(name, value) _Generic((value), \
+    char: _trace_rec_return_char, \
+    signed char: _trace_rec_return_char, \
+    unsigned char: _trace_rec_return_char, \
+    default: _trace_rec_return_ll \
+)(name, value)
+
 /* ── Functions without value parameters (no dispatch needed) ──── */
 
 void trace_array_init(char* name, int size);
@@ -145,6 +159,23 @@ void trace_graph_init(char* name);
 void trace_graph_node(char* graph, char* id);
 void trace_graph_edge(char* graph, char* from, char* to);
 void trace_graph_highlight(char* graph, char* id);
+
+/* ── Recursion / Call Tree ──────────────────────────────────────── */
+/* Visualizes a recursion (call) tree: each function INVOCATION becomes a
+   rectangular node whose parameter values are shown in separate partitions, and
+   a directed edge links each caller to the callee it spawned. The tracer keeps
+   an internal call stack, so each invocation's unique identity, its parent (the
+   caller), and the currently-active frame are derived automatically — user code
+   only marks enter / param / return. Identity is the invocation, not the
+   function: fib(2) reached twice yields two distinct nodes. */
+void trace_rec_init(char* name);
+void trace_rec_enter(char* name, char* func);
+void trace_rec_exit(char* name); /* leave current frame with no return value */
+
+void _trace_rec_param_ll(char* name, char* p, long long value);
+void _trace_rec_param_char(char* name, char* p, char value);
+void _trace_rec_return_ll(char* name, long long value);
+void _trace_rec_return_char(char* name, char value);
 
 void trace_line(int line);
 

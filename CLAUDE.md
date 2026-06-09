@@ -18,7 +18,7 @@ frontend/src/
     Canvas.jsx         # Left panel; renders visual objects on a pannable canvas
     Editor.jsx         # Right panel; Monaco-based code editor
     Controls.jsx       # Playback controls (step/play/reset)
-    Visuals/           # 10 data-structure renderers (one component per type)
+    Visuals/           # 11 data-structure renderers (one component per type)
   traceEngine.js       # buildState(): pure fn replaying trace events → render state
 
 backend/

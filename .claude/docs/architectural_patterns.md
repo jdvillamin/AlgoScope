@@ -14,7 +14,7 @@ Object positions persist via a separate drag-state map (keyed by object ID), mer
 
 ## 3. Type-Dispatched Visual Components (Canvas.jsx → Visuals/)
 
-Each trace object has a `type` field. `Canvas.jsx` dispatches rendering to one of 10 components in `frontend/src/components/Visuals/` based on `type`. Adding a new data structure requires:
+Each trace object has a `type` field. `Canvas.jsx` dispatches rendering to one of 11 components in `frontend/src/components/Visuals/` based on `type`. Adding a new data structure requires:
 1. New trace functions in `tracer/tracer.c` + `tracer/tracer.h`
 2. Handling new event types in `traceEngine.js:buildState()`
 3. A new `Visuals/XxxView.jsx` component

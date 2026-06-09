@@ -347,6 +347,70 @@ void trace_graph_highlight(char* graph, char* id) {
          graph, id);
 }
 
+/* ── Recursion / Call Tree ──────────────────────────────────────── */
+/* An internal call stack lets the tracer assign every invocation a unique id and
+   derive its parent (the caller on the stack below it) and the currently-active
+   frame, so user code only marks enter/param/return. enter pushes a fresh id;
+   param/return act on the top frame; return/exit pops. Because identity is the
+   pushed id (not the function), the same function reached twice produces two
+   separate nodes — exactly what a recursion tree shows. */
+
+#define _TRACE_REC_MAX 8192
+static long long _trace_rec_stack[_TRACE_REC_MAX];
+static int _trace_rec_sp = 0;
+static long long _trace_rec_counter = 0;
+
+static long long _trace_rec_top(void) {
+  return _trace_rec_sp > 0 ? _trace_rec_stack[_trace_rec_sp - 1] : -1;
+}
+
+void trace_rec_init(char* name) {
+  _trace_rec_sp = 0;
+  _trace_rec_counter = 0;
+  printf("{\"type\":\"rec_init\",\"name\":\"%s\"}\n", name);
+}
+
+void trace_rec_enter(char* name, char* func) {
+  long long id = ++_trace_rec_counter;
+  long long parent = _trace_rec_top();
+  if (_trace_rec_sp < _TRACE_REC_MAX) _trace_rec_stack[_trace_rec_sp++] = id;
+  printf("{\"type\":\"rec_enter\",\"name\":\"%s\",\"id\":%lld,\"parent\":%lld,"
+         "\"func\":\"%s\"}\n",
+         name, id, parent, func);
+}
+
+void _trace_rec_param_ll(char* name, char* p, long long value) {
+  printf("{\"type\":\"rec_param\",\"name\":\"%s\",\"id\":%lld,\"p\":\"%s\","
+         "\"v\":%lld}\n",
+         name, _trace_rec_top(), p, value);
+}
+
+void _trace_rec_param_char(char* name, char* p, char value) {
+  printf("{\"type\":\"rec_param\",\"name\":\"%s\",\"id\":%lld,\"p\":\"%s\","
+         "\"v\":\"%c\"}\n",
+         name, _trace_rec_top(), p, value);
+}
+
+void _trace_rec_return_ll(char* name, long long value) {
+  long long id = _trace_rec_top();
+  if (_trace_rec_sp > 0) _trace_rec_sp--;
+  printf("{\"type\":\"rec_return\",\"name\":\"%s\",\"id\":%lld,\"v\":%lld}\n",
+         name, id, value);
+}
+
+void _trace_rec_return_char(char* name, char value) {
+  long long id = _trace_rec_top();
+  if (_trace_rec_sp > 0) _trace_rec_sp--;
+  printf("{\"type\":\"rec_return\",\"name\":\"%s\",\"id\":%lld,\"v\":\"%c\"}\n",
+         name, id, value);
+}
+
+void trace_rec_exit(char* name) {
+  long long id = _trace_rec_top();
+  if (_trace_rec_sp > 0) _trace_rec_sp--;
+  printf("{\"type\":\"rec_return\",\"name\":\"%s\",\"id\":%lld}\n", name, id);
+}
+
 /* ── Others ─────────────────────────────────────────────────────── */
 
 void trace_line(int line) { printf("{\"type\":\"line\",\"n\":%d}\n", line); }

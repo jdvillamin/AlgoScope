@@ -1382,6 +1382,99 @@ int current = queue[front++];
 trace_graph_highlight("G", g->vertices[current].id);
 
 ==================================================
+RECURSION / CALL TREE TRACES
+==================================================
+
+Use this family to profile a RECURSIVE function (one that calls itself, directly
+or indirectly). It builds a recursion tree: every function INVOCATION becomes a
+rectangular node whose parameter values are shown in separate partitions, and a
+directed edge runs from each caller to the callee it spawns. The frames still on
+the call stack are highlighted as a live path; returned frames are dimmed and may
+show their result.
+
+Signatures:
+
+trace_rec_init(char* name)
+trace_rec_enter(char* name, char* func)
+trace_rec_param(char* name, char* param_name, value)   /* int or char */
+trace_rec_return(char* name, value)                    /* pop, with a result */
+trace_rec_exit(char* name)                             /* pop, no result (void) */
+
+The tracer keeps an internal call stack, so each invocation's unique identity,
+its parent (the caller), and the active frame are derived automatically — you
+only mark enter / param / return. fib(2) reached twice yields two distinct nodes.
+
+Rules:
+
+0. ONLY emit this family when a recursive function exists. Use ONE recursion view
+   per program (e.g. name it "calls"). Do NOT use it for non-recursive helpers.
+
+1. Call trace_rec_init ONCE in main, before the first call to the recursive
+   function.
+
+2. At the TOP of the recursive function body (before anything else), emit:
+       trace_rec_enter("calls", "<functionName>");
+   then ONE trace_rec_param per argument you want shown in a partition:
+       trace_rec_param("calls", "n", n);
+   Show the int/char parameters that drive the recursion. SKIP array/pointer
+   parameters (e.g. arr) — show the index bounds instead (low, high).
+
+3. POP the frame when the call finishes, AFTER all of its recursive calls have
+   executed:
+   - void function: place trace_rec_exit("calls"); at the single exit at the end
+     of the body.
+   - value-returning function: place trace_rec_return("calls", result); right
+     BEFORE the return, where `result` is the value being returned. The recursive
+     calls must run in statements that PRECEDE this pop (e.g. the result is stored
+     in a local first), so the frame is still on the stack while its children run.
+
+4. Every recursive call still on the stack is shown as the active path
+   automatically — you do NOT emit highlight calls for recursion.
+
+Example (value-returning recursion — Fibonacci):
+
+int fib(int n) {
+    trace_rec_enter("calls", "fib");
+    trace_rec_param("calls", "n", n);
+    trace_line(4);
+    if (n < 2) {
+        trace_line(5);
+        trace_rec_return("calls", n);     // pop a base case
+        return n;
+    }
+    trace_line(7);
+    int result = fib(n - 1) + fib(n - 2); // children run while this frame is on the stack
+    trace_line(8);
+    trace_rec_return("calls", result);    // pop after children finished
+    return result;
+}
+
+int main() {
+    trace_rec_init("calls");              // once, before the first call
+    ...
+    int answer = fib(n);
+    ...
+}
+
+Example (void recursion — Quicksort; pair with the array view):
+
+void quicksort(int arr[], int low, int high) {
+    trace_rec_enter("calls", "quicksort");
+    trace_rec_param("calls", "low", low);   // skip arr; show the bounds
+    trace_rec_param("calls", "high", high);
+    trace_line(23);
+    if (low < high) {
+        trace_line(24);
+        int p = partition(arr, low, high);  // partition is NOT recursive — no rec traces
+        trace_line(25);
+        quicksort(arr, low, p - 1);
+        trace_line(26);
+        quicksort(arr, p + 1, high);
+    }
+    trace_rec_exit("calls");                 // single exit pops the frame
+}
+
+==================================================
 INSTRUMENTATION STRATEGY
 ==================================================
 

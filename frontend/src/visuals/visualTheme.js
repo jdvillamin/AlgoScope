@@ -10,6 +10,7 @@ export const VISUAL_THEME = {
   tree:    { border: "#52203b", label: "#b36b93", flash: "#e586b8" },
   btree:   { border: "#3a2a5c", label: "#8b7ac0", flash: "#b29bff" },
   graph:   { border: "#5a2429", label: "#c16672", flash: "#eb7785" },
+  recursion: { border: "#33306e", label: "#8782c4", flash: "#9b93ff" },
 };
 
 export function themeFor(type) {

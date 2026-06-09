@@ -376,6 +376,55 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
     if (step.type === "graph_highlight" && newObjects[step.graph]) {
       newObjects[step.graph].currentHighlight = step.id;
     }
+
+    // ================= RECURSION / CALL TREE =================
+    if (step.type === "rec_init") {
+      newObjects[step.name] = {
+        id: step.name,
+        type: "recursion",
+        nodes: {},
+        edges: [],
+        // ids of frames currently on the call stack, bottom → top. The last
+        // entry is the active (executing) frame; ancestors are its callers.
+        stack: [],
+        activeId: null,
+      };
+    }
+
+    if (step.type === "rec_enter" && newObjects[step.name]) {
+      const rec = newObjects[step.name];
+      const id = String(step.id);
+      const parent = step.parent === undefined ? -1 : String(step.parent);
+      rec.nodes[id] = {
+        id,
+        func: step.func,
+        params: [],
+        ret: undefined,
+        returned: false,
+      };
+      if (parent !== "-1" && rec.nodes[parent]) {
+        rec.edges.push({ parent, child: id });
+      }
+      rec.stack = [...rec.stack, id];
+      rec.activeId = id;
+    }
+
+    if (step.type === "rec_param" && newObjects[step.name]) {
+      const node = newObjects[step.name].nodes[String(step.id)];
+      if (node) node.params.push({ name: step.p, value: step.v });
+    }
+
+    if (step.type === "rec_return" && newObjects[step.name]) {
+      const rec = newObjects[step.name];
+      const id = String(step.id);
+      const node = rec.nodes[id];
+      if (node) {
+        node.returned = true;
+        if (step.v !== undefined) node.ret = step.v;
+      }
+      rec.stack = rec.stack.filter((x) => x !== id);
+      rec.activeId = rec.stack.length ? rec.stack[rec.stack.length - 1] : null;
+    }
   }
 
   // ================= AUTO LAYOUT =================
@@ -397,7 +446,8 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       step.type === "hash_init" ||
       step.type === "tree_init" ||
       step.type === "btree_init" ||
-      step.type === "graph_init"
+      step.type === "graph_init" ||
+      step.type === "rec_init"
     ) {
       if (!orderedIds.includes(step.name)) {
         orderedIds.push(step.name);

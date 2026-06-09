@@ -14,6 +14,7 @@ import HashMapView from "./visuals/HashMapView";
 import TreeView from "./visuals/TreeView";
 import BinaryTreeView from "./visuals/BinaryTreeView";
 import GraphView from "./visuals/GraphView";
+import RecursionView from "./visuals/RecursionView";
 
 function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
   const [scale, setScale] = useState(1);
@@ -573,6 +574,15 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
             if (obj.type === "graph")
               return (
                 <GraphView
+                  key={obj.id}
+                  obj={obj}
+                  onMouseDown={handleObjectMouseDown}
+                />
+              );
+
+            if (obj.type === "recursion")
+              return (
+                <RecursionView
                   key={obj.id}
                   obj={obj}
                   onMouseDown={handleObjectMouseDown}
