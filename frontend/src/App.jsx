@@ -966,7 +966,7 @@ function App() {
               width: "40px",
               height: "40px",
               borderRadius: "10px",
-              background: "rgba(14, 21, 32, 0.9)",
+              background: "var(--c-glass)",
               border: "1px solid var(--c-border)",
               color: "var(--c-text-muted)",
               fontSize: "18px",
@@ -995,7 +995,7 @@ function App() {
             flexDirection: "column",
             background: "var(--c-bg-panel)",
             borderRadius: "14px 14px 0 0",
-            boxShadow: "0 -4px 24px rgba(0,0,0,0.5)",
+            boxShadow: "var(--shadow-sheet)",
             transition: sheetDragHeight !== null ? "none" : "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             zIndex: 30,
             overflow: "hidden",
@@ -1022,7 +1022,7 @@ function App() {
               width: "36px",
               height: "4px",
               borderRadius: "2px",
-              background: "#2a3f5c",
+              background: "var(--c-handle)",
             }} />
           </div>
 
@@ -1105,7 +1105,7 @@ function App() {
                     overflowY: "auto",
                     fontSize: "10px",
                     fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                    color: error ? "#f87171" : "var(--c-text-dim)",
+                    color: error ? "var(--c-danger-fg)" : "var(--c-text-dim)",
                     whiteSpace: "pre-wrap",
                     lineHeight: 1.4,
                   }}
@@ -1123,7 +1123,7 @@ function App() {
                     <div style={{ color: "var(--c-gold)" }}>
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>Security violations ({securityViolations.length})</div>
                       {securityViolations.map((v, i) => (
-                        <div key={i} style={{ color: "#d4956a", fontSize: "10px", marginBottom: "2px" }}>
+                        <div key={i} style={{ color: "var(--c-warn-item)", fontSize: "10px", marginBottom: "2px" }}>
                           Line {v.line}: {v.message}
                         </div>
                       ))}
@@ -1152,7 +1152,7 @@ function App() {
               style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(2, 4, 10, 0.6)",
+                background: "var(--c-scrim)",
                 zIndex: 100,
                 backdropFilter: "blur(2px)",
               }}
@@ -1168,7 +1168,7 @@ function App() {
                 zIndex: 101,
                 display: "flex",
                 flexDirection: "column",
-                boxShadow: "4px 0 24px rgba(0,0,0,0.6)",
+                boxShadow: "var(--shadow-drawer)",
                 animation: "slideInLeft 0.2s ease-out",
               }}
             >
@@ -1304,7 +1304,7 @@ function App() {
                 fontWeight: 600,
                 lineHeight: 1,
                 cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                boxShadow: "var(--shadow-float)",
               }}
             >
               <span style={{ fontSize: "14px", lineHeight: 1, display: "inline-block", transform: "translateY(-1px)" }}>‹</span>
@@ -1321,6 +1321,9 @@ function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            position: "relative",
+            zIndex: 2,
+            boxShadow: "var(--shadow-edge-up)",
           }}
         >
           <Controls trace={trace} currentStep={currentStep} setCurrentStep={setCurrentStep} setActiveTab={setActiveTab} />
@@ -1339,10 +1342,10 @@ function App() {
           style={{
             width: "6px",
             cursor: "col-resize",
-            background: isResizing ? "#2a3f5c" : "var(--c-border-subtle)",
+            background: isResizing ? "var(--c-resizer-active)" : "var(--c-border-subtle)",
             transition: isResizing ? "none" : "background 0.15s",
             flexShrink: 0,
-            zIndex: 5,
+            zIndex: 2,
           }}
         />
       )}
@@ -1354,6 +1357,9 @@ function App() {
           flexShrink: 0,
           display: editorHidden ? "none" : "flex",
           flexDirection: "column",
+          position: "relative",
+          zIndex: 3,
+          boxShadow: "var(--shadow-edge-left)",
         }}
       >
         <div style={{ flex: 3, minHeight: 0 }}>
@@ -1450,7 +1456,7 @@ function App() {
               fontSize: "12.5px",
               fontFamily:
                 "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-              color: error ? "#f87171" : "var(--c-text-dim)",
+              color: error ? "var(--c-danger-fg)" : "var(--c-text-dim)",
               whiteSpace: "pre-wrap",
               lineHeight: 1.6,
               transition: "opacity 0.2s ease",
@@ -1507,7 +1513,7 @@ function App() {
                   Security violations ({securityViolations.length})
                 </div>
                 {securityViolations.map((v, i) => (
-                  <div key={i} style={{ color: "#d4956a", fontSize: "12px", marginBottom: "3px" }}>
+                  <div key={i} style={{ color: "var(--c-warn-item)", fontSize: "12px", marginBottom: "3px" }}>
                     Line {v.line}: {v.message}
                   </div>
                 ))}

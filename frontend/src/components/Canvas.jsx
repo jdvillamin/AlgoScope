@@ -61,6 +61,7 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
     fontSize: "14px",
     fontWeight: 600,
     transition: "all 0.15s ease",
+    boxShadow: "var(--shadow-card)",
   };
 
   // ================= GREEDY AUTO-LAYOUT =================
@@ -371,9 +372,9 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
             zIndex: 10,
           }}
         >
-          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.min(s + 0.2, 3))} title="Zoom in">+</button>
-          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.max(s - 0.2, 0.3))} title="Zoom out">−</button>
-          <button style={{ ...iconButton, background: "rgba(14, 21, 32, 0.9)", backdropFilter: "blur(8px)" }} onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} title="Reset view">↺</button>
+          <button style={{ ...iconButton, background: "var(--c-glass)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.min(s + 0.2, 3))} title="Zoom in">+</button>
+          <button style={{ ...iconButton, background: "var(--c-glass)", backdropFilter: "blur(8px)" }} onClick={() => setScale((s) => Math.max(s - 0.2, 0.3))} title="Zoom out">−</button>
+          <button style={{ ...iconButton, background: "var(--c-glass)", backdropFilter: "blur(8px)" }} onClick={() => { setScale(1); setOffset({ x: 0, y: 0 }); }} title="Reset view">↺</button>
         </div>
       ) : (
       <div
@@ -388,6 +389,9 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
           boxSizing: "border-box",
           overflow: "hidden",
           minWidth: 0,
+          position: "relative",
+          zIndex: 2,
+          boxShadow: "var(--shadow-edge-down)",
         }}
       >
         <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: "var(--c-text-head)", textTransform: "uppercase", marginRight: "8px" }}>
@@ -427,10 +431,10 @@ function Canvas({ trace = [], currentStep = 0, isMobile = false }) {
             flexShrink: 0,
             ...(optimalMode
               ? {
-                  background: "#1a2f5a",
-                  borderColor: "#3d6fc4",
-                  color: "#7ab8ff",
-                  boxShadow: "0 0 0 1px #3d6fc4",
+                  background: "var(--c-active-bg)",
+                  borderColor: "var(--c-active-border)",
+                  color: "var(--c-active-fg)",
+                  boxShadow: "0 0 0 1px var(--c-active-border)",
                 }
               : {}),
           }}

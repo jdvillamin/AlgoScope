@@ -75,6 +75,7 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
     justifyContent: "center",
     fontSize: "16px",
     transition: "all 0.15s ease",
+    boxShadow: "var(--shadow-card)",
   };
 
   const playBtn = {
@@ -90,6 +91,7 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
     justifyContent: "center",
     fontSize: "18px",
     transition: "all 0.15s ease",
+    boxShadow: "var(--shadow-card)",
   };
 
   const lastIndex = Math.max(trace.length - 1, 0);
@@ -150,7 +152,7 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
               position: "absolute",
               inset: 0,
               width: `${hoverPct}%`,
-              background: "#243854",
+              background: "var(--c-bar-hover)",
             }}
           />
         )}
@@ -162,7 +164,7 @@ function Controls({ trace, currentStep, setCurrentStep, setActiveTab }) {
             background: disabled
               ? "var(--c-border-subtle)"
               : "linear-gradient(90deg, #3d6fc4 0%, var(--c-accent) 100%)",
-            boxShadow: disabled ? "none" : "0 0 8px rgba(75,140,247,0.45)",
+            boxShadow: disabled ? "none" : "var(--shadow-bar-glow)",
             transition: "width 0.12s linear",
           }}
         />

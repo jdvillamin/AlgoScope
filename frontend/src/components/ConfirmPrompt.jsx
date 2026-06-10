@@ -12,6 +12,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
     background: "var(--c-bg-btn)",
     color: "var(--c-text-muted)",
     transition: "all 0.12s",
+    boxShadow: "var(--shadow-card)",
   };
 
   return (
@@ -20,7 +21,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(2, 4, 10, 0.72)",
+        background: "var(--c-scrim)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -37,7 +38,7 @@ function ConfirmPrompt({ open, title, message, confirmLabel = "Confirm", onConfi
           border: "1px solid var(--c-border)",
           borderRadius: "12px",
           padding: "22px 24px 18px",
-          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.6)",
+          boxShadow: "var(--shadow-modal)",
           color: "var(--c-text-bright)",
           fontFamily: "inherit",
         }}

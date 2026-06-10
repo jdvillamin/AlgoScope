@@ -32,6 +32,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
     justifyContent: "center",
     gap: "5px",
     fontFamily: "inherit",
+    boxShadow: "var(--shadow-card)",
   };
 
   const collapsedBtn = {
@@ -48,6 +49,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
     justifyContent: "center",
     padding: 0,
     fontFamily: "inherit",
+    boxShadow: "var(--shadow-card)",
   };
 
   const toggleCategory = (name) => {
@@ -66,6 +68,12 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
         display: "flex",
         flexDirection: "column",
         transition: isMobile ? "none" : "width 0.2s ease, min-width 0.2s ease",
+        // z-index above the editor column (3): the sign-in modal and user
+        // popup render inside this panel's stacking context and must paint
+        // over the rest of the app shell.
+        position: "relative",
+        zIndex: 4,
+        boxShadow: isMobile ? "none" : "var(--shadow-edge-right)",
       }}
     >
       {/* Header row */}
@@ -103,6 +111,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               justifyContent: "center",
               padding: 0,
               fontFamily: "inherit",
+              boxShadow: "var(--shadow-card)",
             }}
             title={effectiveCollapsed ? "Expand panel" : "Collapse panel"}
           >
@@ -206,6 +215,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               alignItems: "center",
               gap: "8px",
               fontFamily: "inherit",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
@@ -248,6 +258,7 @@ function FilePanel({ files, activeFileId, unsavedIds, activeFileUnsaved, onNewFi
               justifyContent: "center",
               gap: "6px",
               fontFamily: "inherit",
+              boxShadow: "var(--shadow-card)",
             }}
             title={
               isSaving

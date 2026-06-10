@@ -164,7 +164,7 @@ function Tutorial() {
       padding: "20px 24px",
       maxWidth: "340px",
       width: "340px",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(75,140,247,0.1)",
+      boxShadow: "var(--shadow-tutorial)",
     };
 
     if (isCentered || !spotlightRect) {
@@ -246,7 +246,7 @@ function Tutorial() {
           y="0"
           width="100%"
           height="100%"
-          fill="rgba(2, 4, 10, 0.75)"
+          style={{ fill: "var(--c-tour-scrim)" }}
           mask="url(#tutorial-mask)"
         />
       </svg>
@@ -361,6 +361,7 @@ function Tutorial() {
                   fontWeight: 600,
                   cursor: "pointer",
                   fontFamily: "inherit",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 Back
@@ -378,6 +379,7 @@ function Tutorial() {
                 fontWeight: 600,
                 cursor: "pointer",
                 fontFamily: "inherit",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               {isLast ? "Get Started" : "Next"}

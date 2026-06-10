@@ -41,6 +41,46 @@
   --c-border-warn: #3d2e10;
 
   --c-stage: radial-gradient(ellipse at 25% 25%, #050912 0%, #02040a 65%);
+
+  /* Surfaces that previously hardcoded dark literals in components. */
+  --c-bg-editor: #080d15;
+  --c-glass: rgba(14, 21, 32, 0.9);
+  --c-scrim: rgba(2, 4, 10, 0.72);
+  --c-tour-scrim: rgba(2, 4, 10, 0.75);
+  --c-editor-scrim: rgba(8, 13, 21, 0.3);
+  --c-bar-hover: #243854;
+  --c-handle: #2a3f5c;
+  --c-resizer-active: #2a3f5c;
+
+  --c-active-bg: #1a2f5a;
+  --c-active-border: #3d6fc4;
+  --c-active-fg: #7ab8ff;
+
+  --c-violet-bg: #161226;
+  --c-violet-border: #3a2a5c;
+  --c-violet-fg: #b29bff;
+
+  --c-danger-bg: #1a0f0f;
+  --c-danger-border: #5c1e1e;
+  --c-danger-fg: #f87171;
+  --c-danger-hover: #1d1318;
+  --c-warn-item: #d4956a;
+
+  /* Elevation. Dark mode stays flat (shadows only where it already had
+     them: overlays, sheets, floating buttons); light mode layers
+     Facebook-style soft shadows so panels read as cards over the page. */
+  --shadow-card: none;
+  --shadow-edge-left: none;
+  --shadow-edge-right: none;
+  --shadow-edge-down: none;
+  --shadow-edge-up: none;
+  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-drawer: 4px 0 24px rgba(0, 0, 0, 0.6);
+  --shadow-tutorial: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(75, 140, 247, 0.1);
+  --shadow-bar-glow: 0 0 8px rgba(75, 140, 247, 0.45);
 }
 
 :root[data-theme="light"] {
@@ -74,6 +114,42 @@
   --c-border-warn: #e6d09a;
 
   --c-stage: radial-gradient(ellipse at 25% 25%, #eef2f8 0%, #dfe6f0 65%);
+
+  --c-bg-editor: #ffffff;
+  --c-glass: rgba(255, 255, 255, 0.92);
+  --c-scrim: rgba(240, 243, 248, 0.8);
+  --c-tour-scrim: rgba(15, 23, 42, 0.45);
+  --c-editor-scrim: rgba(255, 255, 255, 0.45);
+  --c-bar-hover: #c9d8ef;
+  --c-handle: #c4cedd;
+  --c-resizer-active: #9db8dd;
+
+  --c-active-bg: #e3edfd;
+  --c-active-border: #9cbcf0;
+  --c-active-fg: #2f6fde;
+
+  --c-violet-bg: #f4effd;
+  --c-violet-border: #d5c8f4;
+  --c-violet-fg: #6d4fd2;
+
+  --c-danger-bg: #fdecec;
+  --c-danger-border: #f1b8b4;
+  --c-danger-fg: #d92d20;
+  --c-danger-hover: #fdecec;
+  --c-warn-item: #b45309;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow-edge-left: -2px 0 4px rgba(16, 24, 40, 0.04), -8px 0 20px rgba(16, 24, 40, 0.06);
+  --shadow-edge-right: 2px 0 4px rgba(16, 24, 40, 0.04), 8px 0 20px rgba(16, 24, 40, 0.06);
+  --shadow-edge-down: 0 2px 4px rgba(16, 24, 40, 0.04), 0 8px 20px rgba(16, 24, 40, 0.06);
+  --shadow-edge-up: 0 -2px 4px rgba(16, 24, 40, 0.04), 0 -8px 20px rgba(16, 24, 40, 0.06);
+  --shadow-float: 0 1px 2px rgba(16, 24, 40, 0.1), 0 4px 12px rgba(16, 24, 40, 0.1);
+  --shadow-pop: 0 12px 28px rgba(16, 24, 40, 0.18), 0 2px 4px rgba(16, 24, 40, 0.1);
+  --shadow-modal: 0 12px 28px rgba(16, 24, 40, 0.2), 0 2px 4px rgba(16, 24, 40, 0.1);
+  --shadow-sheet: 0 -4px 24px rgba(16, 24, 40, 0.16);
+  --shadow-drawer: 4px 0 24px rgba(16, 24, 40, 0.2);
+  --shadow-tutorial: 0 12px 28px rgba(16, 24, 40, 0.2), 0 0 0 1px rgba(47, 111, 222, 0.08);
+  --shadow-bar-glow: 0 0 8px rgba(47, 111, 222, 0.3);
 }
 
 :root {
@@ -121,6 +197,10 @@ button:focus-visible {
 
 .algoscope-current-line {
   background: rgba(240, 164, 41, 0.08);
+}
+
+:root[data-theme="light"] .algoscope-current-line {
+  background: rgba(240, 164, 41, 0.18);
 }
 
 .algoscope-current-line-gutter {

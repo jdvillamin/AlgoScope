@@ -174,6 +174,7 @@ function Editor({
     padding: 0,
     lineHeight: 1,
     flexShrink: 0,
+    boxShadow: active ? "var(--shadow-card)" : "none",
   });
 
   const tabStyle = (selected) => ({
@@ -279,9 +280,9 @@ function Editor({
               gap: "5px",
               fontSize: "12.5px",
               fontWeight: 600,
-              color: rawHasViolations ? "#f87171" : isProcessing ? "var(--c-text-dimmer)" : "#b29bff",
-              border: `1px solid ${rawHasViolations ? "#5c1e1e" : isProcessing ? "var(--c-border-subtle)" : "#3a2a5c"}`,
-              background: rawHasViolations ? "#1a0f0f" : isProcessing ? "var(--c-bg-btn)" : "#161226",
+              color: rawHasViolations ? "var(--c-danger-fg)" : isProcessing ? "var(--c-text-dimmer)" : "var(--c-violet-fg)",
+              border: `1px solid ${rawHasViolations ? "var(--c-danger-border)" : isProcessing ? "var(--c-border-subtle)" : "var(--c-violet-border)"}`,
+              background: rawHasViolations ? "var(--c-danger-bg)" : isProcessing ? "var(--c-bg-btn)" : "var(--c-violet-bg)",
               cursor: isProcessing || rawHasViolations ? "not-allowed" : "pointer",
             }}
             title={rawHasViolations ? "Fix security violations before instrumenting" : isProcessing ? "Processing..." : "Instrument raw code (adds tracing)"}
@@ -339,7 +340,7 @@ function Editor({
       </div>
 
       {/* Editor body */}
-      <div style={{ flex: 1, minHeight: 0, position: "relative", background: "var(--c-bg0)" }}>
+      <div style={{ flex: 1, minHeight: 0, position: "relative", background: "var(--c-bg-editor)" }}>
         <MonacoEditor
           height="100%"
           language="c"
@@ -379,7 +380,7 @@ function Editor({
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(8, 13, 21, 0.3)",
+              background: "var(--c-editor-scrim)",
               zIndex: 2,
               pointerEvents: "none",
             }}

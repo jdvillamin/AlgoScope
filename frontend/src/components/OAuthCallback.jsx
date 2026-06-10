@@ -54,7 +54,7 @@ function OAuthCallback() {
           gap: "16px",
         }}
       >
-        <div style={{ color: "#f87171", fontSize: "14px" }}>{error}</div>
+        <div style={{ color: "var(--c-danger-fg)", fontSize: "14px" }}>{error}</div>
         <a
           href="/"
           style={{

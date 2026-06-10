@@ -71,7 +71,14 @@ Guidelines:
 - **Chrome (shell) inline styles** should reference tokens: `color: "var(--c-text)"`,
   `background: "var(--c-bg-panel)"`, `border: "1px solid var(--c-border)"`, etc. See the token
   list in `index.css` (`--c-bg-*`, `--c-border-*`, `--c-text-*`, `--c-accent`, `--c-gold`,
-  `--c-bg-warn`, `--c-stage`).
+  `--c-bg-warn`, `--c-stage`, plus state colors `--c-active-*`, `--c-violet-*`, `--c-danger-*`
+  and surfaces `--c-glass`, `--c-scrim`, `--c-handle`).
+- **Elevation** goes through `--shadow-*` tokens (`--shadow-card`, `--shadow-edge-{left,right,up,down}`,
+  `--shadow-pop`, `--shadow-modal`, `--shadow-float`, `--shadow-sheet`, `--shadow-drawer`). Dark mode
+  keeps its original flat look (most resolve to `none` or the pre-existing black shadows); light mode
+  resolves them to Facebook-style soft shadows. Panels casting edge shadows need `position: relative`
+  plus a small `zIndex` so the shadow paints over the adjacent canvas stage. Never put `--shadow-card`
+  on a transparent-background button — the shadow would render as a ghost rectangle.
 - **Monaco** can't read CSS variables (canvas-rendered): it has `algoscope-dark` /
   `algoscope-light` themes defined with literal hex in `Editor.jsx`, selected by the `theme` prop.
 - **Data-structure visuals** (`components/visuals/*`) deliberately keep their own dark card

@@ -67,7 +67,7 @@ function Modal({ title, onClose, children }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(4, 8, 14, 0.65)",
+        background: "var(--c-scrim)",
         backdropFilter: "blur(2px)",
         display: "flex",
         alignItems: "center",
@@ -83,7 +83,7 @@ function Modal({ title, onClose, children }) {
           background: "var(--c-bg-panel)",
           border: "1px solid var(--c-border)",
           borderRadius: "12px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+          boxShadow: "var(--shadow-modal)",
           color: "var(--c-text-bright)",
           fontFamily: "inherit",
         }}
@@ -152,11 +152,12 @@ const primaryBtn = {
   cursor: "pointer",
   fontFamily: "inherit",
   width: "100%",
+  boxShadow: "var(--shadow-card)",
 };
 
 const errorStyle = {
   fontSize: "12px",
-  color: "#f87171",
+  color: "var(--c-danger-fg)",
   padding: "6px 8px",
   borderRadius: "6px",
   background: "rgba(248, 113, 113, 0.08)",
@@ -447,7 +448,7 @@ function UserMenu({ collapsed, onLogout }) {
             background: "var(--c-bg-panel)",
             border: "1px solid var(--c-border)",
             borderRadius: "10px",
-            boxShadow: "0 12px 32px rgba(0,0,0,0.55)",
+            boxShadow: "var(--shadow-pop)",
             padding: "6px",
             zIndex: 50,
           }}
@@ -491,12 +492,12 @@ function UserMenu({ collapsed, onLogout }) {
           </div>
 
           <button
-            style={{ ...menuItem, color: "#f87171" }}
+            style={{ ...menuItem, color: "var(--c-danger-fg)" }}
             onClick={() => {
               setPopupOpen(false);
               onLogout?.();
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#1d1318")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--c-danger-hover)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             {ICON.logout}
