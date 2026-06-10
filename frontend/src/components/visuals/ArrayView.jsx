@@ -11,6 +11,8 @@ const CARD_BORDER = 1;
 const LABEL_HEIGHT = 16;
 const LABEL_MARGIN = 10;
 const MARKER_HEIGHT = 18;
+// Index row: 9px text + 4px gap toward the cells/bars.
+const INDEX_HEIGHT = 13;
 
 const BAR_WIDTH = 24;
 const BAR_GAP = 3;
@@ -46,7 +48,7 @@ export function estimateArraySize(obj) {
     const barOuter = BAR_WIDTH + BAR_GAP;
     const rowWidth = n === 0 ? 0 : n * barOuter - BAR_GAP;
     const w = rowWidth + BAR_AREA_PADDING * 2 + CARD_PADDING_X * 2 + CARD_BORDER * 2;
-    const h = LABEL_HEIGHT + LABEL_MARGIN + BAR_MAX_HEIGHT + BAR_AREA_PADDING + markerExtra + CARD_PADDING_Y * 2 + CARD_BORDER * 2;
+    const h = LABEL_HEIGHT + LABEL_MARGIN + BAR_MAX_HEIGHT + BAR_AREA_PADDING + INDEX_HEIGHT + markerExtra + CARD_PADDING_Y * 2 + CARD_BORDER * 2;
     return { w, h };
   }
   const cellOuter = CELL + CELL_BORDER * 2;
@@ -55,6 +57,7 @@ export function estimateArraySize(obj) {
   const h =
     LABEL_HEIGHT +
     LABEL_MARGIN +
+    INDEX_HEIGHT +
     cellOuter +
     markerExtra +
     CARD_PADDING_Y * 2 +
@@ -124,6 +127,17 @@ function ArrayView({ obj, onMouseDown }) {
     if (!hasMarkers) return null;
     return <div style={{ minHeight: `${MARKER_HEIGHT - 3}px`, marginTop: "3px" }} />;
   };
+
+  const indexCellStyle = (i, width) => ({
+    width: `${width}px`,
+    height: "9px",
+    lineHeight: 1,
+    textAlign: "center",
+    fontSize: "9px",
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    color: obj.highlightIndex === i ? "#4ade80" : "#506888",
+  });
 
   return (
     <div
@@ -222,6 +236,13 @@ function ArrayView({ obj, onMouseDown }) {
                 );
               })}
             </div>
+            <div style={{ display: "flex", gap: `${BAR_GAP}px`, padding: `0 ${BAR_AREA_PADDING}px`, marginTop: "4px" }}>
+              {obj.data.map((_, i) => (
+                <div key={i} style={indexCellStyle(i, BAR_WIDTH)}>
+                  {i}
+                </div>
+              ))}
+            </div>
             {hasMarkers && (
               <div style={{ display: "flex", gap: `${BAR_GAP}px`, padding: `0 ${BAR_AREA_PADDING}px` }}>
                 {obj.data.map((_, i) => (
@@ -234,6 +255,13 @@ function ArrayView({ obj, onMouseDown }) {
           </div>
         ) : (
           <div>
+            <div style={{ display: "flex", gap: "6px", marginBottom: "4px" }}>
+              {obj.data.map((_, i) => (
+                <div key={i} style={indexCellStyle(i, 48)}>
+                  {i}
+                </div>
+              ))}
+            </div>
             <div style={{ display: "flex", gap: "6px" }}>
               {obj.data.map((v, i) => {
                 const isHighlighted = obj.highlightIndex === i;

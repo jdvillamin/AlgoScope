@@ -44,6 +44,21 @@ function Array2DView({ obj, onMouseDown }) {
 
   if (!obj || !Array.isArray(obj.data)) return null;
 
+  const cols = obj.data.reduce(
+    (m, row) => (Array.isArray(row) ? Math.max(m, row.length) : m),
+    0,
+  );
+  const ROW_INDEX_W = 16;
+
+  const indexStyle = (active) => ({
+    fontSize: "9px",
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    lineHeight: 1,
+    textAlign: "center",
+    color: active ? "#4ade80" : "#506888",
+  });
+
   return (
     <div
       data-viz-id={obj.id}
@@ -78,8 +93,29 @@ function Array2DView({ obj, onMouseDown }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {/* column indices */}
+          <div style={{ display: "flex", gap: "6px" }}>
+            <div style={{ width: `${ROW_INDEX_W}px` }} />
+            {Array.from({ length: cols }, (_, c) => (
+              <div
+                key={c}
+                style={{ ...indexStyle(obj.highlightCol === c), width: "48px" }}
+              >
+                {c}
+              </div>
+            ))}
+          </div>
           {obj.data.map((row, rIndex) => (
-            <div key={rIndex} style={{ display: "flex", gap: "6px" }}>
+            <div key={rIndex} style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              {/* row index */}
+              <div
+                style={{
+                  ...indexStyle(obj.highlightRow === rIndex),
+                  width: `${ROW_INDEX_W}px`,
+                }}
+              >
+                {rIndex}
+              </div>
               {row.map((v, cIndex) => {
                 const isHighlighted =
                   obj.highlightRow === rIndex && obj.highlightCol === cIndex;
