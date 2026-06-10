@@ -15,6 +15,14 @@ const POINTER_COLORS = [
   "#eb7785",
 ];
 
+// Red-black tree node fills. The node's semantic color always shows as the
+// fill; highlight/flash are expressed through the border + glow so the
+// red/black reading is never lost mid-traversal.
+const RB_STYLES = {
+  R: { bg: "#7f1d1d", border: "#ef4444", text: "#fecaca" },
+  B: { bg: "#0b0f14", border: "#566176", text: "#dce7f8" },
+};
+
 // Hash the name to a palette slot so a given pointer keeps the same color across
 // every step (stable, not order-dependent).
 function colorForPointer(name) {
@@ -147,6 +155,7 @@ function BinaryTreeView({ obj, onMouseDown }) {
       {Object.entries(positioned).map(([id, pos]) => {
         const highlighted = obj.currentHighlight === id;
         const isFlashing = changed.has(id);
+        const rb = RB_STYLES[nodes[id].color] || null;
         return (
           <div
             key={id}
@@ -157,19 +166,31 @@ function BinaryTreeView({ obj, onMouseDown }) {
               width: NODE_SIZE,
               height: NODE_SIZE,
               borderRadius: "50%",
-              background: highlighted ? "#0f2040" : "#131d2e",
-              border: `1px solid ${
-                highlighted ? "#1e3a6e" : isFlashing ? theme.flash : "#1e2d42"
-              }`,
+              background: rb ? rb.bg : highlighted ? "#0f2040" : "#131d2e",
+              border: rb
+                ? `2px solid ${
+                    highlighted ? "#4b8cf7" : isFlashing ? theme.flash : rb.border
+                  }`
+                : `1px solid ${
+                    highlighted ? "#1e3a6e" : isFlashing ? theme.flash : "#1e2d42"
+                  }`,
               boxShadow: highlighted
-                ? "0 0 14px rgba(75,140,247,0.2)"
+                ? "0 0 14px rgba(75,140,247,0.35)"
                 : isFlashing
                 ? `0 0 14px ${theme.flash}33, 0 4px 14px rgba(0,0,0,0.4)`
                 : "0 4px 14px rgba(0,0,0,0.4)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: highlighted ? "#4b8cf7" : isFlashing ? theme.flash : "#dce7f8",
+              color: rb
+                ? isFlashing
+                  ? theme.flash
+                  : rb.text
+                : highlighted
+                ? "#4b8cf7"
+                : isFlashing
+                ? theme.flash
+                : "#dce7f8",
               fontWeight: 600,
               fontSize: "14px",
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",

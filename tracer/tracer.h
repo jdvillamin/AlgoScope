@@ -154,6 +154,9 @@ void trace_btree_highlight(char* tree, void* node);
    which pointer variable references it — useful for rotation pivots and search
    cursors. Passing NULL as target detaches the label. */
 void trace_btree_pointer(char* tree, char* name, void* target);
+/* Set a node's color for red-black trees: color is "R" (red) or "B" (black).
+   Call after every assignment to the node's color field. */
+void trace_btree_color(char* tree, void* node, char* color);
 
 void trace_graph_init(char* name);
 void trace_graph_node(char* graph, char* id);

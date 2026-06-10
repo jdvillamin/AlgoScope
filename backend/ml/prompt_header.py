@@ -873,6 +873,7 @@ trace_btree_update(char* tree, void* node, long long data)
 trace_btree_delete(char* tree, void* node)
 trace_btree_highlight(char* tree, void* node)
 trace_btree_pointer(char* tree, char* name, void* target)
+trace_btree_color(char* tree, void* node, char* color)
 
 Rules:
 
@@ -939,6 +940,35 @@ Rules:
 
    Do NOT use trace_var_init / trace_var for node pointer variables in a binary
    tree — use trace_btree_pointer instead.
+
+8. NODE COLORS (red-black trees) — call trace_btree_color after EVERY assignment
+   to a node's color field, passing "R" for red or "B" for black. The node
+   renders as a red or black circle. This applies to creation, recoloring
+   during insert/delete fixup, and color copies between nodes:
+
+       n->color = 'R';
+       trace_btree_color("T", n, "R");
+
+   When the new color is only known at runtime (copying another node's color),
+   convert the char with a ternary in the same call:
+
+       y->color = z->color;
+       trace_btree_color("T", y, y->color == 'R' ? "R" : "B");
+
+   Only emit colors for trees that actually use them (red-black trees). Plain
+   BSTs / AVL trees should NOT call trace_btree_color.
+
+9. NIL SENTINELS — red-black tree code often uses a shared sentinel node (NIL)
+   instead of NULL. NEVER register the sentinel with trace_btree_node, never
+   highlight it, and convert it to NULL in every trace call with a ternary so
+   the visualizer treats it as "no child":
+
+       x->right = y->left;
+       trace_btree_right("T", x, x->right == NIL ? NULL : x->right);
+       trace_btree_pointer("T", "x", x == NIL ? NULL : x);
+
+   Guard fixup-loop highlights the same way: only highlight a node when it is
+   not NIL.
 
 Example (right rotation with pointer labels on the pivots):
 

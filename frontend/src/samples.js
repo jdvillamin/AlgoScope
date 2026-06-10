@@ -3964,6 +3964,1898 @@ int main() {
 `,
       },
       {
+        name: "Red-Black Left Rotation",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->color = color;
+  n->left = NIL;
+  n->right = NIL;
+  n->parent = NIL;
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  Node* y = x->right;
+  x->right = y->left;
+  if (y->left != NIL) {
+    y->left->parent = x;
+  }
+  y->parent = x->parent;
+  if (x->parent == NIL) {
+    *root = y;
+  } else if (x == x->parent->left) {
+    x->parent->left = y;
+  } else {
+    x->parent->right = y;
+  }
+  y->left = x;
+  x->parent = y;
+}
+
+void inorder(Node* node) {
+  if (node == NIL) return;
+  inorder(node->left);
+  printf("%d ", node->data);
+  inorder(node->right);
+}
+
+int main() {
+  NIL->color = 'B';
+
+  Node* root = createNode(10, 'B');
+  Node* a = createNode(5, 'B');
+  Node* y = createNode(20, 'R');
+  Node* b = createNode(15, 'B');
+  Node* c = createNode(25, 'B');
+
+  root->left = a;
+  a->parent = root;
+  root->right = y;
+  y->parent = root;
+  y->left = b;
+  b->parent = y;
+  y->right = c;
+  c->parent = y;
+
+  inorder(root);
+  printf("\\n");
+
+  leftRotate(&root, root);
+
+  root->color = 'B';
+  root->left->color = 'R';
+
+  inorder(root);
+  printf("\\n");
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  trace_line(16);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(17);
+  n->data = data;
+  trace_line(18);
+  n->color = color;
+  trace_line(19);
+  n->left = NIL;
+  trace_line(20);
+  n->right = NIL;
+  trace_line(21);
+  n->parent = NIL;
+  trace_btree_node("T", n, n->data);
+  trace_btree_color("T", n, color == 'R' ? "R" : "B");
+  trace_line(22);
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  trace_line(26);
+  Node* y = x->right;
+  trace_btree_pointer("T", "x", x);
+  trace_btree_pointer("T", "y", y == NIL ? NULL : y);
+  trace_btree_highlight("T", x);
+  trace_line(27);
+  x->right = y->left;
+  trace_btree_right("T", x, x->right == NIL ? NULL : x->right);
+  trace_line(28);
+  if (y->left != NIL) {
+    trace_line(29);
+    y->left->parent = x;
+  }
+  trace_line(31);
+  y->parent = x->parent;
+  trace_line(32);
+  if (x->parent == NIL) {
+    trace_line(33);
+    *root = y;
+  } else if (x == x->parent->left) {
+    trace_line(35);
+    x->parent->left = y;
+    trace_btree_left("T", x->parent, y);
+  } else {
+    trace_line(37);
+    x->parent->right = y;
+    trace_btree_right("T", x->parent, y);
+  }
+  trace_line(39);
+  y->left = x;
+  trace_btree_left("T", y, x);
+  trace_line(40);
+  x->parent = y;
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "y", NULL);
+}
+
+void inorder(Node* node) {
+  trace_line(44);
+  if (node == NIL) return;
+  trace_line(45);
+  inorder(node->left);
+  trace_btree_highlight("T", node);
+  trace_line(46);
+  printf("%d ", node->data);
+  trace_line(47);
+  inorder(node->right);
+}
+
+int main() {
+  trace_btree_init("T");
+  trace_line(51);
+  NIL->color = 'B';
+
+  trace_line(53);
+  Node* root = createNode(10, 'B');
+  trace_line(54);
+  Node* a = createNode(5, 'B');
+  trace_line(55);
+  Node* y = createNode(20, 'R');
+  trace_line(56);
+  Node* b = createNode(15, 'B');
+  trace_line(57);
+  Node* c = createNode(25, 'B');
+
+  trace_line(59);
+  root->left = a;
+  trace_btree_left("T", root, a);
+  trace_line(60);
+  a->parent = root;
+  trace_line(61);
+  root->right = y;
+  trace_btree_right("T", root, y);
+  trace_line(62);
+  y->parent = root;
+  trace_line(63);
+  y->left = b;
+  trace_btree_left("T", y, b);
+  trace_line(64);
+  b->parent = y;
+  trace_line(65);
+  y->right = c;
+  trace_btree_right("T", y, c);
+  trace_line(66);
+  c->parent = y;
+
+  trace_line(68);
+  inorder(root);
+  trace_line(69);
+  printf("\\n");
+
+  trace_line(71);
+  leftRotate(&root, root);
+
+  trace_line(73);
+  root->color = 'B';
+  trace_btree_color("T", root, "B");
+  trace_line(74);
+  root->left->color = 'R';
+  trace_btree_color("T", root->left, "R");
+
+  trace_line(76);
+  inorder(root);
+  trace_line(77);
+  printf("\\n");
+
+  trace_line(79);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Red-Black Right Rotation",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->color = color;
+  n->left = NIL;
+  n->right = NIL;
+  n->parent = NIL;
+  return n;
+}
+
+void rightRotate(Node** root, Node* y) {
+  Node* x = y->left;
+  y->left = x->right;
+  if (x->right != NIL) {
+    x->right->parent = y;
+  }
+  x->parent = y->parent;
+  if (y->parent == NIL) {
+    *root = x;
+  } else if (y == y->parent->left) {
+    y->parent->left = x;
+  } else {
+    y->parent->right = x;
+  }
+  x->right = y;
+  y->parent = x;
+}
+
+void inorder(Node* node) {
+  if (node == NIL) return;
+  inorder(node->left);
+  printf("%d ", node->data);
+  inorder(node->right);
+}
+
+int main() {
+  NIL->color = 'B';
+
+  Node* root = createNode(20, 'B');
+  Node* x = createNode(10, 'R');
+  Node* a = createNode(5, 'B');
+  Node* b = createNode(15, 'B');
+  Node* c = createNode(25, 'B');
+
+  root->left = x;
+  x->parent = root;
+  root->right = c;
+  c->parent = root;
+  x->left = a;
+  a->parent = x;
+  x->right = b;
+  b->parent = x;
+
+  inorder(root);
+  printf("\\n");
+
+  rightRotate(&root, root);
+
+  root->color = 'B';
+  root->right->color = 'R';
+
+  inorder(root);
+  printf("\\n");
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  trace_line(16);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(17);
+  n->data = data;
+  trace_line(18);
+  n->color = color;
+  trace_line(19);
+  n->left = NIL;
+  trace_line(20);
+  n->right = NIL;
+  trace_line(21);
+  n->parent = NIL;
+  trace_btree_node("T", n, n->data);
+  trace_btree_color("T", n, color == 'R' ? "R" : "B");
+  trace_line(22);
+  return n;
+}
+
+void rightRotate(Node** root, Node* y) {
+  trace_line(26);
+  Node* x = y->left;
+  trace_btree_pointer("T", "y", y);
+  trace_btree_pointer("T", "x", x == NIL ? NULL : x);
+  trace_btree_highlight("T", y);
+  trace_line(27);
+  y->left = x->right;
+  trace_btree_left("T", y, y->left == NIL ? NULL : y->left);
+  trace_line(28);
+  if (x->right != NIL) {
+    trace_line(29);
+    x->right->parent = y;
+  }
+  trace_line(31);
+  x->parent = y->parent;
+  trace_line(32);
+  if (y->parent == NIL) {
+    trace_line(33);
+    *root = x;
+  } else if (y == y->parent->left) {
+    trace_line(35);
+    y->parent->left = x;
+    trace_btree_left("T", y->parent, x);
+  } else {
+    trace_line(37);
+    y->parent->right = x;
+    trace_btree_right("T", y->parent, x);
+  }
+  trace_line(39);
+  x->right = y;
+  trace_btree_right("T", x, y);
+  trace_line(40);
+  y->parent = x;
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "y", NULL);
+}
+
+void inorder(Node* node) {
+  trace_line(44);
+  if (node == NIL) return;
+  trace_line(45);
+  inorder(node->left);
+  trace_btree_highlight("T", node);
+  trace_line(46);
+  printf("%d ", node->data);
+  trace_line(47);
+  inorder(node->right);
+}
+
+int main() {
+  trace_btree_init("T");
+  trace_line(51);
+  NIL->color = 'B';
+
+  trace_line(53);
+  Node* root = createNode(20, 'B');
+  trace_line(54);
+  Node* x = createNode(10, 'R');
+  trace_line(55);
+  Node* a = createNode(5, 'B');
+  trace_line(56);
+  Node* b = createNode(15, 'B');
+  trace_line(57);
+  Node* c = createNode(25, 'B');
+
+  trace_line(59);
+  root->left = x;
+  trace_btree_left("T", root, x);
+  trace_line(60);
+  x->parent = root;
+  trace_line(61);
+  root->right = c;
+  trace_btree_right("T", root, c);
+  trace_line(62);
+  c->parent = root;
+  trace_line(63);
+  x->left = a;
+  trace_btree_left("T", x, a);
+  trace_line(64);
+  a->parent = x;
+  trace_line(65);
+  x->right = b;
+  trace_btree_right("T", x, b);
+  trace_line(66);
+  b->parent = x;
+
+  trace_line(68);
+  inorder(root);
+  trace_line(69);
+  printf("\\n");
+
+  trace_line(71);
+  rightRotate(&root, root);
+
+  trace_line(73);
+  root->color = 'B';
+  trace_btree_color("T", root, "B");
+  trace_line(74);
+  root->right->color = 'R';
+  trace_btree_color("T", root->right, "R");
+
+  trace_line(76);
+  inorder(root);
+  trace_line(77);
+  printf("\\n");
+
+  trace_line(79);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Red-Black Insert",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->color = 'R';
+  n->left = NIL;
+  n->right = NIL;
+  n->parent = NIL;
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  Node* y = x->right;
+  x->right = y->left;
+  if (y->left != NIL) {
+    y->left->parent = x;
+  }
+  y->parent = x->parent;
+  if (x->parent == NIL) {
+    *root = y;
+  } else if (x == x->parent->left) {
+    x->parent->left = y;
+  } else {
+    x->parent->right = y;
+  }
+  y->left = x;
+  x->parent = y;
+}
+
+void rightRotate(Node** root, Node* y) {
+  Node* x = y->left;
+  y->left = x->right;
+  if (x->right != NIL) {
+    x->right->parent = y;
+  }
+  x->parent = y->parent;
+  if (y->parent == NIL) {
+    *root = x;
+  } else if (y == y->parent->left) {
+    y->parent->left = x;
+  } else {
+    y->parent->right = x;
+  }
+  x->right = y;
+  y->parent = x;
+}
+
+void insertFixup(Node** root, Node* z) {
+  while (z->parent->color == 'R') {
+    if (z->parent == z->parent->parent->left) {
+      Node* u = z->parent->parent->right;
+      if (u->color == 'R') {
+        z->parent->color = 'B';
+        u->color = 'B';
+        z->parent->parent->color = 'R';
+        z = z->parent->parent;
+      } else {
+        if (z == z->parent->right) {
+          z = z->parent;
+          leftRotate(root, z);
+        }
+        z->parent->color = 'B';
+        z->parent->parent->color = 'R';
+        rightRotate(root, z->parent->parent);
+      }
+    } else {
+      Node* u = z->parent->parent->left;
+      if (u->color == 'R') {
+        z->parent->color = 'B';
+        u->color = 'B';
+        z->parent->parent->color = 'R';
+        z = z->parent->parent;
+      } else {
+        if (z == z->parent->left) {
+          z = z->parent;
+          rightRotate(root, z);
+        }
+        z->parent->color = 'B';
+        z->parent->parent->color = 'R';
+        leftRotate(root, z->parent->parent);
+      }
+    }
+  }
+  (*root)->color = 'B';
+}
+
+void insert(Node** root, int data) {
+  Node* z = createNode(data);
+  Node* y = NIL;
+  Node* x = *root;
+  while (x != NIL) {
+    y = x;
+    if (z->data < x->data) {
+      x = x->left;
+    } else {
+      x = x->right;
+    }
+  }
+  z->parent = y;
+  if (y == NIL) {
+    *root = z;
+  } else if (z->data < y->data) {
+    y->left = z;
+  } else {
+    y->right = z;
+  }
+  insertFixup(root, z);
+}
+
+void inorder(Node* node) {
+  if (node == NIL) return;
+  inorder(node->left);
+  printf("%d ", node->data);
+  inorder(node->right);
+}
+
+int main() {
+  NIL->color = 'B';
+
+  int values[8] = {10, 20, 30, 15, 25, 5, 1, 2};
+
+  Node* root = NIL;
+  for (int i = 0; i < 8; i++) {
+    insert(&root, values[i]);
+  }
+
+  inorder(root);
+  printf("\\n");
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data) {
+  trace_line(16);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(17);
+  n->data = data;
+  trace_line(18);
+  n->color = 'R';
+  trace_line(19);
+  n->left = NIL;
+  trace_line(20);
+  n->right = NIL;
+  trace_line(21);
+  n->parent = NIL;
+  trace_btree_node("T", n, n->data);
+  trace_btree_color("T", n, "R");
+  trace_line(22);
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  trace_line(26);
+  Node* y = x->right;
+  trace_btree_pointer("T", "x", x);
+  trace_btree_pointer("T", "y", y == NIL ? NULL : y);
+  trace_line(27);
+  x->right = y->left;
+  trace_btree_right("T", x, x->right == NIL ? NULL : x->right);
+  trace_line(28);
+  if (y->left != NIL) {
+    trace_line(29);
+    y->left->parent = x;
+  }
+  trace_line(31);
+  y->parent = x->parent;
+  trace_line(32);
+  if (x->parent == NIL) {
+    trace_line(33);
+    *root = y;
+  } else if (x == x->parent->left) {
+    trace_line(35);
+    x->parent->left = y;
+    trace_btree_left("T", x->parent, y);
+  } else {
+    trace_line(37);
+    x->parent->right = y;
+    trace_btree_right("T", x->parent, y);
+  }
+  trace_line(39);
+  y->left = x;
+  trace_btree_left("T", y, x);
+  trace_line(40);
+  x->parent = y;
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "y", NULL);
+}
+
+void rightRotate(Node** root, Node* y) {
+  trace_line(44);
+  Node* x = y->left;
+  trace_btree_pointer("T", "y", y);
+  trace_btree_pointer("T", "x", x == NIL ? NULL : x);
+  trace_line(45);
+  y->left = x->right;
+  trace_btree_left("T", y, y->left == NIL ? NULL : y->left);
+  trace_line(46);
+  if (x->right != NIL) {
+    trace_line(47);
+    x->right->parent = y;
+  }
+  trace_line(49);
+  x->parent = y->parent;
+  trace_line(50);
+  if (y->parent == NIL) {
+    trace_line(51);
+    *root = x;
+  } else if (y == y->parent->left) {
+    trace_line(53);
+    y->parent->left = x;
+    trace_btree_left("T", y->parent, x);
+  } else {
+    trace_line(55);
+    y->parent->right = x;
+    trace_btree_right("T", y->parent, x);
+  }
+  trace_line(57);
+  x->right = y;
+  trace_btree_right("T", x, y);
+  trace_line(58);
+  y->parent = x;
+  trace_btree_pointer("T", "x", NULL);
+  trace_btree_pointer("T", "y", NULL);
+}
+
+void insertFixup(Node** root, Node* z) {
+  trace_line(62);
+  while (z->parent->color == 'R') {
+    trace_line(62);
+    trace_btree_pointer("T", "z", z);
+    trace_btree_highlight("T", z);
+    trace_line(63);
+    if (z->parent == z->parent->parent->left) {
+      trace_line(64);
+      Node* u = z->parent->parent->right;
+      trace_btree_pointer("T", "u", u == NIL ? NULL : u);
+      trace_line(65);
+      if (u->color == 'R') {
+        trace_line(66);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(67);
+        u->color = 'B';
+        trace_btree_color("T", u, "B");
+        trace_line(68);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(69);
+        z = z->parent->parent;
+        trace_btree_pointer("T", "z", z);
+      } else {
+        trace_line(71);
+        if (z == z->parent->right) {
+          trace_line(72);
+          z = z->parent;
+          trace_btree_pointer("T", "z", z);
+          trace_line(73);
+          leftRotate(root, z);
+        }
+        trace_line(75);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(76);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(77);
+        rightRotate(root, z->parent->parent);
+      }
+    } else {
+      trace_line(80);
+      Node* u = z->parent->parent->left;
+      trace_btree_pointer("T", "u", u == NIL ? NULL : u);
+      trace_line(81);
+      if (u->color == 'R') {
+        trace_line(82);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(83);
+        u->color = 'B';
+        trace_btree_color("T", u, "B");
+        trace_line(84);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(85);
+        z = z->parent->parent;
+        trace_btree_pointer("T", "z", z);
+      } else {
+        trace_line(87);
+        if (z == z->parent->left) {
+          trace_line(88);
+          z = z->parent;
+          trace_btree_pointer("T", "z", z);
+          trace_line(89);
+          rightRotate(root, z);
+        }
+        trace_line(91);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(92);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(93);
+        leftRotate(root, z->parent->parent);
+      }
+    }
+  }
+  trace_btree_pointer("T", "z", NULL);
+  trace_btree_pointer("T", "u", NULL);
+  trace_line(97);
+  (*root)->color = 'B';
+  trace_btree_color("T", *root, "B");
+}
+
+void insert(Node** root, int data) {
+  trace_line(101);
+  Node* z = createNode(data);
+  trace_line(102);
+  Node* y = NIL;
+  trace_line(103);
+  Node* x = *root;
+  trace_line(104);
+  while (x != NIL) {
+    trace_line(104);
+    trace_btree_highlight("T", x);
+    trace_line(105);
+    y = x;
+    trace_line(106);
+    if (z->data < x->data) {
+      trace_line(107);
+      x = x->left;
+    } else {
+      trace_line(109);
+      x = x->right;
+    }
+  }
+  trace_line(112);
+  z->parent = y;
+  trace_line(113);
+  if (y == NIL) {
+    trace_line(114);
+    *root = z;
+  } else if (z->data < y->data) {
+    trace_line(116);
+    y->left = z;
+    trace_btree_left("T", y, z);
+  } else {
+    trace_line(118);
+    y->right = z;
+    trace_btree_right("T", y, z);
+  }
+  trace_line(120);
+  insertFixup(root, z);
+}
+
+void inorder(Node* node) {
+  trace_line(124);
+  if (node == NIL) return;
+  trace_line(125);
+  inorder(node->left);
+  trace_btree_highlight("T", node);
+  trace_line(126);
+  printf("%d ", node->data);
+  trace_line(127);
+  inorder(node->right);
+}
+
+int main() {
+  trace_btree_init("T");
+  trace_line(131);
+  NIL->color = 'B';
+
+  trace_line(133);
+  int values[8] = {10, 20, 30, 15, 25, 5, 1, 2};
+
+  trace_line(135);
+  Node* root = NIL;
+  trace_line(136);
+  for (int i = 0; i < 8; i++) {
+    trace_line(136);
+    trace_line(137);
+    insert(&root, values[i]);
+  }
+
+  trace_line(140);
+  inorder(root);
+  trace_line(141);
+  printf("\\n");
+
+  trace_line(143);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Red-Black Search",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->color = color;
+  n->left = NIL;
+  n->right = NIL;
+  n->parent = NIL;
+  return n;
+}
+
+Node* search(Node* root, int key) {
+  Node* cur = root;
+  while (cur != NIL && cur->data != key) {
+    if (key < cur->data) {
+      cur = cur->left;
+    } else {
+      cur = cur->right;
+    }
+  }
+  return cur;
+}
+
+int main() {
+  NIL->color = 'B';
+
+  Node* root = createNode(15, 'B');
+  Node* l = createNode(10, 'R');
+  Node* r = createNode(20, 'R');
+  Node* a = createNode(5, 'B');
+  Node* b = createNode(12, 'B');
+  Node* c = createNode(17, 'B');
+  Node* d = createNode(25, 'B');
+
+  root->left = l;
+  l->parent = root;
+  root->right = r;
+  r->parent = root;
+  l->left = a;
+  a->parent = l;
+  l->right = b;
+  b->parent = l;
+  r->left = c;
+  c->parent = r;
+  r->right = d;
+  d->parent = r;
+
+  Node* found = search(root, 12);
+  if (found != NIL) {
+    printf("Found %d (%c)\\n", found->data, found->color);
+  } else {
+    printf("12 not found\\n");
+  }
+
+  found = search(root, 19);
+  if (found != NIL) {
+    printf("Found %d (%c)\\n", found->data, found->color);
+  } else {
+    printf("19 not found\\n");
+  }
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data, char color) {
+  trace_line(16);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(17);
+  n->data = data;
+  trace_line(18);
+  n->color = color;
+  trace_line(19);
+  n->left = NIL;
+  trace_line(20);
+  n->right = NIL;
+  trace_line(21);
+  n->parent = NIL;
+  trace_btree_node("T", n, n->data);
+  trace_btree_color("T", n, color == 'R' ? "R" : "B");
+  trace_line(22);
+  return n;
+}
+
+Node* search(Node* root, int key) {
+  trace_line(26);
+  Node* cur = root;
+  trace_btree_pointer("T", "cur", cur == NIL ? NULL : cur);
+  trace_line(27);
+  while (cur != NIL && cur->data != key) {
+    trace_line(27);
+    trace_btree_highlight("T", cur);
+    trace_line(28);
+    if (key < cur->data) {
+      trace_line(29);
+      cur = cur->left;
+    } else {
+      trace_line(31);
+      cur = cur->right;
+    }
+    trace_btree_pointer("T", "cur", cur == NIL ? NULL : cur);
+  }
+  trace_btree_highlight("T", cur == NIL ? NULL : cur);
+  trace_btree_pointer("T", "cur", NULL);
+  trace_line(34);
+  return cur;
+}
+
+int main() {
+  trace_btree_init("T");
+  trace_line(38);
+  NIL->color = 'B';
+
+  trace_line(40);
+  Node* root = createNode(15, 'B');
+  trace_line(41);
+  Node* l = createNode(10, 'R');
+  trace_line(42);
+  Node* r = createNode(20, 'R');
+  trace_line(43);
+  Node* a = createNode(5, 'B');
+  trace_line(44);
+  Node* b = createNode(12, 'B');
+  trace_line(45);
+  Node* c = createNode(17, 'B');
+  trace_line(46);
+  Node* d = createNode(25, 'B');
+
+  trace_line(48);
+  root->left = l;
+  trace_btree_left("T", root, l);
+  trace_line(49);
+  l->parent = root;
+  trace_line(50);
+  root->right = r;
+  trace_btree_right("T", root, r);
+  trace_line(51);
+  r->parent = root;
+  trace_line(52);
+  l->left = a;
+  trace_btree_left("T", l, a);
+  trace_line(53);
+  a->parent = l;
+  trace_line(54);
+  l->right = b;
+  trace_btree_right("T", l, b);
+  trace_line(55);
+  b->parent = l;
+  trace_line(56);
+  r->left = c;
+  trace_btree_left("T", r, c);
+  trace_line(57);
+  c->parent = r;
+  trace_line(58);
+  r->right = d;
+  trace_btree_right("T", r, d);
+  trace_line(59);
+  d->parent = r;
+
+  trace_line(61);
+  Node* found = search(root, 12);
+  trace_btree_pointer("T", "found", found == NIL ? NULL : found);
+  trace_line(62);
+  if (found != NIL) {
+    trace_line(63);
+    printf("Found %d (%c)\\n", found->data, found->color);
+  } else {
+    trace_line(65);
+    printf("12 not found\\n");
+  }
+
+  trace_line(68);
+  found = search(root, 19);
+  trace_btree_pointer("T", "found", found == NIL ? NULL : found);
+  trace_line(69);
+  if (found != NIL) {
+    trace_line(70);
+    printf("Found %d (%c)\\n", found->data, found->color);
+  } else {
+    trace_line(72);
+    printf("19 not found\\n");
+  }
+
+  trace_line(75);
+  return 0;
+}
+`,
+      },
+      {
+        name: "Red-Black Delete",
+        code: `#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data) {
+  Node* n = (Node*)malloc(sizeof(Node));
+  n->data = data;
+  n->color = 'R';
+  n->left = NIL;
+  n->right = NIL;
+  n->parent = NIL;
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  Node* y = x->right;
+  x->right = y->left;
+  if (y->left != NIL) {
+    y->left->parent = x;
+  }
+  y->parent = x->parent;
+  if (x->parent == NIL) {
+    *root = y;
+  } else if (x == x->parent->left) {
+    x->parent->left = y;
+  } else {
+    x->parent->right = y;
+  }
+  y->left = x;
+  x->parent = y;
+}
+
+void rightRotate(Node** root, Node* y) {
+  Node* x = y->left;
+  y->left = x->right;
+  if (x->right != NIL) {
+    x->right->parent = y;
+  }
+  x->parent = y->parent;
+  if (y->parent == NIL) {
+    *root = x;
+  } else if (y == y->parent->left) {
+    y->parent->left = x;
+  } else {
+    y->parent->right = x;
+  }
+  x->right = y;
+  y->parent = x;
+}
+
+void insertFixup(Node** root, Node* z) {
+  while (z->parent->color == 'R') {
+    if (z->parent == z->parent->parent->left) {
+      Node* u = z->parent->parent->right;
+      if (u->color == 'R') {
+        z->parent->color = 'B';
+        u->color = 'B';
+        z->parent->parent->color = 'R';
+        z = z->parent->parent;
+      } else {
+        if (z == z->parent->right) {
+          z = z->parent;
+          leftRotate(root, z);
+        }
+        z->parent->color = 'B';
+        z->parent->parent->color = 'R';
+        rightRotate(root, z->parent->parent);
+      }
+    } else {
+      Node* u = z->parent->parent->left;
+      if (u->color == 'R') {
+        z->parent->color = 'B';
+        u->color = 'B';
+        z->parent->parent->color = 'R';
+        z = z->parent->parent;
+      } else {
+        if (z == z->parent->left) {
+          z = z->parent;
+          rightRotate(root, z);
+        }
+        z->parent->color = 'B';
+        z->parent->parent->color = 'R';
+        leftRotate(root, z->parent->parent);
+      }
+    }
+  }
+  (*root)->color = 'B';
+}
+
+void insert(Node** root, int data) {
+  Node* z = createNode(data);
+  Node* y = NIL;
+  Node* x = *root;
+  while (x != NIL) {
+    y = x;
+    if (z->data < x->data) {
+      x = x->left;
+    } else {
+      x = x->right;
+    }
+  }
+  z->parent = y;
+  if (y == NIL) {
+    *root = z;
+  } else if (z->data < y->data) {
+    y->left = z;
+  } else {
+    y->right = z;
+  }
+  insertFixup(root, z);
+}
+
+Node* search(Node* root, int key) {
+  Node* cur = root;
+  while (cur != NIL && cur->data != key) {
+    if (key < cur->data) {
+      cur = cur->left;
+    } else {
+      cur = cur->right;
+    }
+  }
+  return cur;
+}
+
+Node* minimum(Node* x) {
+  while (x->left != NIL) {
+    x = x->left;
+  }
+  return x;
+}
+
+void transplant(Node** root, Node* u, Node* v) {
+  if (u->parent == NIL) {
+    *root = v;
+  } else if (u == u->parent->left) {
+    u->parent->left = v;
+  } else {
+    u->parent->right = v;
+  }
+  v->parent = u->parent;
+}
+
+void deleteFixup(Node** root, Node* x) {
+  while (x != *root && x->color == 'B') {
+    if (x == x->parent->left) {
+      Node* w = x->parent->right;
+      if (w->color == 'R') {
+        w->color = 'B';
+        x->parent->color = 'R';
+        leftRotate(root, x->parent);
+        w = x->parent->right;
+      }
+      if (w->left->color == 'B' && w->right->color == 'B') {
+        w->color = 'R';
+        x = x->parent;
+      } else {
+        if (w->right->color == 'B') {
+          w->left->color = 'B';
+          w->color = 'R';
+          rightRotate(root, w);
+          w = x->parent->right;
+        }
+        w->color = x->parent->color;
+        x->parent->color = 'B';
+        w->right->color = 'B';
+        leftRotate(root, x->parent);
+        x = *root;
+      }
+    } else {
+      Node* w = x->parent->left;
+      if (w->color == 'R') {
+        w->color = 'B';
+        x->parent->color = 'R';
+        rightRotate(root, x->parent);
+        w = x->parent->left;
+      }
+      if (w->right->color == 'B' && w->left->color == 'B') {
+        w->color = 'R';
+        x = x->parent;
+      } else {
+        if (w->left->color == 'B') {
+          w->right->color = 'B';
+          w->color = 'R';
+          leftRotate(root, w);
+          w = x->parent->left;
+        }
+        w->color = x->parent->color;
+        x->parent->color = 'B';
+        w->left->color = 'B';
+        rightRotate(root, x->parent);
+        x = *root;
+      }
+    }
+  }
+  x->color = 'B';
+}
+
+void deleteNode(Node** root, Node* z) {
+  Node* y = z;
+  Node* x;
+  char yColor = y->color;
+  if (z->left == NIL) {
+    x = z->right;
+    transplant(root, z, z->right);
+  } else if (z->right == NIL) {
+    x = z->left;
+    transplant(root, z, z->left);
+  } else {
+    y = minimum(z->right);
+    yColor = y->color;
+    x = y->right;
+    if (y->parent == z) {
+      x->parent = y;
+    } else {
+      transplant(root, y, y->right);
+      y->right = z->right;
+      y->right->parent = y;
+    }
+    transplant(root, z, y);
+    y->left = z->left;
+    y->left->parent = y;
+    y->color = z->color;
+  }
+  free(z);
+  if (yColor == 'B') {
+    deleteFixup(root, x);
+  }
+}
+
+void deleteValue(Node** root, int key) {
+  Node* z = search(*root, key);
+  if (z != NIL) {
+    deleteNode(root, z);
+  }
+}
+
+void inorder(Node* node) {
+  if (node == NIL) return;
+  inorder(node->left);
+  printf("%d ", node->data);
+  inorder(node->right);
+}
+
+int main() {
+  NIL->color = 'B';
+
+  int values[7] = {10, 5, 15, 3, 7, 12, 20};
+  Node* root = NIL;
+  for (int i = 0; i < 7; i++) {
+    insert(&root, values[i]);
+  }
+  inorder(root);
+  printf("\\n");
+
+  int keys[5] = {3, 5, 15, 10, 7};
+  for (int i = 0; i < 5; i++) {
+    deleteValue(&root, keys[i]);
+    inorder(root);
+    printf("\\n");
+  }
+
+  return 0;
+}
+`,
+        instrumentedCode: `#include <stdio.h>
+#include <stdlib.h>
+#include "tracer.h"
+
+typedef struct Node {
+  int data;
+  char color;
+  struct Node* left;
+  struct Node* right;
+  struct Node* parent;
+} Node;
+
+Node nil;
+Node* NIL = &nil;
+
+Node* createNode(int data) {
+  trace_line(16);
+  Node* n = (Node*)malloc(sizeof(Node));
+  trace_line(17);
+  n->data = data;
+  trace_line(18);
+  n->color = 'R';
+  trace_line(19);
+  n->left = NIL;
+  trace_line(20);
+  n->right = NIL;
+  trace_line(21);
+  n->parent = NIL;
+  trace_btree_node("T", n, n->data);
+  trace_btree_color("T", n, "R");
+  trace_line(22);
+  return n;
+}
+
+void leftRotate(Node** root, Node* x) {
+  trace_line(26);
+  Node* y = x->right;
+  trace_line(27);
+  x->right = y->left;
+  trace_btree_right("T", x, x->right == NIL ? NULL : x->right);
+  trace_line(28);
+  if (y->left != NIL) {
+    trace_line(29);
+    y->left->parent = x;
+  }
+  trace_line(31);
+  y->parent = x->parent;
+  trace_line(32);
+  if (x->parent == NIL) {
+    trace_line(33);
+    *root = y;
+  } else if (x == x->parent->left) {
+    trace_line(35);
+    x->parent->left = y;
+    trace_btree_left("T", x->parent, y);
+  } else {
+    trace_line(37);
+    x->parent->right = y;
+    trace_btree_right("T", x->parent, y);
+  }
+  trace_line(39);
+  y->left = x;
+  trace_btree_left("T", y, x);
+  trace_line(40);
+  x->parent = y;
+}
+
+void rightRotate(Node** root, Node* y) {
+  trace_line(44);
+  Node* x = y->left;
+  trace_line(45);
+  y->left = x->right;
+  trace_btree_left("T", y, y->left == NIL ? NULL : y->left);
+  trace_line(46);
+  if (x->right != NIL) {
+    trace_line(47);
+    x->right->parent = y;
+  }
+  trace_line(49);
+  x->parent = y->parent;
+  trace_line(50);
+  if (y->parent == NIL) {
+    trace_line(51);
+    *root = x;
+  } else if (y == y->parent->left) {
+    trace_line(53);
+    y->parent->left = x;
+    trace_btree_left("T", y->parent, x);
+  } else {
+    trace_line(55);
+    y->parent->right = x;
+    trace_btree_right("T", y->parent, x);
+  }
+  trace_line(57);
+  x->right = y;
+  trace_btree_right("T", x, y);
+  trace_line(58);
+  y->parent = x;
+}
+
+void insertFixup(Node** root, Node* z) {
+  trace_line(62);
+  while (z->parent->color == 'R') {
+    trace_line(62);
+    trace_btree_highlight("T", z);
+    trace_line(63);
+    if (z->parent == z->parent->parent->left) {
+      trace_line(64);
+      Node* u = z->parent->parent->right;
+      trace_line(65);
+      if (u->color == 'R') {
+        trace_line(66);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(67);
+        u->color = 'B';
+        trace_btree_color("T", u, "B");
+        trace_line(68);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(69);
+        z = z->parent->parent;
+      } else {
+        trace_line(71);
+        if (z == z->parent->right) {
+          trace_line(72);
+          z = z->parent;
+          trace_line(73);
+          leftRotate(root, z);
+        }
+        trace_line(75);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(76);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(77);
+        rightRotate(root, z->parent->parent);
+      }
+    } else {
+      trace_line(80);
+      Node* u = z->parent->parent->left;
+      trace_line(81);
+      if (u->color == 'R') {
+        trace_line(82);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(83);
+        u->color = 'B';
+        trace_btree_color("T", u, "B");
+        trace_line(84);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(85);
+        z = z->parent->parent;
+      } else {
+        trace_line(87);
+        if (z == z->parent->left) {
+          trace_line(88);
+          z = z->parent;
+          trace_line(89);
+          rightRotate(root, z);
+        }
+        trace_line(91);
+        z->parent->color = 'B';
+        trace_btree_color("T", z->parent, "B");
+        trace_line(92);
+        z->parent->parent->color = 'R';
+        trace_btree_color("T", z->parent->parent, "R");
+        trace_line(93);
+        leftRotate(root, z->parent->parent);
+      }
+    }
+  }
+  trace_line(97);
+  (*root)->color = 'B';
+  trace_btree_color("T", *root, "B");
+}
+
+void insert(Node** root, int data) {
+  trace_line(101);
+  Node* z = createNode(data);
+  trace_line(102);
+  Node* y = NIL;
+  trace_line(103);
+  Node* x = *root;
+  trace_line(104);
+  while (x != NIL) {
+    trace_line(104);
+    trace_btree_highlight("T", x);
+    trace_line(105);
+    y = x;
+    trace_line(106);
+    if (z->data < x->data) {
+      trace_line(107);
+      x = x->left;
+    } else {
+      trace_line(109);
+      x = x->right;
+    }
+  }
+  trace_line(112);
+  z->parent = y;
+  trace_line(113);
+  if (y == NIL) {
+    trace_line(114);
+    *root = z;
+  } else if (z->data < y->data) {
+    trace_line(116);
+    y->left = z;
+    trace_btree_left("T", y, z);
+  } else {
+    trace_line(118);
+    y->right = z;
+    trace_btree_right("T", y, z);
+  }
+  trace_line(120);
+  insertFixup(root, z);
+}
+
+Node* search(Node* root, int key) {
+  trace_line(124);
+  Node* cur = root;
+  trace_btree_pointer("T", "cur", cur == NIL ? NULL : cur);
+  trace_line(125);
+  while (cur != NIL && cur->data != key) {
+    trace_line(125);
+    trace_btree_highlight("T", cur);
+    trace_line(126);
+    if (key < cur->data) {
+      trace_line(127);
+      cur = cur->left;
+    } else {
+      trace_line(129);
+      cur = cur->right;
+    }
+    trace_btree_pointer("T", "cur", cur == NIL ? NULL : cur);
+  }
+  trace_btree_pointer("T", "cur", NULL);
+  trace_line(132);
+  return cur;
+}
+
+Node* minimum(Node* x) {
+  trace_line(136);
+  while (x->left != NIL) {
+    trace_line(136);
+    trace_btree_highlight("T", x);
+    trace_line(137);
+    x = x->left;
+  }
+  trace_btree_highlight("T", x);
+  trace_line(139);
+  return x;
+}
+
+void transplant(Node** root, Node* u, Node* v) {
+  trace_line(143);
+  if (u->parent == NIL) {
+    trace_line(144);
+    *root = v;
+  } else if (u == u->parent->left) {
+    trace_line(146);
+    u->parent->left = v;
+    trace_btree_left("T", u->parent, v == NIL ? NULL : v);
+  } else {
+    trace_line(148);
+    u->parent->right = v;
+    trace_btree_right("T", u->parent, v == NIL ? NULL : v);
+  }
+  trace_line(150);
+  v->parent = u->parent;
+}
+
+void deleteFixup(Node** root, Node* x) {
+  trace_line(154);
+  while (x != *root && x->color == 'B') {
+    trace_line(154);
+    trace_btree_highlight("T", x == NIL ? NULL : x);
+    trace_line(155);
+    if (x == x->parent->left) {
+      trace_line(156);
+      Node* w = x->parent->right;
+      trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+      trace_line(157);
+      if (w->color == 'R') {
+        trace_line(158);
+        w->color = 'B';
+        trace_btree_color("T", w, "B");
+        trace_line(159);
+        x->parent->color = 'R';
+        trace_btree_color("T", x->parent, "R");
+        trace_line(160);
+        leftRotate(root, x->parent);
+        trace_line(161);
+        w = x->parent->right;
+        trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+      }
+      trace_line(163);
+      if (w->left->color == 'B' && w->right->color == 'B') {
+        trace_line(164);
+        w->color = 'R';
+        trace_btree_color("T", w, "R");
+        trace_line(165);
+        x = x->parent;
+      } else {
+        trace_line(167);
+        if (w->right->color == 'B') {
+          trace_line(168);
+          w->left->color = 'B';
+          trace_btree_color("T", w->left == NIL ? NULL : w->left, "B");
+          trace_line(169);
+          w->color = 'R';
+          trace_btree_color("T", w, "R");
+          trace_line(170);
+          rightRotate(root, w);
+          trace_line(171);
+          w = x->parent->right;
+          trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+        }
+        trace_line(173);
+        w->color = x->parent->color;
+        trace_btree_color("T", w, w->color == 'R' ? "R" : "B");
+        trace_line(174);
+        x->parent->color = 'B';
+        trace_btree_color("T", x->parent, "B");
+        trace_line(175);
+        w->right->color = 'B';
+        trace_btree_color("T", w->right == NIL ? NULL : w->right, "B");
+        trace_line(176);
+        leftRotate(root, x->parent);
+        trace_line(177);
+        x = *root;
+      }
+    } else {
+      trace_line(180);
+      Node* w = x->parent->left;
+      trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+      trace_line(181);
+      if (w->color == 'R') {
+        trace_line(182);
+        w->color = 'B';
+        trace_btree_color("T", w, "B");
+        trace_line(183);
+        x->parent->color = 'R';
+        trace_btree_color("T", x->parent, "R");
+        trace_line(184);
+        rightRotate(root, x->parent);
+        trace_line(185);
+        w = x->parent->left;
+        trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+      }
+      trace_line(187);
+      if (w->right->color == 'B' && w->left->color == 'B') {
+        trace_line(188);
+        w->color = 'R';
+        trace_btree_color("T", w, "R");
+        trace_line(189);
+        x = x->parent;
+      } else {
+        trace_line(191);
+        if (w->left->color == 'B') {
+          trace_line(192);
+          w->right->color = 'B';
+          trace_btree_color("T", w->right == NIL ? NULL : w->right, "B");
+          trace_line(193);
+          w->color = 'R';
+          trace_btree_color("T", w, "R");
+          trace_line(194);
+          leftRotate(root, w);
+          trace_line(195);
+          w = x->parent->left;
+          trace_btree_pointer("T", "w", w == NIL ? NULL : w);
+        }
+        trace_line(197);
+        w->color = x->parent->color;
+        trace_btree_color("T", w, w->color == 'R' ? "R" : "B");
+        trace_line(198);
+        x->parent->color = 'B';
+        trace_btree_color("T", x->parent, "B");
+        trace_line(199);
+        w->left->color = 'B';
+        trace_btree_color("T", w->left == NIL ? NULL : w->left, "B");
+        trace_line(200);
+        rightRotate(root, x->parent);
+        trace_line(201);
+        x = *root;
+      }
+    }
+  }
+  trace_btree_pointer("T", "w", NULL);
+  trace_line(205);
+  x->color = 'B';
+  trace_btree_color("T", x == NIL ? NULL : x, "B");
+}
+
+void deleteNode(Node** root, Node* z) {
+  trace_btree_highlight("T", z);
+  trace_line(209);
+  Node* y = z;
+  trace_line(210);
+  Node* x;
+  trace_line(211);
+  char yColor = y->color;
+  trace_line(212);
+  if (z->left == NIL) {
+    trace_line(213);
+    x = z->right;
+    trace_line(214);
+    transplant(root, z, z->right);
+  } else if (z->right == NIL) {
+    trace_line(216);
+    x = z->left;
+    trace_line(217);
+    transplant(root, z, z->left);
+  } else {
+    trace_line(219);
+    y = minimum(z->right);
+    trace_btree_pointer("T", "y", y);
+    trace_line(220);
+    yColor = y->color;
+    trace_line(221);
+    x = y->right;
+    trace_line(222);
+    if (y->parent == z) {
+      trace_line(223);
+      x->parent = y;
+    } else {
+      trace_line(225);
+      transplant(root, y, y->right);
+      trace_line(226);
+      y->right = z->right;
+      trace_btree_right("T", y, y->right == NIL ? NULL : y->right);
+      trace_line(227);
+      y->right->parent = y;
+    }
+    trace_line(229);
+    transplant(root, z, y);
+    trace_line(230);
+    y->left = z->left;
+    trace_btree_left("T", y, y->left == NIL ? NULL : y->left);
+    trace_line(231);
+    y->left->parent = y;
+    trace_line(232);
+    y->color = z->color;
+    trace_btree_color("T", y, y->color == 'R' ? "R" : "B");
+    trace_btree_pointer("T", "y", NULL);
+  }
+  trace_btree_delete("T", z);
+  trace_line(234);
+  free(z);
+  trace_line(235);
+  if (yColor == 'B') {
+    trace_line(236);
+    deleteFixup(root, x);
+  }
+}
+
+void deleteValue(Node** root, int key) {
+  trace_line(241);
+  Node* z = search(*root, key);
+  trace_line(242);
+  if (z != NIL) {
+    trace_line(243);
+    deleteNode(root, z);
+  }
+}
+
+void inorder(Node* node) {
+  trace_line(248);
+  if (node == NIL) return;
+  trace_line(249);
+  inorder(node->left);
+  trace_btree_highlight("T", node);
+  trace_line(250);
+  printf("%d ", node->data);
+  trace_line(251);
+  inorder(node->right);
+}
+
+int main() {
+  trace_btree_init("T");
+  trace_line(255);
+  NIL->color = 'B';
+
+  trace_line(257);
+  int values[7] = {10, 5, 15, 3, 7, 12, 20};
+  trace_line(258);
+  Node* root = NIL;
+  trace_line(259);
+  for (int i = 0; i < 7; i++) {
+    trace_line(259);
+    trace_line(260);
+    insert(&root, values[i]);
+  }
+  trace_line(262);
+  inorder(root);
+  trace_line(263);
+  printf("\\n");
+
+  trace_line(265);
+  int keys[5] = {3, 5, 15, 10, 7};
+  trace_line(266);
+  for (int i = 0; i < 5; i++) {
+    trace_line(266);
+    trace_line(267);
+    deleteValue(&root, keys[i]);
+    trace_line(268);
+    inorder(root);
+    trace_line(269);
+    printf("\\n");
+  }
+
+  trace_line(272);
+  return 0;
+}
+`,
+      },
+      {
         name: "N-ary Tree",
         code: `#include <stdio.h>
 #include <stdlib.h>

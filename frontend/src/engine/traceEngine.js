@@ -307,6 +307,7 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
         value: step.v,
         left: existing?.left ?? null,
         right: existing?.right ?? null,
+        color: existing?.color ?? null,
       };
     }
 
@@ -339,6 +340,15 @@ export function buildState(trace = [], currentStep = 0, positions = {}) {
       Object.keys(t.pointers || {}).forEach((name) => {
         if (t.pointers[name] === step.id) t.pointers[name] = "";
       });
+    }
+
+    // Red-black tree node color: "R" or "B" (anything else clears it).
+    if (step.type === "btree_color" && newObjects[step.tree]) {
+      const node = newObjects[step.tree].nodes[step.id];
+      if (node) {
+        const c = String(step.color || "").toUpperCase();
+        node.color = c.startsWith("R") ? "R" : c.startsWith("B") ? "B" : null;
+      }
     }
 
     if (step.type === "btree_highlight" && newObjects[step.tree]) {

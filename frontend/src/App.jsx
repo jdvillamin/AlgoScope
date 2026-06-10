@@ -624,7 +624,9 @@ function App() {
             const outputLines = [];
             for (const line of full.trace) {
               try {
-                parsed.push(typeof line === "string" ? JSON.parse(line) : line);
+                const event = typeof line === "string" ? JSON.parse(line) : line;
+                if (event && typeof event === "object") parsed.push(event);
+                else if (typeof line === "string" && line.trim()) outputLines.push(line);
               } catch {
                 if (typeof line === "string" && line.trim()) outputLines.push(line);
               }
@@ -680,8 +682,15 @@ function App() {
       const outputLines = [];
 
       for (const line of lines) {
+        // Only JSON objects are trace events — a bare number on its own line
+        // (e.g. printf("%d\n")) parses as JSON too but is program output.
         try {
-          parsed.push(JSON.parse(line));
+          const event = JSON.parse(line);
+          if (event && typeof event === "object") {
+            parsed.push(event);
+          } else if (line.trim()) {
+            outputLines.push(line);
+          }
         } catch {
           if (line.trim()) outputLines.push(line);
         }
