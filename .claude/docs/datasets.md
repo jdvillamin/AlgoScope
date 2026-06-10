@@ -31,6 +31,19 @@ Each fine-tuning subdirectory contains numbered pairs:
 
 These pairs train the LLM to produce correct instrumented code given raw C input. The instrumented file must follow every rule in `backend/ml/prompt_header.py`.
 
+**The live training corpus is `datasets/fine_tuning/`** (the default source for
+`scripts/build_finetune_tranche.py`, which validates pairs — raw lines preserved
+in order, tracer markers present, compiles against `tracer/` — and assembles the
+JSONL tranches in `datasets/fine_tuning_jsonl/`). It is a superset of
+`samples/fine_tuning/` and additionally holds the `claude_gfg_batch_*` /
+`github_batch_*` batches and `red_black_tree/` (6 pairs covering colored-node
+builds, rotations, CLRS insert/delete fixups, and search across the common color
+conventions: `char 'R'/'B'`, `enum { RED, BLACK }`, and `int isRed`, with both
+NULL children and NIL-sentinel styles). The deployed fine-tuned instrumenter
+model only knows the trace calls present in this corpus — when a new trace
+function is added (e.g. `trace_btree_color`), add pairs here and retrain, since
+`backend/ml/prompt_header.py` is only used by the non-fine-tuned prompt mode.
+
 ## Constant Size Constraints
 
 **When creating or editing sample files, or when encountering user-submitted programs with excessively large constants, reduce them to at most 20.**

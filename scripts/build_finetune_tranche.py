@@ -35,6 +35,7 @@ DATA_TRACE_MARKERS = (
     "trace_queue_",
     "trace_hash_",
     "trace_tree_",
+    "trace_btree_",
     "trace_graph_",
 )
 
